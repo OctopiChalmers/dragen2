@@ -1,0 +1,42 @@
+-- This file has been generated from package.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 58647da9ef1bd960ed4151dc75b7d2f3b4097453d62bd758e8782d87ea5cfa0e
+
+name:           quickcheck-patterns
+version:        0.1.0.0
+synopsis:       QuickCheck utilities to generate data following pattern matchings.
+description:    Please see the README on GitHub at <https://github.com/agustinmista/quickcheck-patterns#readme>
+category:       Testing
+homepage:       https://github.com/agustinmista/quickcheck-patterns#readme
+bug-reports:    https://github.com/agustinmista/quickcheck-patterns/issues
+author:         Agustín Mista
+maintainer:     Agustín Mista
+copyright:      2018 Agustín Mista
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+    ChangeLog.md
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/agustinmista/quickcheck-patterns
+
+library
+  exposed-modules:
+      Test.QuickCheck.Patterns
+  other-modules:
+      Test.QuickCheck.Patterns.Regular
+      Paths_quickcheck_patterns
+  hs-source-dirs:
+      src
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , multirec
+    , template-haskell
+  default-language: Haskell2010
