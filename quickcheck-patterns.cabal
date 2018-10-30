@@ -1,8 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 58647da9ef1bd960ed4151dc75b7d2f3b4097453d62bd758e8782d87ea5cfa0e
+-- hash: c5511c6527f6ab814b870e31b737b6c72f4ccc8f0f1c3c63571eb00d53d4a513
 
 name:           quickcheck-patterns
 version:        0.1.0.0
@@ -17,10 +19,9 @@ copyright:      2018 Agustín Mista
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 1.10
 extra-source-files:
-    ChangeLog.md
     README.md
+    ChangeLog.md
 
 source-repository head
   type: git
@@ -28,15 +29,24 @@ source-repository head
 
 library
   exposed-modules:
-      Test.QuickCheck.Patterns
+      Test.QuickCheck.Patterns.TH
+      Test.QuickCheck.Patterns.Rep
   other-modules:
-      Test.QuickCheck.Patterns.Regular
+      Test.QuickCheck.Patterns.Extract
+      Test.QuickCheck.Patterns.Reify
+      Test.QuickCheck.Patterns.Types
       Paths_quickcheck_patterns
   hs-source-dirs:
       src
   build-depends:
       QuickCheck
     , base >=4.7 && <5
-    , multirec
+    , directory
+    , extra
+    , filepath
+    , ghc-prim
+    , haskell-src-exts
+    , split
     , template-haskell
+    , th-desugar
   default-language: Haskell2010

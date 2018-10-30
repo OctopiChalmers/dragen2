@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -5,7 +6,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Test.QuickCheck.Regular where
+module Test.QuickCheck.Patterns.Regular where
 
 import GHC.TypeLits
 import Data.Kind
@@ -19,13 +20,13 @@ data Expr
   | EVar String
   deriving Show
 
-foo :: Expr -> a
+foo :: Expr -> Expr
 foo (EAdd (EConst 0) (EConst _)) = undefined
 foo (EMul (EConst 1) _)          = undefined
 foo (EMul (EConst 0) _)          = undefined
 foo _                            = undefined
 
-bar :: Expr -> a
+bar :: Expr -> Expr
 bar (EMul (EAdd _ _) _)          = undefined
 bar (EAdd _ (EAdd _ (EConst _))) = undefined
 bar _                            = undefined

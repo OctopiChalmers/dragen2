@@ -23,13 +23,21 @@ description:
 
 dependencies:
 - base >= 4.7 && < 5
+- extra
 
 library:
   source-dirs:
     - src
   exposed-modules:
-    - Test.QuickCheck.Patterns
+    - Test.QuickCheck.Patterns.TH
+    - Test.QuickCheck.Patterns.Rep
   dependencies:
-    - multirec
-    - QuickCheck
     - template-haskell
+    - th-desugar
+    - haskell-src-exts
+    - ghc-prim
+    - extra
+    - split
+    - filepath
+    - directory
+    - QuickCheck
