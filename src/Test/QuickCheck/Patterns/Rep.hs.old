@@ -1,108 +1,227 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Test.QuickCheck.Patterns.Rep where
 
 import GHC.TypeLits
 import Data.Kind
+import Data.Proxy
+import Data.Reflection
+
+import Test.QuickCheck
 
 ----------------------------------------
+-- | Fix point of a functor.
+data Fix (f :: Type -> Type)
+  = Fix { unFix :: (f (Fix f)) }
 
--- | Fix point of a data type. Just for illustration.
-data Fix (f :: Type -> Type) = Fix { unFix :: (f (Fix f))}
+deriving instance (Show (f (Fix f)) => Show (Fix f))
 
--- | Fix point of a pair of data types.
--- If we have two pattern functors representing the same data type in different
--- ways, we can interleave them by selecting either FixL or FixR accordingly.
-data Bifix (f :: Type -> Type) (g :: Type -> Type)
-  = FixL (f (Bifix f g))
-  | FixR (g (Bifix f g))
+-- | Arbitrary plumbing for fixpoints
+instance Arbitrary1 f => Arbitrary (Fix f) where
+  arbitrary = Fix <$> liftArbitrary arbitrary
 
-----------------------------------------
-
--- | We say that an interleaved pattern functor `f` can be translated to our
--- original type `a`, provided that we know how to translate any other
--- internally interleaved pattern functor.
-class Rep f a where
-  to :: (Rep g a, Rep g' a) => f (Bifix g g') -> a
+-- | Catamorphisms, a.k.a generic foldings over fix points.
+cata :: Functor f => (f a -> a) -> Fix f -> a
+cata f = f . fmap (cata f) . unFix
 
 ----------------------------------------
+-- | Types tagged with an explicit generation frequency.
 
--- | A type that represents values of type `t` that are built using either its
--- pattern functor (PF t) for completely random subexpressions, or a pattern
--- satisfying subexpression from a list of functions-patterns-encoding functors.
-type Interleave (t :: Type) (fs :: [Symbol]) = Bifix (PF t) (Pats fs)
+newtype (f :> (n :: Nat)) a = Tag (f a) deriving Show
 
--- | If we know how to translate both pattern functors from an interleaved
--- value, we can translate it to our original data type `a` by "uninterleaving" the
--- interleaved structure.
-uninterleave :: (Rep f a, Rep g a) => Bifix f g -> a
-uninterleave (FixL f) = to f
-uninterleave (FixR g) = to g
+infix 6 :>
+
+instance Arbitrary1 f => Arbitrary1 (f :> n) where
+  liftArbitrary gen = Tag <$> liftArbitrary gen
+
+  -- instance {-# OVERLAPS #-}
+--   (Reifies ff Integer, Reifies fg Integer, Arbitrary1 f, Arbitrary1 g)
+--   => Arbitrary1 (f := ff :+: g := fg) where
+--     liftArbitrary gen = frequency
+--       [ (fromInteger (reflect (Proxy @ff)), InL . Tag <$> liftArbitrary gen)
+--       , (fromInteger (reflect (Proxy @fg)), InR . Tag <$> liftArbitrary gen)
+--       ]
+
+-- instance {-# OVERLAPS #-}
+--   (Reifies ff Integer, Arbitrary1 f, Arbitrary1 g)
+--   => Arbitrary1 (f := ff :+: g) where
+--     liftArbitrary gen = frequency
+--       [ (fromInteger (reflect (Proxy @ff)), InL . Tag <$> liftArbitrary gen)
+--       , (1, InR <$> liftArbitrary gen)
+--       ]
+
+-- instance {-# OVERLAPS #-}
+--   (Reifies fg Integer, Arbitrary1 f, Arbitrary1 g)
+--   => Arbitrary1 (f :+: g := fg) where
+--     liftArbitrary gen = frequency
+--       [ (1, InL <$> liftArbitrary gen)
+--       , (fromInteger (reflect (Proxy @fg)), InR . Tag <$> liftArbitrary gen)
+--       ]
+
+-- instance (Arbitrary1 f, Arbitrary1 g) => Arbitrary1 (f :+: g) where
+--     liftArbitrary gen = oneof
+--       [ InL <$> liftArbitrary gen
+--       , InR <$> liftArbitrary gen
+--       ]
 
 ----------------------------------------
-
 -- | Extensible sum types using "data types a la carte" approach.
 
--- | Empty type
-data Empty a deriving Functor
-
 -- | Generic sum type
-data (f :+: g) a = InL (f a) | InR (g a) deriving Functor
+data (f :+: g) a
+  = InL (f a)
+  | InR (g a)
+  deriving Functor
 
-instance (Rep f a, Rep g a) => Rep (f :+: g) a where
-  to (InL f) = to f
-  to (InR g) = to g
+infixr 5 :+:
+
+deriving instance (Show (f a), Show (g a)) => Show ((f :+: g) a)
+
+type t ::> freq = (KnownNat freq, Frequency t ~ freq)
+
+instance (Arbitrary1 f, Arbitrary1 g, f ::> freq_f, g ::> freq_g)
+    => Arbitrary1 (f :+: g) where
+    liftArbitrary gen = frequency
+      [ (fromInteger (reflect (Proxy @freq_f)), InL <$> liftArbitrary gen)
+      , (fromInteger (reflect (Proxy @freq_g)), InR <$> liftArbitrary gen)
+      ]
+
+-- instance (Arbitrary1 f, Arbitrary1 g) => Arbitrary1 (f :+: g) where
+--   liftArbitrary arb = oneof
+--     [ InL <$> liftArbitrary arb
+--     , InR <$> liftArbitrary arb ]
+--   liftShrink shrinker (InL f) = InL <$> liftShrink shrinker f
+--   liftShrink shrinker (InR g) = InR <$> liftShrink shrinker g
+
+-- instance (FreqArbitrary1 f, FreqArbitrary1 g) => FreqArbitrary1 (f :+: g) where
+--   liftFreqArbitrary f gen
+--     = withFrequency f
+--     [ ('InL, InL <$> gen @! f)
+--     , ('InR, InR <$> gen @! f)
+--     ]
+
+-- | Generic random choice sum type
+-- This is isomorphic to (:+:), but it's useful to distinguish them when
+-- generating random values
+data (f :?: g) a
+  = Rnd (f a)
+  | Pat (g a)
+  deriving (Functor)
+
+infixr 4 :?:
+
+deriving instance (Show (f a), Show (g a)) => Show ((f :?: g) a)
+
+instance (KnownNat (Frequency f), KnownNat (Frequency g)
+         ,Arbitrary1 f, Arbitrary1 g)
+    => Arbitrary1 (f :?: g) where
+    liftArbitrary gen = frequency
+      [ (fromInteger (reflect (Proxy :: Proxy (Frequency f)))
+        , Rnd <$> liftArbitrary gen)
+      , (fromInteger (reflect (Proxy :: Proxy (Frequency g)))
+        , Pat <$> liftArbitrary gen)
+      ]
+
+-- instance (Arbitrary1 f, Arbitrary1 g) => Arbitrary1 (f :?: g) where
+--   liftArbitrary arb = oneof
+--     [ Rnd <$> liftArbitrary arb
+--     , Pat <$> liftArbitrary arb ]
+--   liftShrink shrinker (Rnd f) = Rnd <$> liftShrink shrinker f
+--   liftShrink shrinker (Pat g) = Pat <$> liftShrink shrinker g
+
+-- instance (FreqArbitrary1 f, FreqArbitrary1 g) => FreqArbitrary1 (f :?: g) where
+--   liftFreqArbitrary f gen
+--     = withFrequency f
+--     [ ('Rnd, Rnd <$> gen @! f)
+--     , ('Pat, Pat <$> gen @! f)
+--     ]
 
 ----------------------------------------
-
 -- | Some type families to reduce the noise
--- | Associate each type to its correspondent pattern functor.
-type family PF   (t  :: Type)     :: Type -> Type
 
--- | Associate each pattern type to its corresponding function.
-type family Pat  (f  :: Symbol)   :: Type -> Type
-type family Pats (fs :: [Symbol]) :: Type -> Type
+-- | Associate each type to its (isomorphic) pattern functor.
+type family PF (t :: Type) :: Type -> Type
 
-type instance Pats '[]       = Empty
-type instance Pats (f ': fs) = Pat f :+: Pats fs
+-- | Associate each function to its pattern-matching functor.
+type family Pat (f :: Symbol) :: Type -> Type
+
+-- | Build a sum type composed of a list of function names.
+type family Sum (ps :: [Type -> Type]) :: Type -> Type where
+  Sum '[f]      = f
+  Sum (f ': fs) = f :+: Sum fs
+
+type family Frequency (f :: Type -> Type) :: Nat where
+  Frequency (f :+: g) = Frequency f + Frequency g
+  Frequency (f :?: g) = Frequency f + Frequency g
+  Frequency (_ :> n) = n
+  Frequency t = 1
 
 ----------------------------------------
-
-data Fix' (f :: Type -> Type) = Fix' { unFix' :: (f (Fix' f))}
-
-cata :: Functor f => (f a -> a) -> Fix' f -> a
-cata f = f . fmap (cata f) . unFix'
+-- | F-algebras over functors
 
 class Algebra f a where
   alg :: f a -> a
 
-instance Algebra Empty a where
-  alg = error "impossible happened"
+instance Algebra f a => Algebra (f :> n) a where
+  alg (Tag f) = alg f
 
 instance (Algebra f a, Algebra g a) => Algebra (f :+: g) a where
   alg (InL f) = alg f
   alg (InR g) = alg g
 
-class (Functor f, Algebra f a) => Rep' f a where
-  to' :: Rep' g a => f (Fix' g) -> a
-  to' = alg . fmap foldRep'
+instance (Algebra f a, Algebra g a) => Algebra (f :?: g) a where
+  alg (Rnd f) = alg f
+  alg (Pat g) = alg g
 
-  foldRep' :: Rep' f a => Fix' f -> a
-  foldRep' = cata alg
+----------------------------------------
+-- | Functor representations
 
-instance Rep' Empty a
-instance (Rep' f a, Rep' g a) => Rep' (f :+: g) a
+-- -- | This is a type class constraint synonym!
+-- type Rep f a = (Functor f, Algebra f a)
 
-type Bifix' f g = Fix (f :+: g)
+-- eval :: (Rep f a, Rep g a) => f (Fix g) -> a
+-- eval = alg . fmap foldRep
 
-type Interleave' (t :: Type) (fs :: [Symbol]) = Bifix' (PF t) (Pats fs)
+eval :: (Functor f, Algebra f a) => Fix f -> a
+eval = cata alg
 
-data (f :?: g) a
-  = Rnd (f a)
-  | Pat (g a)
-  deriving Functor
+-- type f |:?:| g = Fix (f :?: g)
+
+type Interleave (t :: Type) (ps :: [Type -> Type]) = Fix (PF t :?: Sum ps)
+
+
+
+
+----------------------------------------
+-- | Some type level trickery again
+
+
+-- data Foo (n :: Nat) = Foo deriving Show
+-- data Bar (n :: Nat) = Bar deriving Show
+
+-- -- data Sum f g = L f | R g deriving Show
+
+
+
+-- -- gen :: Gen (Either (Int := 3) (Char := 1))
+-- -- gen = arbitrary
+
+-- instance KnownNat n => Reifies (Foo n) Integer where
+--   reflect _ = reflect (Proxy @n)
+
+-- instance KnownNat n => Reifies (Bar n) Integer where
+--   reflect _ = reflect (Proxy @n)

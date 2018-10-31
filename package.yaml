@@ -41,3 +41,4 @@ library:
     - filepath
     - directory
     - QuickCheck
+    - reflection

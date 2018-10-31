@@ -17,7 +17,6 @@ import Test.QuickCheck
 
 import Test.QuickCheck.Patterns.Rep
 import Test.QuickCheck.Patterns.TH
-import Test.QuickCheck.FreqArbitrary
 
 data Expr a
   = ELit a
@@ -27,7 +26,6 @@ data Expr a
   | ELst [Expr a]
   | EVar String
   deriving Show
-
 
 foo :: Int -> Expr a -> Int -> a
 foo 1 (EAdd (EVar "foo") (ELit _)) = undefined
@@ -53,63 +51,46 @@ deriveAll ''Expr [''Int] [('foo, 2), ('bar, 1), ('baz, 1)]
 -- deriveFunPF 'bar []
 -- deriveFunPF 'baz [''Int]
 
-instance FreqArbitrary a => FreqArbitrary1 (ExprF a) where
-  liftFreqArbitrary f gen
-    = smaller $ withFrequency f
-    [ ('ELitF, ELitF <$> freqArbitrary f)
-    , ('EAddF, EAddF <$> gen <*> gen)
-    , ('EMulF, EMulF <$> gen <*> gen)
-    , ('EMbEF, EMbEF <$> liftFreqArbitrary f (liftFreqArbitrary f gen))
-    , ('ELstF, ELstF <$> liftFreqArbitrary f gen)
-    , ('EVarF, EVarF <$> freqArbitrary f) ]
+instance Arbitrary a => Arbitrary1 (ExprF a) where
+  liftArbitrary gen = sized $ \n ->
+    if n == 0
+    then oneof
+         [ (ELitF <$> arbitrary)
+         , (EVarF <$> arbitrary) ]
+    else oneof
+         [ (ELitF <$> arbitrary)
+         , (EAddF <$> resize (n-1) gen <*> resize (n-1) gen)
+         , (EMulF <$> resize (n-1) gen <*> resize (n-1) gen)
+         , (EMbEF <$> liftArbitrary (liftArbitrary (resize (n-1) gen)))
+         , (ELstF <$> liftArbitrary (resize (n-1) gen))
+         , (EVarF <$> arbitrary) ]
 
-instance FreqArbitrary a => FreqArbitrary1 (Pat_foo a) where
-  liftFreqArbitrary f gen
-    = smaller $ withFrequency f
-    [ ('Pat_foo_1
-      , Pat_foo_1 <$> freqArbitrary f)
+instance Arbitrary a => Arbitrary1 (Pat_foo a) where
+  liftArbitrary gen
+    = oneof
+    [ Pat_foo_1 <$> arbitrary
+    , Pat_foo_2 <$> arbitrary <*> gen `suchThat` const True
+    , Pat_foo_3 <$> arbitrary <*> gen `suchThat` const True ]
 
-    , ('Pat_foo_1
-      , Pat_foo_2 <$> freqArbitrary f <*> gen
-        `suchThat` const True)
-    , ('Pat_foo_3
-      , Pat_foo_3 <$> freqArbitrary f <*> gen
-        `suchThat` const True) ]
+instance Arbitrary1 Pat_bar where
+  liftArbitrary gen
+    = oneof
+    [ Pat_bar_1 <$> gen <*> gen <*> gen
+    , Pat_bar_2 <$> gen <*> gen `suchThat` const True ]
 
-instance FreqArbitrary1 Pat_bar where
-  liftFreqArbitrary f gen
-    = smaller $ withFrequency f
-    [ ('Pat_bar_1
-      , Pat_bar_1 <$> gen <*> gen <*> gen)
-
-    , ('Pat_bar_2
-      , Pat_bar_2 <$> gen <*> gen
-        `suchThat` const True) ]
-
-instance FreqArbitrary a => FreqArbitrary1 (Pat_baz a) where
-  liftFreqArbitrary f gen
-    = smaller $ withFrequency f
-    [ ('Pat_baz_1
-      , Pat_baz_1 <$> gen <*> freqArbitrary f)
-
-    , ('Pat_baz_2
-      , Pat_baz_2 <$> gen <*> gen <*> freqArbitrary f
-        `suchThat` const True)
-    , ('Pat_baz_3
-      , Pat_baz_3 <$> liftFreqArbitrary f gen
-        `suchThat` const True) ]
+instance Arbitrary a => Arbitrary1 (Pat_baz a) where
+  liftArbitrary gen
+    = oneof
+    [ Pat_baz_1 <$> gen <*> arbitrary
+    , Pat_baz_2 <$> gen <*> gen <*> arbitrary `suchThat` const True
+    , Pat_baz_3 <$> liftArbitrary gen `suchThat` const True ]
 
 
-freqs :: Name -> Size -> Maybe Freq
-freqs cn 0
-  -- | No recursive constructors
-  | cn == 'EAdd = Just 0
-  | cn == 'EMul = Just 0
-  | cn == 'EMbE = Just 0
-  | cn == 'ELst = Just 0
-  -- | No patterns either
-  | cn == 'Pat  = Just 0
-freqs _ _ = Nothing
+type Expr_Int_foo_bar = Interleave (Expr Int) [Pat "foo" :> 5, Pat "bar"]
+
+genExpr :: Gen Expr_Int_foo_bar
+genExpr = arbitrary
+
 
 
 main :: IO ()
@@ -162,7 +143,10 @@ main = return ()
 -- ----------------------------------------
 -- -- Code to tell our tool how to behave
 
-type Expr_Int_foo_bar_baz = Interleave (Expr Int) '["foo", "bar", "baz"]
+-- type Expr_Int_foo_bar_baz = Interleave (Expr Int) '["foo", "bar", "baz"]
+
+
+  -- '["foo", "bar", "baz"]
 
 -- x :: Expr_Int_foo_bar_baz
 -- x = rnd $ EAddF
@@ -178,11 +162,11 @@ type Expr_Int_foo_bar_baz = Interleave (Expr Int) '["foo", "bar", "baz"]
 --          10
 --          (rnd $ EVarF "Ho"))
 
-y :: Expr_Int_foo_bar_baz
-y = pat2 $ Pat_bar_1
-      (rnd $ ELitF 42)
-      (rnd $ ELitF 42)
-      (rnd $ ELitF 42)
+-- y :: Expr_Int_foo_bar_baz
+-- y = pat2 $ Pat_bar_1
+--       (rnd $ ELitF 42)
+--       (rnd $ ELitF 42)
+--       (rnd $ ELitF 42)
 
 
 -- x' :: Expr Int

@@ -23,7 +23,8 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Desugar
 import qualified Language.Haskell.Exts as Ext
 
-import Test.QuickCheck.Patterns.Rep
+import qualified Test.QuickCheck.Patterns.Rep as Rep
+import Test.QuickCheck.FreqArbitrary
 
 
 deriving instance Eq DTyVarBndr
@@ -34,7 +35,7 @@ deriving instance Eq DType
 -- | Function match clauses
 
 deriveAll :: Name -> [Name] -> [(Name, Int)] -> Q [Dec]
-deriveAll t_name t_inst f_names_args = decorate $ do
+deriveAll t_name t_inst f_names_args = do
   pf <- derivePF t_name
   fun_pfs <- concatMapM (deriveFunPF t_inst) f_names_args
   return (pf ++ fun_pfs)
@@ -73,13 +74,13 @@ derivePF og_tn = do
         where replace_vbts (n,b,t) = (mkPFName n,b,replaceTyForTV og_ty pf_rv t)
 
   -- | Generate PF type family instance
-  let pf_ti = DTySynInstD ''PF (DTySynEqn [og_ty] pf_ty_f)
+  let pf_ti = DTySynInstD ''Rep.PF (DTySynEqn [og_ty] pf_ty_f)
       pf_ty_f = pf_tn <<* og_vs
 
   -- | Generate Algebra (PF T) T instance
-  let pf_alg_inst = DInstanceD Nothing [] pf_alg_ty [pf_alg_clauses]
-      pf_alg_ty = ''Algebra <<| [pf_ty_f, og_ty]
-      pf_alg_clauses = DLetDec (DFunD 'alg clauses)
+  let pf_alg_inst = DInstanceD Nothing [] pf_alg_ty [pf_alg_letdec]
+      pf_alg_ty = ''Rep.Algebra <<| [pf_ty_f, og_ty]
+      pf_alg_letdec = DLetDec (DFunD 'Rep.alg clauses)
         where clauses = map (uncurry mkPFAlgClause) (zip pf_cons og_cons)
 
       mkPFAlgClause pf_con og_con
@@ -93,8 +94,17 @@ derivePF og_tn = do
         = applyDExp (DConE c_name) (map DVarE field_exprs)
         where field_exprs = take (dConFieldsNr c_fields) patVars
 
+  -- | Generate FreqArbitrary1 (PF T) instance
+  let pf_gen = DInstanceD Nothing pf_gen_cxt pf_gen_ty [pf_gen_letdec]
+      pf_gen_ty = ''FreqArbitrary1 <<| [pf_tn <<* og_vs]
+      pf_gen_cxt = map mkCxt og_vs
+      pf_gen_letdec = DLetDec (DFunD 'liftFreqArbitrary [pf_gen_body])
+      pf_gen_body = DClause [] (DVarE 'undefined)
+
+      mkCxt v = DAppPr (DConPr ''FreqArbitrary) (dTyVarBndrToDType v)
+
   -- | Return all the generated stuff, converted again to TH
-  return (sweeten [pf_dd, pf_ti, pf_alg_inst])
+  return (sweeten [pf_dd, pf_ti, pf_alg_inst, pf_gen])
 
 
 ----------------------------------------
@@ -135,7 +145,7 @@ deriveFunPF f_inst_vars (f_name, arg_nr) = do
   -- | Create Pat type family instance
   -- There is currently a problem here: we cannot use existentially polymorphic
   -- types on type instance RHS.
-  let pf_ti = DTySynInstD ''Pattern pf_eqns
+  let pf_ti = DTySynInstD ''Rep.Pat pf_eqns
       pf_eqns = DTySynEqn [f_name_ty_lit] pf_rhs
       pf_rhs = pf_tn <<| pf_rhs_args
       pf_rhs_args = DConT <$> take (length pf_fv) f_inst_vars
@@ -143,9 +153,9 @@ deriveFunPF f_inst_vars (f_name, arg_nr) = do
 
   -- | Create Algebra (Pat T) T instance
   let alg_inst = DInstanceD Nothing [] alg_ty [alg_letdec]
-      alg_ty = ''Algebra <<| [ty_f, ty]
+      alg_ty = ''Rep.Algebra <<| [ty_f, ty]
       ty_f = pf_tn <<* pf_fv
-      alg_letdec = DLetDec (DFunD 'alg alg_clauses)
+      alg_letdec = DLetDec (DFunD 'Rep.alg alg_clauses)
       alg_clauses = map (uncurry mkPFAlgClause) (zip pf_cons pf_pats_exps)
       pf_pats_exps = map dPatToDExpWithVars pats
 
