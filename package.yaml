@@ -28,9 +28,12 @@ dependencies:
 library:
   source-dirs:
     - src
+    - test
   exposed-modules:
     - Test.QuickCheck.Patterns.TH
     - Test.QuickCheck.Patterns.Rep
+    - Expr
+    - Expr_test
   dependencies:
     - template-haskell
     - th-desugar

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b0a8359facc1b227c37730274435503112839e3ed1948d4aa9bcbafe0cce42ce
+-- hash: 9310efcb9cc1bfc44c4094c99d97cd1b70ee7e4b3bf3d4db943647da6e1230d4
 
 name:           quickcheck-patterns
 version:        0.1.0.0
@@ -31,6 +31,8 @@ library
   exposed-modules:
       Test.QuickCheck.Patterns.TH
       Test.QuickCheck.Patterns.Rep
+      Expr
+      Expr_test
   other-modules:
       Test.QuickCheck.FreqArbitrary
       Test.QuickCheck.Patterns.Extract
@@ -40,6 +42,7 @@ library
       Paths_quickcheck_patterns
   hs-source-dirs:
       src
+      test
   build-depends:
       QuickCheck
     , base >=4.7 && <5
