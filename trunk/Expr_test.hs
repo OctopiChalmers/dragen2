@@ -16,15 +16,15 @@ type Expr_Int_foo_bar_baz
   + Pat "baz"      @> 1
 
 genExpr :: Gen (Expr Int)
-genExpr = fixGen @Expr_Int_foo_bar_baz
+genExpr = genEval @Expr_Int_foo_bar_baz
 
 genExpr' :: Gen (Expr Int)
-genExpr' = fixGen @(Rep (Expr Int) @> 50
-                  ? Pat "foo"      @> 2
-                  + Pat "baz"      @> 1)
+genExpr' = genEval @(Rep (Expr Int) @> 50
+                   ? Pat "foo"      @> 2
+                   + Pat "baz"      @> 1)
 
 genExpr'' :: Gen (Expr Int)
-genExpr'' = fixGen @(Interleave
+genExpr'' = genEval @(Interleave
                      (Expr Int) 5
                      [ Pat "foo"
                      , Pat "bar"])
