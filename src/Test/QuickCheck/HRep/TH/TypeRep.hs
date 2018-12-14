@@ -7,7 +7,6 @@ import Control.Monad.Extra
 
 import Language.Haskell.TH
 import Language.Haskell.TH.Desugar
-import Language.Haskell.TH.Desugar.Utils
 
 import qualified Test.QuickCheck as QC
 import qualified Test.QuickCheck.HRep as HRep
@@ -18,8 +17,8 @@ import Test.QuickCheck.HRep.TH.Common
 ----------------------------------------
 -- | Derive the complete representation for every constructor of a type, plus
 -- the type representation as a sized sum of each constructor.
-deriveTypeRep :: Name -> Q [Dec]
-deriveTypeRep tyName = do
+deriveTypeRep :: Name -> [Name] -> Q [Dec]
+deriveTypeRep tyName tyFam = do
 
   -- | Reify the original data declaration name and desugar it
   (vs, cons) <- getDataD mempty tyName
@@ -28,26 +27,25 @@ deriveTypeRep tyName = do
   ogCons <- concatMapM (dsCon tyVars ty) cons
 
   -- | Create the representation for each constructor
-  conReps <- concatMapM deriveConRep ogCons
+  conReps <- concatMapM (deriveConRep tyFam) ogCons
 
   -- | Create the default Rep type instance
   let repTyIns = DTySynInstD ''HRep.HRep (DTySynEqn [DConT tyName] rhs)
-      rhs | null atoms = foldr1 mkSumType (mkAs <$> recs)
-          | otherwise  = mkSizedSumType
-                           (foldr1 mkSumType (mkAs <$> atoms))
-                           (foldr1 mkSumType (mkAs <$> recs))
-      (recs, atoms) = partition (isTerminalDCon ty) ogCons
+      rhs = foldr1 mkSumType (mkCon <$> ogCons)
 
-      mkAs (DCon _ _ conName _ _)
-        = DConT ''HRep.Con `DAppT` DConT conName
+      mkCon c@(DCon _ _ conName _ _)
+        | isTerminalDCon tyFam c = term' `DAppT` con'
+        | otherwise = con'
+        where con' = DConT ''HRep.Con `DAppT` DConT conName
+              term' = DConT ''HRep.Term
 
   -- | Return all the generated stuff, converted again to TH
   return $ sweeten $ repTyIns : conReps
 
 ----------------------------------------
 -- | Derive the complete representation for a single constructor of a type.
-deriveConRep :: DCon -> Q [DDec]
-deriveConRep (DCon conTyVars conCxt conName conFields conTy) = do
+deriveConRep :: [Name] -> DCon -> Q [DDec]
+deriveConRep tyFam (DCon conTyVars conCxt conName conFields conTy) = do
 
   -- | Some "fresh" names
   repName <- newName ("Rep_" ++ nameBase conName)
@@ -81,24 +79,21 @@ deriveConRep (DCon conTyVars conCxt conName conFields conTy) = do
         where conVarExprs = take (dConFieldsNr conFields) varNames
 
   -- | Representation FixArbitrary instance
+  conFieldsGens <- mapM (deriveGen (DVarE gen) conTy)
+                        (dConFieldsTypes conFields)
+
   let repArbIns = DInstanceD Nothing repArbCxt repArbTy [repArbLetDec]
       repArbCxt = mkCxt <$> conTyVars
       repArbTy = ''HRep.FixArbitrary <<| [repConTy2Ty, conTy]
       repArbLetDec = DLetDec (DFunD 'HRep.liftFix [repArbClause])
       repArbClause = DClause [DVarPa gen] repArbBody
-      repArbBody = mkAppExp repConName (mkGen <$> dConFieldsTypes conFields)
+      repArbBody = mkAppExp repConName conFieldsGens
 
       mkCxt v = DAppPr (DConPr ''QC.Arbitrary) (dTyVarBndrToDType v)
 
-      mkGen ty | ty == conTy
-        = smallerTH (DVarE gen)
-      mkGen (DAppT (DAppT (DConT _) t1) t2)
-        = liftArbitrary2TH (mkGen t1) (mkGen t2)
-      mkGen (DAppT (DConT _) r)
-        = liftArbitraryTH (mkGen r)
-      mkGen _ = arbitraryTH
-
   -- | Representation Branching instance
+  tyFamCons <- getFamConNames tyFam
+
   let repBrIns = DInstanceD Nothing [] repBrTy repBrLetDecs
       repBrTy = ''Branching.Branching <<| [repConTy2Ty]
       repBrLetDecs = mkBranchingDec <$> zip branchingFunNames brFunExps
@@ -106,15 +101,20 @@ deriveConRep (DCon conTyVars conCxt conName conFields conTy) = do
       mkBranchingDec (funName, funExp)
         = DLetDec (DFunD funName [DClause [] funExp])
 
-      brFunExps = singletonTH <$>
-        [ DLitE (StringL (nameBase conName))
-        , if conTy `occursInFields` conFields then DConE 'False else DConE 'True
-        , DLitE (IntegerL 1)
-        , DLitE (IntegerL (sum (branchFactor conTy <$> dConFieldsTypes conFields)))
-        , DLitE (IntegerL 1)
+      brFunExps = singletonTH . singletonTH <$>
+        [ stringLit (nameBase conName)
+        , DConE 'True
+        , intLit 1
+        , intLit 1
+        , vectorTH  (      intLit . beta <$> tyFam)
+        , vector2TH (fmap (intLit . eta) <$> tyFamCons)
         ]
 
-  -- | Representation Rep type family instance
+      beta tn = length (filter ((tn ==) . tyHead) (dConFieldsTypes conFields))
+      eta  cn = if cn == conName then 1 else 0
+
+
+  -- | Representation Con type family instance
   let repConTyIns = DTySynInstD ''HRep.Con repConInsEqn
       repConInsEqn = DTySynEqn [DConT conName] someTy
       someTy | null conTyVars = DConT repName

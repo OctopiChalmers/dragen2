@@ -8,7 +8,6 @@ import Control.Monad.IO.Class
 
 import Language.Haskell.TH
 import Language.Haskell.TH.Desugar
-import Language.Haskell.TH.Desugar.Utils
 import qualified Language.Haskell.Exts as Ext
 
 import qualified Test.QuickCheck as QC
@@ -49,8 +48,8 @@ returnsType tyName funName
   = checkRetTy <$> reifyOrFail funName
   where
     checkRetTy (DVarI _ ty _)
-      | tyName == fst (unapply (retType ty)) = True
-    checkRetTy _                             = False
+      | tyName == tyHead (retType ty) = True
+    checkRetTy _                      = False
 
 ----------------------------------------
 -- | Derive the complete representation of a single value of the abstract
@@ -68,7 +67,7 @@ deriveCombRep tyName modAlias funName = do
   DVarI _ funTy _ <- reifyOrFail funName
   let funSig = splitSignature funTy
       (funArgTys, funRetTy) = (init funSig, last funSig)
-      (_, funRetTyInsVars) = unapply funRetTy
+      funRetTyInsVars = tyArgs funRetTy
 
   -- | Retrieve the original type definition
   (vs, _) <- getDataD mempty tyName
@@ -97,38 +96,16 @@ deriveCombRep tyName modAlias funName = do
       repAlgVars = take (length funArgTys) varNames
 
   -- | Representation FixArbitrary instance
+  conFieldsGens <- mapM (deriveGen (DVarE gen) funRetTy) funArgTys
+
   let repArbIns = DInstanceD Nothing repArbCxt repArbTy [repArbLetDec]
       repArbCxt = mkCxt <$> toList (fvDType funRetTy)
       repArbTy = ''HRep.FixArbitrary <<| [repConTy2Ty, funRetTy]
       repArbLetDec = DLetDec (DFunD 'HRep.liftFix [repArbClause])
       repArbClause = DClause [DVarPa gen] repArbBody
-      repArbBody = mkAppExp repConName (mkGen <$> funArgTys)
+      repArbBody = mkAppExp repConName conFieldsGens
 
       mkCxt v = DAppPr (DConPr ''QC.Arbitrary) (DVarT v)
-
-      mkGen ty | ty == funRetTy
-        = smallerTH (DVarE gen)
-      mkGen (DAppT (DAppT (DConT _) t1) t2)
-        = liftArbitrary2TH (mkGen t1) (mkGen t2)
-      mkGen (DAppT (DConT _) r)
-        = liftArbitraryTH (mkGen r)
-      mkGen _ = arbitraryTH
-
-  -- | Representation Branching instance
-  -- let repBrIns = DInstanceD Nothing [] repBrTy repBrLetDecs
-  --     repBrTy = ''Branching.Branching <<| [repConTy2Ty]
-  --     repBrLetDecs = uncurry mkBranchingDec <$> zip branchingFunNames brFunExps
-
-  --     mkBranchingDec brFun funExp
-  --       = DLetDec (DFunD brFun [DClause [] funExp])
-
-  --     brFunExps = singletonTH <$>
-  --       [ DLitE (StringL patAlias)
-  --       , if rvTy `occursInTypes` patVarsTys then DConE 'False else DConE 'True
-  --       , DLitE (IntegerL 1)
-  --       , DLitE (IntegerL (sum (branchFactor rvTy <$> patVarsTys)))
-  --       , DLitE (IntegerL 1)
-  --       ]
 
   let repFunTyIns = DTySynInstD ''HRep.Fun repFunInsEqn
       repFunInsEqn = DTySynEqn [DLitT (StrTyLit (nameBase funName))] someTy

@@ -9,7 +9,6 @@ import Control.Monad.IO.Class
 
 import Language.Haskell.TH
 import Language.Haskell.TH.Desugar
-import Language.Haskell.TH.Desugar.Utils
 import qualified Language.Haskell.Exts as Ext
 
 import qualified Test.QuickCheck as QC
@@ -21,8 +20,8 @@ import Test.QuickCheck.HRep.TH.Common
 ----------------------------------------
 -- | Derive the complete representation for a every pattern of a function,
 -- plus the function representation as a sum of each pattern.
-deriveFunPatsRep :: Bool -> Name -> Int -> Q [Dec]
-deriveFunPatsRep redPatSize funName argNr = do
+deriveFunPatsRep :: Name -> Int -> [Name] -> Q [Dec]
+deriveFunPatsRep funName argNr tyFam = do
 
   -- | Retrieve the LHS of the target function
   FunLHS _ funSig funPats <- reifyFunLHS funName
@@ -36,18 +35,18 @@ deriveFunPatsRep redPatSize funName argNr = do
   -- | Retrieve the uninstatiated type vars of the function argument type
   let (funArgTyName, funArgInsTyVars) = unapply funArgTy
   (vs, _) <- getDataD mempty funArgTyName
-  funArgDefTyVars <- mapM desugar vs
+  funArgDefTVs <- mapM desugar vs
 
   -- | Replace the type variables in the instantiated function argument type
   -- to match the ones in the type definition
   let funArgTy' = applyDType (DConT funArgTyName) replacedTyVars
-      replacedTyVars = zipWith pickTyVars funArgDefTyVars funArgInsTyVars
+      replacedTyVars = zipWith pickTyVars funArgDefTVs funArgInsTyVars
       pickTyVars (DPlainTV v)    (DVarT _) = DVarT v
       pickTyVars (DKindedTV v _) (DVarT _) = DVarT v
       pickTyVars _               t         = t
 
   -- | Create the representation for each pattern matching of the function
-  let derivePatRep' = derivePatRep funName redPatSize funArgTy' funArgDefTyVars
+  let derivePatRep' = derivePatRep funName tyFam funArgTy' funArgDefTVs
   patReps <- concatMapM (uncurry3 derivePatRep')
                         (zip3 [1..] funArgPats funArgPatRejects)
 
@@ -56,8 +55,9 @@ deriveFunPatsRep redPatSize funName argNr = do
       repTyInsEqn = DTySynEqn [DLitT (StrTyLit (nameBase funName))] repTyInsType
       repTyInsType = foldr1 mkSumType (mkPatTy <$> [1..(length funArgPats)])
 
-      mkPatTy n = DConT ''HRep.Pat `DAppT` mkSymbol n
-      mkSymbol n = DLitT (StrTyLit (nameBase funName ++ "#" ++ show n))
+      mkPatTy n = DConT ''HRep.Pat
+          `DAppT` DLitT (StrTyLit (nameBase funName))
+          `DAppT` DLitT (NumTyLit (fromIntegral n))
 
   -- | Return all the generated stuff, converted again to TH
   return $ sweeten $ repTyIns : concat [patReps]
@@ -65,10 +65,10 @@ deriveFunPatsRep redPatSize funName argNr = do
 
 ----------------------------------------
 -- | Derive the complete representation for a single pattern of a function.
-derivePatRep :: Name -> Bool -> DType -> [DTyVarBndr]
-             -> Int -> DPat -> [DPat] -> Q [DDec]
-derivePatRep funName redPatSize funArgTy funArgDefTyVars
-             patNr targetPat rejectsPats = do
+derivePatRep :: Name -> [Name] -> DType -> [DTyVarBndr]
+             -> Integer -> DPat -> [DPat] -> Q [DDec]
+derivePatRep funName tyFam funArgTy funArgDefTVs
+             patNr targetPat rejPats = do
 
   -- | Create fresh names for the data types
   repName <- newName ("Pat_" ++ nameBase funName ++ "_" ++ show patNr)
@@ -78,16 +78,12 @@ derivePatRep funName redPatSize funArgTy funArgDefTyVars
   rv <- mkRecVar
 
   let patAlias = nameBase funName ++ "#" ++ show patNr
-      rvTy = dTyVarBndrToDType rv
 
   let collectPatInfo = collectPatVarDepthsTys funArgTy
-      replaceArgTyForRv = map (\(d, t) -> (d, replaceTyForTV funArgTy rv t))
-  patVarsDepthsTys <- replaceArgTyForRv <$> collectPatInfo targetPat
+  (_patVarsDepths, patVarsTys) <- unzip <$> collectPatInfo targetPat
 
-  let patVarsTys = snd <$> patVarsDepthsTys
-
-  let (_, funArgInsTyVars) = unapply funArgTy
-      extVars = funArgDefTyVars ++ [rv]
+  let funArgInsTyVars = tyArgs funArgTy
+      extVars = funArgDefTVs ++ [rv]
       repConTy = repName <<* extVars
       repConTy2Ty = repName <<| funArgInsTyVars
 
@@ -97,7 +93,7 @@ derivePatRep funName redPatSize funArgTy funArgDefTyVars
       singleCon = DCon extVars [] repConName conRepFields repConTy
       conRepFields = DNormalC False (mkPatRepField <$> patVarsTys)
 
-      mkPatRepField ty = (defaultBang, ty)
+      mkPatRepField ty = (defaultBang, replaceTyForTV funArgTy rv ty)
       defaultBang = Bang NoSourceUnpackedness NoSourceStrictness
 
   -- | Representation Algebra instance
@@ -110,35 +106,32 @@ derivePatRep funName redPatSize funArgTy funArgDefTyVars
       repAlgRhs = dPatToDExpWithVars targetPat
 
   -- | Representation FixArbitrary instance
+  conFieldsGens <- mapM (deriveGen (DVarE gen) funArgTy) patVarsTys
+
   let repArbIns = DInstanceD Nothing repArbCxt repArbTy [repArbLetDec]
       repArbCxt = mkCxt <$> toList (fvDType funArgTy)
       repArbTy = ''HRep.FixArbitrary <<| [repConTy2Ty, funArgTy]
       repArbLetDec = DLetDec (DFunD 'HRep.liftFix [repArbClause])
       repArbClause = DClause [DVarPa gen] repArbBody
-      repArbBody = mkAppExp repConName
-                   (uncurry mkGen <$> patVarsDepthsTys)
-                   `rejecting` rejectsPats
+      repArbBody = mkAppExp repConName conFieldsGens `rejecting` rejPats
 
       mkCxt v = DAppPr (DConPr ''QC.Arbitrary) (DVarT v)
 
-      mkGen depth ty | ty == rvTy
-        = (if redPatSize then reduceTH depth else smallerTH) (DVarE gen)
-      mkGen depth (DAppT (DAppT (DConT _) t1) t2)
-        = liftArbitrary2TH (mkGen depth t1) (mkGen depth t2)
-      mkGen depth (DAppT (DConT _) r)
-        = liftArbitraryTH (mkGen depth r)
-      mkGen _ _ = arbitraryTH
-
       rejecting genExp patExps
-        = satisfyTH patAlias .: mkMatchReject patExps .: genExp
+        = satisfyTH patAlias
+        .: mkMatchReject patExps
+        .: genExp
 
       mkMatchReject pats
         = DLamE [pat] (DCaseE converted (badClauses ++ [lastClause]))
-        where converted   = stepTH .: DVarE pat
+        where converted  = stepTH .: DVarE pat
               badClauses = flip DMatch (DConE 'False) <$> pats
               lastClause = DMatch DWildPa (DConE 'True)
 
   -- | Representation Branching instance
+  tyFamCons <- getFamConNames tyFam
+  let targetPatCons = collectPatCons targetPat
+
   let repBrIns = DInstanceD Nothing [] repBrTy repBrLetDecs
       repBrTy = ''Branching.Branching <<| [repConTy2Ty]
       repBrLetDecs = uncurry mkBranchingDec <$> zip branchingFunNames brFunExps
@@ -146,31 +139,27 @@ derivePatRep funName redPatSize funArgTy funArgDefTyVars
       mkBranchingDec brFun funExp
         = DLetDec (DFunD brFun [DClause [] funExp])
 
-      brFunExps = singletonTH <$>
-        [ DLitE (StringL patAlias)
-        , if rvTy `occursInTypes` patVarsTys then DConE 'False else DConE 'True
-        , DLitE (IntegerL 1)
-        , DLitE (IntegerL (sum (branchFactor rvTy <$> patVarsTys)))
-        , DLitE (IntegerL 1)
+      brFunExps = singletonTH . singletonTH <$>
+        [ stringLit patAlias
+        , DConE 'False
+        , intLit 1
+        , intLit 1
+        , vectorTH  (      intLit . beta <$> tyFam)
+        , vector2TH (fmap (intLit . eta) <$> tyFamCons)
         ]
 
-  -- | Representation Rep type family instance
-  let repHashTyIns = DTySynInstD ''HRep.Hash repHashInsEqn
-      repHashInsEqn = DTySynEqn
-                      [ DLitT (StrTyLit (nameBase funName))
-                      , DLitT (NumTyLit (fromIntegral patNr)) ]
-                      (DLitT (StrTyLit patAlias))
+      beta tn = length (filter ((tn ==) . tyHead) patVarsTys)
+      eta  cn = maybe 0 id (lookup cn targetPatCons)
 
   -- | Representation Pat type family instance
   let repPatTyIns = DTySynInstD ''HRep.Pat repPatInsEqn
-      repPatInsEqn = DTySynEqn [DLitT (StrTyLit (patAlias))] someTy
-      someTy | null funArgDefTyVars
-             = DConT repName
-             | otherwise
-             = someTH (length funArgDefTyVars) (DConT repName)
+      repPatInsEqn = DTySynEqn [ DLitT (StrTyLit (nameBase funName))
+                               , DLitT (NumTyLit patNr)] someTy
+      someTy | null funArgDefTVs = DConT repName
+             | otherwise = someTH (length funArgDefTVs) (DConT repName)
 
   -- | Return all the stuff
-  return [repDataDec, repAlgIns, repArbIns, repBrIns, repPatTyIns, repHashTyIns]
+  return [repDataDec, repAlgIns, repArbIns, repBrIns, repPatTyIns]
 
 
 -- | Collect the variables of a pattern in left to right order.
@@ -254,8 +243,8 @@ toDPats (Ext.InfixMatch _ p _ ps _ _)
 toTHDPat :: Ext.Pat l -> Q DPat
 toTHDPat (Ext.PLit _ sign l)
   = pure (DLitPa (toTHLit l sign))
-toTHDPat (Ext.PVar _ n)
-  = DVarPa <$> toTHDataName n
+toTHDPat (Ext.PVar _ _)
+  = pure DWildPa
 toTHDPat (Ext.PApp _ cn ps)
   = DConPa <$> toTHDataName cn <*> mapM toTHDPat ps
 toTHDPat (Ext.PIrrPat _ pat)

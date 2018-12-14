@@ -4,6 +4,8 @@
 
 module Test.QuickCheck.HRep.TH where
 
+import Control.Monad.Extra
+
 import Language.Haskell.TH
 
 import Test.QuickCheck.HRep.TH.TypeRep
@@ -15,33 +17,37 @@ import Test.QuickCheck.HRep.TH.ModIntRep
 
 data Target
   = TypeRep
-    { type_ :: Name }
-  | FunPatsRep
+    { ty :: Name
+    , fam   :: [Name] }
+  | PatsRep
     { fun :: Name
     , arg :: Int
-    , rps :: Bool }
-  | ModIntRep
+    , fam :: [Name] }
+  | ModRep
     { type_ :: Name
-    , alias :: String }
+    , alias :: String
+    , fam :: [Name] }
 
-data Void
+typeRep :: Name -> Target
+typeRep tyName = TypeRep tyName [tyName]
 
-typeRep :: Target
-typeRep = TypeRep ''Void
+patsRep :: Name -> Target
+patsRep funName = PatsRep funName 1 []
 
-funPatsRep :: Target
-funPatsRep = FunPatsRep 'undefined 1 False
-
-modIntRep :: Target
-modIntRep = ModIntRep ''Void mempty
+modRep :: Name -> Target
+modRep tyName = ModRep tyName mempty []
 
 derive :: Target -> Q [Dec]
-derive (TypeRep tyName)
-  = deriveTypeRep tyName
-derive (FunPatsRep  funName funArgNr redPatSize)
-  = deriveFunPatsRep redPatSize funName funArgNr
-derive (ModIntRep tyName modAlias)
+derive (TypeRep tyName tyFam)
+  = deriveTypeRep tyName tyFam
+derive (PatsRep  funName funArgNr tyFam)
+  = deriveFunPatsRep funName funArgNr tyFam
+derive (ModRep tyName modAlias _)
   = deriveModIntRep tyName modAlias
+
+deriveWithFam :: [Name] -> [Target] -> Q [Dec]
+deriveWithFam fam' targets = concatMapM derive (setFam <$> targets)
+  where setFam target = target { fam = fam' }
 
 -- ----------------------------------------
 -- -- | Derive all the stuff
