@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# OPTIONS_GHC -Wno-unused-imports #-}
+-- {-# OPTIONS_GHC -Wno-unused-imports #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -20,81 +20,113 @@
 
 module PredMutRec where
 
-import Unsafe.Coerce
-import Data.Kind
-import Data.Proxy
-import Data.Reflection
+-- import Unsafe.Coerce
+-- import Data.Kind
+-- import Data.Proxy
+-- import Data.Reflection
 
-import GHC.TypeLits (KnownNat)
+-- import GHC.TypeLits (KnownNat)
 import GHC.Generics
-import GHC.Generics.Countable
+-- import GHC.Generics.Countable
 
 import Test.QuickCheck
 import Test.QuickCheck.Branching
 import Test.QuickCheck.HRep
 import Test.QuickCheck.HRep.Infix
 import Test.QuickCheck.HRep.TH
+import Test.QuickCheck.HRep.TH.Common
 
-import Data.Map.Strict (Map)
-import Data.Vector (Vector, (!))
-import Data.Matrix (Matrix, (<->), (<|>))
-import qualified Data.Map.Strict as Map
-import qualified Data.Vector as Vector
-import qualified Data.Matrix as Matrix
+-- import Data.Map.Strict (Map)
+-- import Data.Vector (Vector, (!))
+-- import Data.Matrix (Matrix, (<->), (<|>))
+-- import qualified Data.Map.Strict as Map
+-- import qualified Data.Vector as Vector
+-- import qualified Data.Matrix as Matrix
 
 ----------------------------------------
 
 type Var = Char
 
-data IExp
-  = Val Int
-  | Add IExp IExp
-  | If  BExp IExp IExp
+data IExp a
+  = Val a
+  | Add (IExp a) (IExp a)
+  | If  (BExp a) (IExp a) (IExp a)
   deriving Show
 
-data BExp
+data BExp a
   = Bool Bool
-  | LEq  IExp IExp
+  | LEq  (IExp a) (IExp a)
   deriving Show
 
-foo :: IExp -> IExp
-foo (Add (Add (Val 42)   _i1) _i2) = undefined
-foo (Add (If _b (Val 42) _i1) _i2) = undefined
+foo :: IExp a -> IExp a
+foo (Add (Add (Val a)   _i1) _i2) = undefined
+foo (Add (If _b (Val a) _i1) _i2) = undefined
 foo _                              = undefined
 
-bar :: BExp -> BExp
-bar (LEq (Val 42) _i2) = Bool True
+bar :: BExp a -> BExp a
+bar (LEq (Val a) _i2) = Bool True
 bar b                  = b
 
-deriveWithFam [''IExp, ''BExp]
-  [ typeRep ''IExp
-  , typeRep ''BExp
-  , patsRep 'foo
+
+deriveHRep
+  [''IExp, ''BExp]
+  [ patsRep 'foo
   , patsRep 'bar
+  , modRep ''IExp ]
+
+type SpecExp = '[
+  IExp := HRep IExp
+       :| HRep "foo",
+       -- :| HRep "MyModule",
+  BExp := HRep BExp
+       :| HRep "bar"
   ]
 
--- derive TypeRep    { ty  = ''IExp, fam = [''IExp, ''BExp] }
--- derive TypeRep    { ty  = ''BExp, fam = [''IExp, ''BExp] }
--- derive FunPatsRep { fun = 'foo  , fam = [''IExp, ''BExp], arg = 1 }
--- derive FunPatsRep { fun = 'bar  , fam = [''IExp, ''BExp], arg = 1 }
+-- infoTH ''SpecExp
 
-type IExp'
-  = Term (Con 'Val) .* 2
-  + Con 'Add
-  + Con 'If .* 3
-  + "foo" #1
-  + "foo" #2
+-- type SpecExp' = '[
+--   IExp := Term (Con 'Val) :* 2
+--        :| Con 'Add
+--        :| Con 'If :* 3
+--        :| Pat "foo" 1
+--        :| Pat "foo" 2,
+--   BExp := Term (Con 'Bool)
+--        :| Con 'LEq
+--        :| Pat "bar" 1 :* 2
+--   ]
+
+instance Arbitrary a => Arbitrary (IExp a) where arbitrary = genEval @(SpecExp :! IExp :@ a)
+instance Arbitrary a => Arbitrary (BExp a) where arbitrary = genEval @(SpecExp :! BExp :@ a)
+
+deriving instance Generic Int
+deriving instance Generic a => Generic (IExp a)
+deriving instance Generic a => Generic (BExp a)
+
+----------------------------------------
+
+-- data T1 = A | B T1 T2 deriving Show
+-- data T2 = C T1 T2 | D T1 deriving Show
 
 
-type BExp'
-  = Term (Con 'Bool)
-  + Con 'LEq
-  + "bar" #1 .* 2
+-- deriveHRep [''T1, ''T2] []
 
-type ExpFam = Fam '[IExp', BExp']
+-- type SpecT = '[ T1 := HRep T1
+--               , T2 := HRep T2 ]
 
-instance Arbitrary IExp where arbitrary = genEval @IExp'
-instance Arbitrary BExp where arbitrary = genEval @BExp'
+-- instance Arbitrary T1 where arbitrary = genEval @(SpecT :! T1)
+-- instance Arbitrary T2 where arbitrary = genEval @(SpecT :! T2)
+
+-- deriving instance Generic T1
+-- deriving instance Generic T2
+
+----------------------------------------
+
+
+-- type TFam = '[ T1 := Con 'Add
+--                   :| Con 'Val
+--                   :| Con 'Val
+--              , T2 := Con 'Mul
+--              ]
 
 -- type IExp'' = HRep IExp + HRep "foo"
 -- type IExp'' = HRep IExp + HRep "foo" + HRep IExp
@@ -102,14 +134,25 @@ instance Arbitrary BExp where arbitrary = genEval @BExp'
 
 -- instance Arbitrary IExp where arbitrary = genEval @IExp'
 -- instance Arbitrary BExp where arbitrary = genEval @BExp'
+-- derive TypeRep    { ty  = ''IExp, fam = [''IExp, ''BExp] }
+-- derive TypeRep    { ty  = ''BExp, fam = [''IExp, ''BExp] }
+-- derive FunPatsRep { fun = 'foo  , fam = [''IExp, ''BExp], arg = 1 }
+-- derive FunPatsRep { fun = 'bar  , fam = [''IExp, ''BExp], arg = 1 }
 
-deriving instance Generic Int
-deriving instance Generic Char
-deriving instance Generic IExp
-deriving instance Generic BExp
+-- type IExp'
+--   = Term (Con 'Val) :* 2
+--   :+ Con 'Add
+--   :+ Con 'If :* 3
+--   :+ "foo" #1
+--   :+ "foo" #2
 
-----------------------------------------
 
+-- type BExp'
+--   = Term (Con 'Bool)
+--   :+ Con 'LEq
+--   :+ "bar" #1 :* 2
+
+-- type ExpFam = '[IExp', BExp']
 -- -- | Pattern expansion matrices
 -- expIExp'2IExp :: Matrix Double
 -- expIExp'2IExp = Matrix.fromLists

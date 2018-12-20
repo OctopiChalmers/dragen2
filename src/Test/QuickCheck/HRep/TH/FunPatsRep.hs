@@ -128,18 +128,18 @@ derivePatRep funName tyFam funArgTy funArgDefTVs
               badClauses = flip DMatch (DConE 'False) <$> pats
               lastClause = DMatch DWildPa (DConE 'True)
 
-  -- | Representation Branching instance
+  -- | Representation BranchingType instance
   tyFamCons <- getFamConNames tyFam
   let targetPatCons = collectPatCons targetPat
 
   let repBrIns = DInstanceD Nothing [] repBrTy repBrLetDecs
-      repBrTy = ''Branching.Branching <<| [repConTy2Ty]
+      repBrTy = ''Branching.BranchingType <<| [repConTy2Ty]
       repBrLetDecs = uncurry mkBranchingDec <$> zip branchingFunNames brFunExps
 
       mkBranchingDec brFun funExp
         = DLetDec (DFunD brFun [DClause [] funExp])
 
-      brFunExps = singletonTH . singletonTH <$>
+      brFunExps = singletonTH <$>
         [ stringLit patAlias
         , DConE 'False
         , intLit 1

@@ -30,6 +30,8 @@ import qualified Data.Vector as Vector
 deriving instance Eq DTyVarBndr
 deriving instance Eq DPred
 deriving instance Eq DType
+deriving instance Eq DCon
+deriving instance Eq DConFields
 
 ----------------------------------------
 -- | Derive a generator for a possibly composite type.
@@ -83,7 +85,18 @@ isTerminalDCon :: [Name] -> DCon -> Bool
 isTerminalDCon tyFam (DCon _ _ _ conFields _)
   = not (any ((`nameOccursIn` conFields)) tyFam)
 
+branchesToFam :: [Name] -> DCon -> Int
+branchesToFam tyFam (DCon _ _ _ conFields _)
+  = sum (branches . tyHead <$> dConFieldsTypes conFields)
+  where branches cn | any (cn ==) tyFam = 1
+                    | otherwise         = 0
+
+
+
 -- | Extract information from constructors
+dConName :: DCon -> Name
+dConName (DCon _ _ n _ _) = n
+
 dConFieldsTypes :: DConFields -> [DType]
 dConFieldsTypes (DNormalC _ bts) = map snd bts
 dConFieldsTypes (DRecC bts)      = map (\(_,_,t) -> t) bts
@@ -243,6 +256,11 @@ debugQ v = do
 qq :: Show a => Q a -> Q Exp
 qq a = a >>= return . sweeten . DLitE . StringL . show
 
+infoTH :: Name -> Q [Dec]
+infoTH nm = dsReify nm >>=
+  \(Just (DTyConI (DTySynD _ _ ty) _)) -> expandType ty >>=
+  \dsTy -> [d| infoTH_ = $(stringE (show dsTy)) |]
+
 uncurry3 :: (a -> b -> c -> d) -> (a, b, c) -> d
 uncurry3 f (a, b, c) = f a b c
 
@@ -270,8 +288,8 @@ liftArbitrary2TH e1 e2 = DVarE 'QC.liftArbitrary2 .: e1 .: e2
 mkSumType :: DType -> DType -> DType
 mkSumType t1 t2 = ''HRep.Sum <<| [t1, t2]
 
-mkSizedSumType :: DType -> DType -> DType
-mkSizedSumType t1 t2 = ''HRep.SizedSum <<| [t1, t2]
+-- mkSizedSumType :: DType -> DType -> DType
+-- mkSizedSumType t1 t2 = ''HRep.SizedSum <<| [t1, t2]
 
 arbitraryTH :: DExp
 arbitraryTH = DVarE 'QC.arbitrary
@@ -298,12 +316,12 @@ intLit :: Int -> DExp
 intLit = DLitE . IntegerL . fromIntegral
 
 branchingFunNames :: [Name]
-branchingFunNames = [ 'Branching.names
-                    , 'Branching.atomic
-                    , 'Branching.probs
-                    , 'Branching.probs0
-                    , 'Branching.beta
-                    , 'Branching.eta
+branchingFunNames = [ 'Branching.typeNames
+                    , 'Branching.typeAtomic
+                    , 'Branching.typeProbs
+                    , 'Branching.typeProbs'
+                    , 'Branching.typeBeta
+                    , 'Branching.typeEta
                     ]
 
 derivingClauses :: [DDerivClause]

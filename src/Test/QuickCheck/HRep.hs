@@ -27,7 +27,6 @@ import GHC.TypeLits
 import GHC.Generics
 
 import Test.QuickCheck
-import Test.QuickCheck.Branching
 
 ----------------------------------------
 -- | Type level combinators
@@ -58,23 +57,16 @@ data Sum f g a
   | InR (g a)
   deriving Functor
 
--- | Generic sum type with tagged terminals
-data SizedSum f g a
-  = Size0 (f a)
-  | SizeN (g a)
-  deriving Functor
 
 deriving instance (Show (f (Fix f)))       => Show (Fix f)
 deriving instance (Show (f a))             => Show (Freq f n a)
 deriving instance (Show (f a))             => Show (Term f a)
 deriving instance (Show (f a), Show (g a)) => Show (Sum f g a)
-deriving instance (Show (f a), Show (g a)) => Show (SizedSum f g a)
 
 deriving instance (Generic (f (Fix f)))          => Generic (Fix f)
 deriving instance (Generic (f a))                => Generic (Freq f n a)
 deriving instance (Generic (f a))                => Generic (Term f a)
 deriving instance (Generic (f a), Generic (g a)) => Generic (Sum f g a)
-deriving instance (Generic (f a), Generic (g a)) => Generic (SizedSum f g a)
 
 ----------------------------------------
 -- | F-algebras over functors
@@ -104,13 +96,45 @@ instance (Algebra f a, Algebra g a) => Algebra (Sum f g) a where
   alg (InL f) = alg f
   alg (InR g) = alg g
 
-instance (Algebra f a, Algebra g a) => Algebra (SizedSum f g) a where
-  alg (Size0 f) = alg f
-  alg (SizeN g) = alg g
-
-
 ----------------------------------------
 -- | FixArbitrary class and instances
+
+-- | Branching frequencies in a sum type.
+-- Defaults to 1 if no frequency tag is provided.
+type family Frequency (f :: Type -> Type) :: Nat where
+  Frequency (Freq f n) = n * Frequency f
+  Frequency (Term f) = Frequency f
+  Frequency (Sum f g) = Frequency f + Frequency g
+  Frequency _ = 1
+
+-- | Terminal frequencies in a sum type.
+-- Defaults to 1 if no frequency tag is provided.
+type family Frequency' (f :: Type -> Type) :: Nat where
+  Frequency' (Freq f n) = n * Frequency' f
+  Frequency' (Term f) = Frequency f
+  Frequency' (Sum f g) = Frequency' f + Frequency' g
+  Frequency' _ = 0
+
+-- | Get the value of a type level frequency tag.
+numVal :: forall n a. (KnownNat n, Reifies n Integer, Num a) => a
+numVal = fromIntegral (reflect (Proxy @n))
+
+type family HasTerminals (f :: Type -> Type) :: Constraint where
+  HasTerminals f = ErrorIfZero (Frequency' f) f
+
+type family ErrorIfZero (n :: Nat) (f :: Type -> Type) :: Constraint where
+  ErrorIfZero 0 f = TypeError
+    ('Text "the type representation: " ':<>: 'ShowType f
+      ':<>: 'Text " has no terminal constructions")
+  ErrorIfZero _ _ = ()
+
+
+-- | Type level frequency equality constraint
+type t #> freq = (KnownNat freq, Frequency  t ~ freq)
+type t @> freq = (KnownNat freq, Frequency' t ~ freq)
+
+type HasFixArbitrary hrep target
+  = (FixArbitrary hrep target, HasTerminals hrep)
 
 class Algebra f a => FixArbitrary f a where
 
@@ -123,40 +147,6 @@ class Algebra f a => FixArbitrary f a where
   genEval = eval <$> genFix @f
 
 
--- | Calculate the sum of the frequencies in a composite type.
--- Defaults to 1 if no frequency tag is provided.
-type family Frequency (f :: Type -> Type) :: Nat where
-  Frequency (Freq f n) = n * Frequency f
-  Frequency (Term f) = Frequency f
-  Frequency (Sum f g) = Frequency f + Frequency g
-  Frequency (SizedSum f g) = Frequency f + Frequency g
-  Frequency _ = 1
-
-type family Frequency0 (f :: Type -> Type) :: Nat where
-  Frequency0 (Freq f n) = n * Frequency0 f
-  Frequency0 (Term f) = Frequency f
-  Frequency0 (Sum f g) = Frequency0 f + Frequency0 g
-  Frequency0 _ = 0
-
-type family HasTerminals (f :: Type -> Type) :: Constraint where
-  HasTerminals f = ErrorIfZero (Frequency0 f) f
-
-type family ErrorIfZero (n :: Nat) (f :: Type -> Type) :: Constraint where
-  ErrorIfZero 0 f = TypeError ('Text "the type representation: "
-                               ':<>: 'ShowType f
-                               ':<>: 'Text " has no terminal constructions")
-  ErrorIfZero _ _ = ()
-
-
--- | Type level frequency equality constraint
-type t #> freq = (KnownNat freq, Frequency  t ~ freq)
-type t @> freq = (KnownNat freq, Frequency0 t ~ freq)
-
--- | Get the value of a type level frequency tag.
-freqVal :: forall n a. (KnownNat n, Reifies n Integer, Num a) => a
-freqVal = fromIntegral (reflect (Proxy @n))
-
-
 instance FixArbitrary f a => Arbitrary (Fix f) where
   arbitrary = Fix <$> liftFix arbitrary
 
@@ -166,18 +156,12 @@ instance FixArbitrary f a => FixArbitrary (Freq f n) a where
 instance FixArbitrary f a => FixArbitrary (Term f) a where
   liftFix gen = TermTag <$> liftFix gen
 
--- instance (FixArbitrary f a, FixArbitrary g a, f #> ff, g #> fg)
---     => FixArbitrary (Sum f g) a where
---     liftFix gen = frequency
---       [ (freqVal @ff, InL <$> liftFix gen)
---       , (freqVal @fg, InR <$> liftFix gen) ]
-
-instance (FixArbitrary f a, f #> ff, f @> ff0,
-          FixArbitrary g a, g #> gg, g @> gg0)
-    => FixArbitrary (Sum f g) a where
+instance ( FixArbitrary f a, f #> ff, f @> ff0
+         , FixArbitrary g a, g #> gg, g @> gg0
+         ) => FixArbitrary (Sum f g) a where
     liftFix gen = sized $ \n ->
       if n == 0
-      then case (freqVal @ff0, freqVal @gg0) of
+      then case (numVal @ff0, numVal @gg0) of
         (0, 0) -> error "liftFix: the impossible happened"
         (_, 0) -> InL <$> liftFix gen
         (0, _) -> InR <$> liftFix gen
@@ -185,79 +169,29 @@ instance (FixArbitrary f a, f #> ff, f @> ff0,
            [ (ff0, InL <$> liftFix gen)
            , (gg0, InR <$> liftFix gen) ]
       else frequency
-           [ (freqVal @ff, InL <$> liftFix gen)
-           , (freqVal @gg, InR <$> liftFix gen) ]
+           [ (numVal @ff, InL <$> liftFix gen)
+           , (numVal @gg, InR <$> liftFix gen) ]
 
-instance (FixArbitrary f a, FixArbitrary g a, f #> ff, g #> gg)
-    => FixArbitrary (SizedSum f g) a where
-    liftFix gen = sized $ \n ->
-      if n == 0
-      then Size0 <$> liftFix gen
-      else frequency
-        [ (freqVal @ff, Size0 <$> liftFix gen)
-        , (freqVal @gg, SizeN <$> liftFix gen) ]
 
 ----------------------------------------
--- | Branching instances
+-- | Type families to hide TH unique names
 
-instance Branching f => Branching (Freq f n) where
-  names = names @f
-  atomic = atomic @f
-  probs = probs @f
-  probs0 = probs0 @f
-  beta = beta @f
-  eta = eta @f
-
-instance (Branching f) => Branching (Term f) where
-  names = names @f
-  atomic = atomic @f
-  probs = probs @f
-  probs0 = probs @f
-  beta = beta @f
-  eta = eta @f
-
-instance (Branching f, Branching g, f @> ff0, f #> ff, g #> gg, g @> gg0)
-  => Branching (Sum f g) where
-  names = names @f <<>> names @g
-  atomic = atomic @f <<>> atomic @g
-  probs = fmap2 (* (ff/tot)) (probs @f) <<>> fmap2 (* (gg/tot)) (probs @g)
-    where ff = freqVal @ff; gg = freqVal @gg; tot = ff + gg
-  probs0 = if tot0 == 0
-    then fmap2 (*0) (probs0 @f <<>> probs0 @g)
-    else fmap2 (* (ff0/tot0)) (probs0 @f) <<>> fmap2 (* (gg0/tot0)) (probs0 @g)
-    where ff0 = freqVal @ff0; gg0 = freqVal @gg0; tot0 = ff0 + gg0
-  beta = beta @f <<>> beta @g
-  eta  = eta  @f <<>> eta  @g
-
-instance (Branching f, Branching g, f #> ff, g #> fg)
-  => Branching (SizedSum f g) where
-  names = names @f <<>> names @g
-  atomic = atomic @f <<>> atomic @g
-  probs = fmap2 (* (ff/tot)) (probs @f) <<>> fmap2 (* (fg/tot)) (probs @g)
-    where ff = freqVal @ff; fg = freqVal @fg; tot = ff + fg
-  probs0 = probs0 @f <<>> fmap2 (*0) (probs0 @g)
-  beta = beta @f <<>> beta @g
-  eta  = eta  @f <<>> eta  @g
-
-----------------------------------------
--- | Type families to reduce the noise
-
--- | A higher-order representation
+-- | Whole types, functions or modules
 type family HRep (t :: k) :: Type -> Type
 
--- | The higher-order representation of a single constructor
+-- | A single constructor
 type family Con (c :: k) :: Type -> Type
 
--- | The higher order representation of a single pattern matching of a function
+-- | A single pattern matchings
 type family Pat (p :: Symbol) (n :: Nat) :: Type -> Type
 
--- | The higher-order representation of a function combinator
-type family Fun (f :: Symbol) :: Type -> Type
+-- | A single function in a module
+type family Fun (t :: Symbol) :: Type -> Type
 
--- | The higher-order representation of a given pattern matching of a function
-type family Hash (f :: Symbol) (n :: Nat) :: Symbol
 
--- | Existential data types hiding type parameters
+----------------------------------------
+-- | Existential types to hide type parameters
+
 data Some1 (f :: Type -> Type -> Type) (r :: Type)
   = forall (a :: Type)
   . Some1 (f a r)
@@ -274,12 +208,10 @@ data Some5 (f :: Type -> Type -> Type -> Type -> Type -> Type -> Type) (r :: Typ
   = forall (e :: Type) (d :: Type) (c :: Type) (b :: Type) (a :: Type)
   . Some5 (f a b c d e r)
 
--- | Apply a data type to a type parameter hidden by an existential type
 type family Apply (a :: Type) (t :: Type -> Type) where
   Apply a (Freq t n) = Freq (Apply a t) n
   Apply a (Term t) = Term (Apply a t)
   Apply a (Sum l r) = Sum (Apply a l) (Apply a r)
-  Apply a (SizedSum l r) = SizedSum (Apply a l) (Apply a r)
   Apply a (Some1 t) = t a
   Apply a (Some2 t) = Some1 (t a)
   Apply a (Some3 t) = Some2 (t a)

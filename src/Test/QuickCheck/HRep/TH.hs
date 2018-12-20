@@ -1,8 +1,11 @@
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
 module Test.QuickCheck.HRep.TH where
+
+import Data.Reflection
 
 import Control.Monad.Extra
 
@@ -35,7 +38,7 @@ patsRep :: Name -> Target
 patsRep funName = PatsRep funName 1 []
 
 modRep :: Name -> Target
-modRep tyName = ModRep tyName mempty []
+modRep tyName = ModRep tyName ("<" ++ nameBase tyName ++ ">") []
 
 derive :: Target -> Q [Dec]
 derive (TypeRep tyName tyFam)
@@ -45,9 +48,11 @@ derive (PatsRep  funName funArgNr tyFam)
 derive (ModRep tyName modAlias _)
   = deriveModIntRep tyName modAlias
 
-deriveWithFam :: [Name] -> [Target] -> Q [Dec]
-deriveWithFam fam' targets = concatMapM derive (setFam <$> targets)
+deriveHRep :: [Name] -> [Target] -> Q [Dec]
+deriveHRep fam' targets = concatMapM derive
+  (setFam <$> ((typeRep <$> fam') ++ targets))
   where setFam target = target { fam = fam' }
+
 
 -- ----------------------------------------
 -- -- | Derive all the stuff

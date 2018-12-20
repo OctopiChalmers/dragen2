@@ -2,6 +2,7 @@
 
 module Test.QuickCheck.HRep.TH.TypeRep where
 
+import Data.Ord
 import Data.List
 import Control.Monad.Extra
 
@@ -31,13 +32,23 @@ deriveTypeRep tyName tyFam = do
 
   -- | Create the default Rep type instance
   let repTyIns = DTySynInstD ''HRep.HRep (DTySynEqn [DConT tyName] rhs)
-      rhs = foldr1 mkSumType (mkCon <$> ogCons)
+      rhs = foldr1 mkSumType (mkConExp <$> ogCons)
 
-      mkCon c@(DCon _ _ conName _ _)
-        | isTerminalDCon tyFam c = term' `DAppT` con'
-        | otherwise = con'
-        where con' = DConT ''HRep.Con `DAppT` DConT conName
-              term' = DConT ''HRep.Term
+      mkConExp c
+        -- | When there are no terminal constructors,
+        -- and `c` is the "smallest" one, tag it as terminal.
+        | not (any (isTerminalDCon tyFam) ogCons)
+          && c == smallest ogCons
+        = mkTerm (mkCon c)
+        -- | When there is a proper terminal constructor
+        | isTerminalDCon tyFam c = mkTerm (mkCon c)
+        -- | A plain recursive constructor
+        | otherwise              = mkCon c
+
+      smallest = head . sortBy (comparing (branchesToFam tyFam))
+      mkCon (DCon _ _ conName _ _) = DConT ''HRep.Con `DAppT` DConT conName
+      mkTerm = DAppT (DConT ''HRep.Term)
+
 
   -- | Return all the generated stuff, converted again to TH
   return $ sweeten $ repTyIns : conReps
@@ -91,17 +102,17 @@ deriveConRep tyFam (DCon conTyVars conCxt conName conFields conTy) = do
 
       mkCxt v = DAppPr (DConPr ''QC.Arbitrary) (dTyVarBndrToDType v)
 
-  -- | Representation Branching instance
+  -- | Representation BranchingType instance
   tyFamCons <- getFamConNames tyFam
 
   let repBrIns = DInstanceD Nothing [] repBrTy repBrLetDecs
-      repBrTy = ''Branching.Branching <<| [repConTy2Ty]
+      repBrTy = ''Branching.BranchingType <<| [repConTy2Ty]
       repBrLetDecs = mkBranchingDec <$> zip branchingFunNames brFunExps
 
       mkBranchingDec (funName, funExp)
         = DLetDec (DFunD funName [DClause [] funExp])
 
-      brFunExps = singletonTH . singletonTH <$>
+      brFunExps = singletonTH <$>
         [ stringLit (nameBase conName)
         , DConE 'True
         , intLit 1

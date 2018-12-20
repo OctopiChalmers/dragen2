@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ddfa8074db5276a38f550694b9f6311706fa062a5a2018c30c6d3705fef8dcf8
+-- hash: aa677ac9b367aeeba2e9eb57756139166764a29c4b97ada0b3be4790cf5ca36d
 
 name:           quickcheck-hrep
 version:        0.1.0.0
@@ -40,7 +40,6 @@ library
   other-modules:
       Test.QuickCheck.Gen.Utils
       Test.QuickCheck.HRep.TH.Common
-      Test.QuickCheck.Prediction
       Exp
       Exp_test
       ExpStm
