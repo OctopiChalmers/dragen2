@@ -20,8 +20,8 @@ import Test.QuickCheck.HRep.TH.Common
 ----------------------------------------
 -- | Derive the complete representation for a every pattern of a function,
 -- plus the function representation as a sum of each pattern.
-deriveFunPatsRep :: Name -> Int -> [Name] -> Q [Dec]
-deriveFunPatsRep funName argNr tyFam = do
+deriveFunctionPatternsRep :: Name -> Int -> [Name] -> Q [Dec]
+deriveFunctionPatternsRep funName argNr tyFam = do
 
   -- | Retrieve the LHS of the target function
   FunLHS _ funSig funPats <- reifyFunLHS funName
@@ -71,8 +71,8 @@ derivePatRep funName tyFam funArgTy funArgDefTVs
              patNr targetPat rejPats = do
 
   -- | Create fresh names for the data types
-  repName <- newName ("Pat_" ++ nameBase funName ++ "_" ++ show patNr)
-  repConName <- newName ("Mk_" ++ nameBase funName ++ "_" ++ show patNr)
+  repName <- newName ("HRep_Pat_" ++ nameBase funName ++ "_" ++ show patNr)
+  repConName <- newName ("Pat_" ++ nameBase funName ++ "_" ++ show patNr)
   gen <- newName "_gen"
   pat <- newName "pat"
   rv <- mkRecVar

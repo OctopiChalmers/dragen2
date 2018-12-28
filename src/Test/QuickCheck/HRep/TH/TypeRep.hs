@@ -18,8 +18,8 @@ import Test.QuickCheck.HRep.TH.Common
 ----------------------------------------
 -- | Derive the complete representation for every constructor of a type, plus
 -- the type representation as a sized sum of each constructor.
-deriveTypeRep :: Name -> [Name] -> Q [Dec]
-deriveTypeRep tyName tyFam = do
+deriveTypeDefinitionRep :: Name -> [Name] -> Q [Dec]
+deriveTypeDefinitionRep tyName tyFam = do
 
   -- | Reify the original data declaration name and desugar it
   (vs, cons) <- getDataD mempty tyName
@@ -59,8 +59,8 @@ deriveConRep :: [Name] -> DCon -> Q [DDec]
 deriveConRep tyFam (DCon conTyVars conCxt conName conFields conTy) = do
 
   -- | Some "fresh" names
-  repName <- newName ("Rep_" ++ nameBase conName)
-  repConName <- newName ("Mk_" ++ nameBase conName)
+  repName <- newName ("HRep_Con_" ++ nameBase conName)
+  repConName <- newName ("Con_" ++ nameBase conName)
   rv  <- DPlainTV <$> newName "self"
   gen <- newName "_gen"
 

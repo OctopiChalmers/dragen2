@@ -256,8 +256,8 @@ debugQ v = do
 qq :: Show a => Q a -> Q Exp
 qq a = a >>= return . sweeten . DLitE . StringL . show
 
-infoTH :: Name -> Q [Dec]
-infoTH nm = dsReify nm >>=
+dumpTHInfo :: Name -> Q [Dec]
+dumpTHInfo nm = dsReify nm >>=
   \(Just (DTyConI (DTySynD _ _ ty) _)) -> expandType ty >>=
   \dsTy -> [d| infoTH_ = $(stringE (show dsTy)) |]
 
@@ -287,9 +287,6 @@ liftArbitrary2TH e1 e2 = DVarE 'QC.liftArbitrary2 .: e1 .: e2
 
 mkSumType :: DType -> DType -> DType
 mkSumType t1 t2 = ''HRep.Sum <<| [t1, t2]
-
--- mkSizedSumType :: DType -> DType -> DType
--- mkSizedSumType t1 t2 = ''HRep.SizedSum <<| [t1, t2]
 
 arbitraryTH :: DExp
 arbitraryTH = DVarE 'QC.arbitrary

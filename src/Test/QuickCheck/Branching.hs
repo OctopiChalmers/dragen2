@@ -128,15 +128,13 @@ type family Length (xs :: [k]) :: Nat where
   Length '[]       = 0
   Length (_ ': xs) = 1 + Length xs
 
-type family (xs :: [k]) !! (n :: Nat) :: k where
-  (x ':  _) !! 0 = x
-  (_ ': xs) !! n = xs !! (n - 1)
-  x         !! n = TypeError ('Text "!!: index out of bounds")
-
 famSize :: forall xs n a. (Length xs ~ n, Reifies n Integer, Num a) => a
 famSize = fromIntegral (reflect (Proxy @n))
 
-type Branching fam = (BranchingFam fam, KnownNat (Length fam))
+-- type family (xs :: [k]) !! (n :: Nat) :: k where
+--   (x ':  _) !! 0 = x
+--   (_ ': xs) !! n = xs !! (n - 1)
+--   x         !! n = TypeError ('Text "!!: index out of bounds")
 
 type family Lookup (map :: [(k, v)]) (key :: k) :: v where
   Lookup ('(k, v) ': m) k = v
@@ -150,9 +148,23 @@ type family Ix (map :: [(k, v)]) (key :: k) :: Nat where
   Ix '[]         k = TypeError
     ('Text "Ix: key not found" ':<>: 'ShowType k)
 
+type family Keys (map :: [(k, v)]) :: [k] where
+  Keys '[] = '[]
+  Keys ('(k, _) ': kvs) = k ': Keys kvs
+
 type family Values (map :: [(k, v)]) :: [v] where
   Values '[] = '[]
   Values ('(_, v) ': kvs) = v ': Values kvs
+
+type family ApplySpec (a :: Type) (ts :: [(k, Type -> Type)])
+  :: [(k, Type -> Type)] where
+  ApplySpec _ '[] = '[]
+  ApplySpec a ('(k, t) ': ts) = '(k, Apply a t) ': ApplySpec a ts
+
+
+type Branching fam
+  = ( BranchingFam fam
+    , KnownNat (Length fam))
 
 type HasSpec spec root
   = ( Branching (Values spec)
@@ -241,7 +253,7 @@ lastLevel ix size = accumLast (0 :: Int) emptyAcc prevLvl
     branch = (* (mean' @fam))
 
     accumLast n acc prev
-      | n == 100    = trace "lastLevel: something funny happened" acc
+      | n == 100    = trace "lastLevel: could not reach a fixed point!" acc
       | acc == acc' = acc
       | otherwise   = accumLast (n + 1) acc' (branch prev)
       where acc' = acc + branch prev
@@ -294,19 +306,9 @@ confirm size = do
 ----------------------------------------
 -- | Optimization
 
-type family All (c :: k -> Constraint) (xs :: [k]) :: Constraint where
-  All c '[] = ()
-  All c (x ': xs) = (c x, All c xs)
-
-type family FreqList (elem :: Type -> Type) :: [Nat] where
-  FreqList (Sum f g) = FreqList f ++ FreqList g
-  FreqList f = '[ Frequency f ]
-
-
-
-type family (f :: [k]) ++ (g :: [k]) :: [k] where
-  '[] ++ g       = g
-  (f ': fs) ++ g = f ': (fs ++ g)
+-- type family All (c :: k -> Constraint) (xs :: [k]) :: Constraint where
+--   All c '[] = ()
+--   All c (x ': xs) = (c x, All c xs)
 
 
 class KnownNatL (ns :: [Nat]) where
@@ -327,15 +329,108 @@ instance KnownNatLL '[] where
 instance (KnownNatL n, KnownNatLL ns) => KnownNatLL (n ': ns) where
   natLLVal  _ = natLVal (Proxy :: Proxy n) : natLLVal (Proxy :: Proxy ns)
 
+type family (f :: [k]) ++ (g :: [k]) :: [k] where
+  '[] ++ g       = g
+  (f ': fs) ++ g = f ': (fs ++ g)
 
--- famFreqsVal :: forall fam. (Branching fam, KnownNatLL (FamFreqList fam)) => [[Integer]]
--- famFreqsVal = natLLVal (Proxy :: Proxy (FamFreqList fam))
 
--- mean' :: forall fam n. (All Branching fam, KnownNat n, Length fam ~ n) => Matrix Double
--- mean' = build (famSize @fam) (famSize @fam) mkElem
---   where mkElem r c
---           = reifyNat (fromIntegral r)
---             $ \(Proxy :: Proxy rr) ->
---                 reifyNat (fromIntegral c)
---                 $ \(Proxy :: Proxy cc) ->
---                     col (typeBeta @(fam !! rr) ! 0 ! (c-1))
+
+type family RepToList (rep :: Type -> Type) :: [Type -> Type] where
+  RepToList (Sum f g) = RepToList f ++ RepToList g
+  RepToList t = '[t]
+
+type family SpecToList (spec :: [(k, Type -> Type)]) :: [(k, [Type -> Type])] where
+  SpecToList '[] = '[]
+  SpecToList ('(k, t) ': ts) = '(k, RepToList t) ': SpecToList ts
+
+type family ListToRep (xs :: [Type -> Type]) :: Type -> Type where
+  ListToRep '[] = TypeError ('Text "ListToRep: empty list")
+  ListToRep '[t] = t
+  ListToRep (x ': xs) = Sum x (ListToRep xs)
+
+
+type family ListToSpec (xs :: [(k, [Type -> Type])]) :: [(k, Type -> Type)] where
+  ListToSpec '[] = '[]
+  ListToSpec ('(k, t) ': ts) = '(k, ListToRep t) ': ListToSpec ts
+
+type family FlattenRep (rep :: Type -> Type) :: Type -> Type where
+  FlattenRep rep = ListToRep (RepToList rep)
+
+type family FlattenSpec (spec :: [(k, Type -> Type)]) :: [(k, Type -> Type)] where
+  FlattenSpec '[] = '[]
+  FlattenSpec ('(k, t) ': ts) = '(k, FlattenRep t) ': FlattenSpec ts
+
+
+
+type family RepFreqList (elem :: Type -> Type) :: [Nat] where
+  RepFreqList (Sum f g) = RepFreqList f ++ RepFreqList g
+  RepFreqList f = '[Frequency f]
+
+type family FamFreqList (elem :: [Type -> Type]) :: [[Nat]] where
+  FamFreqList '[] = '[]
+  FamFreqList (x ': xs) = RepFreqList x ': FamFreqList xs
+
+
+
+type family SetFreq (rep :: Type -> Type) (freq :: Nat) :: Type -> Type where
+  SetFreq (Freq t _) n = Freq t n
+  SetFreq t          n = Freq t n
+
+type family SetRepFreqs (rep :: Type -> Type) (freqsL :: [Nat]) :: Type -> Type where
+  SetRepFreqs (Sum f g) (ff ': gg) = Sum (SetFreq f ff) (SetRepFreqs g gg)
+  SetRepFreqs t '[f] = Freq t f
+  SetRepFreqs _ _ = TypeError ('Text "SetRepFreqs: mismatched sizes")
+
+type family SetSpecFreqs (spec :: [(k, Type -> Type)]) (freqs :: [[Nat]])
+  :: [(k, Type -> Type)] where
+  SetSpecFreqs '[] '[] = '[]
+  SetSpecFreqs ('(k, t) ': ts) (f ': fs) = '(k, SetRepFreqs t f) ': SetSpecFreqs ts fs
+  SetSpecFreqs _ _ = TypeError ('Text "SetFamFreqs: mismatched sizes")
+
+
+type family Spec (spec :: [(k, Type -> Type)]) :: [(k, Type -> Type)] where
+  Spec spec = FlattenSpec spec
+
+-- type family SetFreqs spec freqs where
+--   SetFreqs spec freqs = SetSpecFreqs (FlattenSpec spec) freqs
+
+-- type family AltRepFreq (rep :: [Type -> Type])
+--   (ix :: Nat) (f :: Nat)
+--   :: [Type -> Type] where
+--   AltRepFreq (t ': ts) 0  f = SetFreq t f ': ts
+--   AltRepFreq (t ': ts) ix f = t ': AltRepFreq ts (ix - 1) f
+--   AltRepFreq _         _  _ = TypeError ('Text "AltRepFreq: index out of bounds")
+
+-- type family AltSpecLFreq
+--   (spec :: [(k, [Type -> Type])])
+--   (famIx :: Nat) (tyIx :: Nat) (freq :: Nat)
+--   :: [(k, [Type -> Type])] where
+--   AltSpecLFreq ('(k, t) ': ts) 0 tix f
+--     = '(k, AltRepFreq t tix f) ': ts
+--   AltSpecLFreq ('(k, t) ': ts) fix tix f
+--     = '(k, t) ': AltSpecLFreq ts (fix - 1) tix f
+--   AltSpecLFreq _ _ _ _
+--     = TypeError ('Text "AltSpecLFreq: index out of bounds")
+
+-- type family AltSpecFreq
+--   (fam :: [[Type -> Type]])
+--   (famIx :: Nat) (tyIx :: Nat) (freq :: Nat)
+--   :: [[Type -> Type]] where
+--   AltSpecFreq (t ': ts) 0   tix f = AltRepFreq t tix f ': ts
+--   AltSpecFreq (t ': ts) fix tix f = t ': AltSpecFreq ts (fix - 1) tix f
+--   AltSpecFreq _         _   _   _ = TypeError ('Text "AltSpecFreq: index out of bounds")
+
+predictWithFreqs :: forall spec root freqs spec'.
+                ( spec' ~ SetSpecFreqs spec freqs
+                , HasSpec spec' root
+                ) => QCSize -> Hist
+predictWithFreqs size = predict @spec' @root size
+  -- =  reifyNat fix $ \(Proxy :: Proxy fix')
+  -- -> reifyNat tix $ \(Proxy :: Proxy tix')
+  -- -> reifyNat f   $ \(Proxy :: Proxy f')
+
+
+  -- SetFreq (Sum (Freq t _) ts) 0 n = Sum (Freq t n) ts
+  -- SetFreq (Sum t          ts) 0 n = Sum (Freq t n) ts
+  -- SetFreq (Sum t          ts) i n = Sum t (SetFreq ts (i - 1) n)
+  -- SetFreq _                   _ _ = TypeError ('Text "SetFreq: index out of bounds")

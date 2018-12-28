@@ -20,8 +20,8 @@ import Test.QuickCheck.HRep.TH.Common
 -- | Derive the complete representation of every combinator of a module that
 -- returns the desired type, plus the module interface representation as a sum
 -- of each combinator.
-deriveModIntRep :: Name -> String -> Q [Dec]
-deriveModIntRep tyName modAlias = do
+deriveModuleInterfaceRep :: Name -> String -> Q [Dec]
+deriveModuleInterfaceRep tyName modAlias = do
 
   -- | Convert the module alias to a safe identifier
   let modAliasId = toIdentStr modAlias
@@ -58,8 +58,8 @@ deriveCombRep :: Name -> String -> Name -> Q [DDec]
 deriveCombRep tyName modAlias funName = do
 
   -- | Some "fresh" names
-  repName <- newName ("Rep_" ++ toIdentStr modAlias ++ "_" ++  nameBase funName)
-  repConName <- newName ("Mk_" ++ toIdentStr modAlias ++ "_" ++ nameBase funName)
+  repName    <- newName ("HRep_Comb_" ++ toIdentStr modAlias ++ "_" ++ nameBase funName)
+  repConName <- newName ("Comb_"  ++ toIdentStr modAlias ++ "_" ++ nameBase funName)
   rv  <- DPlainTV <$> newName "self"
   gen <- newName "_gen"
 

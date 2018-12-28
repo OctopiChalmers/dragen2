@@ -20,14 +20,7 @@
 
 module PredMutRec where
 
--- import Unsafe.Coerce
--- import Data.Kind
--- import Data.Proxy
--- import Data.Reflection
-
--- import GHC.TypeLits (KnownNat)
 import GHC.Generics
--- import GHC.Generics.Countable
 
 import Test.QuickCheck
 import Test.QuickCheck.Branching
@@ -35,13 +28,6 @@ import Test.QuickCheck.HRep
 import Test.QuickCheck.HRep.Infix
 import Test.QuickCheck.HRep.TH
 import Test.QuickCheck.HRep.TH.Common
-
--- import Data.Map.Strict (Map)
--- import Data.Vector (Vector, (!))
--- import Data.Matrix (Matrix, (<->), (<|>))
--- import qualified Data.Map.Strict as Map
--- import qualified Data.Vector as Vector
--- import qualified Data.Matrix as Matrix
 
 ----------------------------------------
 
@@ -61,42 +47,43 @@ data BExp a
 foo :: IExp a -> IExp a
 foo (Add (Add (Val a)   _i1) _i2) = undefined
 foo (Add (If _b (Val a) _i1) _i2) = undefined
-foo _                              = undefined
+foo _                             = undefined
 
 bar :: BExp a -> BExp a
 bar (LEq (Val a) _i2) = Bool True
-bar b                  = b
+bar b                 = b
 
 
-deriveHRep
-  [''IExp, ''BExp]
-  [ patsRep 'foo
-  , patsRep 'bar
-  , modRep ''IExp ]
+deriveHRep [''IExp, ''BExp]
+  [ patterns_ 'foo
+  , patterns_ 'bar
+  , module_   ''IExp ]
 
-type SpecExp = '[
-  IExp := HRep IExp
-       :| HRep "foo",
-       -- :| HRep "MyModule",
-  BExp := HRep BExp
+type ExpS
+  = Spec
+    '[ IExp
+       := HRep IExp
+       :| HRep "foo"
+     , BExp
+       := HRep BExp
        :| HRep "bar"
-  ]
+     ]
 
--- infoTH ''SpecExp
+deriveArbitrary [''IExp, ''BExp] ''ExpS
 
--- type SpecExp' = '[
---   IExp := Term (Con 'Val) :* 2
---        :| Con 'Add
---        :| Con 'If :* 3
---        :| Pat "foo" 1
---        :| Pat "foo" 2,
---   BExp := Term (Con 'Bool)
---        :| Con 'LEq
---        :| Pat "bar" 1 :* 2
+
+-- dumpTHInfo ''SpecExp
+
+-- type SpecExp' =
+--   '[ IExp := Term (Con 'Val) :* 2
+--           :| Con 'Add
+--           :| Con 'If :* 3
+--           :| Pat "foo" 1
+--           :| Pat "foo" 2
+--    , BExp := Term (Con 'Bool)
+--           :| Con 'LEq
+--           :| Pat "bar" 1 :* 2
 --   ]
-
-instance Arbitrary a => Arbitrary (IExp a) where arbitrary = genEval @(SpecExp :! IExp :@ a)
-instance Arbitrary a => Arbitrary (BExp a) where arbitrary = genEval @(SpecExp :! BExp :@ a)
 
 deriving instance Generic Int
 deriving instance Generic a => Generic (IExp a)
