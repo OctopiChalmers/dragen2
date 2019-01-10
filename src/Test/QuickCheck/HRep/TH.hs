@@ -5,8 +5,6 @@
 
 module Test.QuickCheck.HRep.TH where
 
-import Data.Reflection
-
 import Control.Monad.Extra
 
 import Language.Haskell.TH
@@ -64,38 +62,34 @@ deriveHRep fam' targets = concatMapM derive
 ----------------------------------------
 -- | Derive Arbitrary instances using a generation specification
 
-deriveArbitrary :: [Name] -> Name -> Q [Dec]
-deriveArbitrary tys spec = concatMapM go tys
-  where
-    go :: Name -> Q [Dec]
-    go tyName = do
-      (vs, _) <- getDataD mempty tyName
-      tyVars <- mapM desugar vs
+deriveArbitrary :: Name -> Name -> Q [Dec]
+deriveArbitrary tyName spec = do
+  (vs, _) <- getDataD mempty tyName
+  tyVars <- mapM desugar vs
 
-      let arbIns = DInstanceD Nothing arbCxt arbTy [arbLetDec]
-          arbCxt = mkCxt <$> tyVars
-          arbTy  = ''QC.Arbitrary <<| [tyName <<* tyVars]
-          arbTyApp = foldl (\t v -> DConT ''HRep.Apply `DAppT` v `DAppT` t)
-                     arbTyAppBase
-                     (dTyVarBndrToDType <$> tyVars)
-          arbTyAppBase = DConT ''Branching.Lookup
-                         `DAppT` DConT spec
-                         `DAppT` DConT tyName
-          arbLetDec = DLetDec (DFunD 'QC.arbitrary [arbClause])
-          arbClause = DClause [] arbBody
-          arbBody = DAppTypeE (DVarE 'HRep.genEval) arbTyApp
+  let arbIns = DInstanceD Nothing arbCxt arbTy [arbLetDec]
+      arbCxt = mkCxt <$> tyVars
+      arbTy  = ''QC.Arbitrary <<| [tyName <<* tyVars]
+      arbTyApp = foldl (\t v -> DConT ''HRep.Apply `DAppT` v `DAppT` t)
+                       arbTyAppBase
+                       (dTyVarBndrToDType <$> tyVars)
+      arbTyAppBase = DConT ''Branching.Lookup
+                     `DAppT` DConT spec
+                     `DAppT` DLitT (StrTyLit (nameBase tyName))
+      arbLetDec = DLetDec (DFunD 'QC.arbitrary [arbClause])
+      arbClause = DClause [] arbBody
+      arbBody = DAppTypeE (DVarE 'HRep.genEval) arbTyApp
 
-          mkCxt v = DAppPr (DConPr ''QC.Arbitrary) (dTyVarBndrToDType v)
+      mkCxt v = DAppPr (DConPr ''QC.Arbitrary) (dTyVarBndrToDType v)
 
-      return (sweeten [arbIns])
+  return (sweeten [arbIns])
 
 
-
--- ----------------------------------------
--- -- | Derive all the stuff
--- deriveAll :: Name -> [(Name, Int)] -> Bool -> Q [Dec]
--- deriveAll ogTyName funcsNameArgs reducePatSize = do
---   ogTyRep <- deriveTypeRep ogTyName
---   let derivePat = deriveFunRep reducePatSize
---   funPatsReps <- concatMapM (uncurry derivePat) funcsNameArgs
---   return (ogTyRep ++ funPatsReps)
+----------------------------------------
+-- | Derive all the stuff
+deriveAll :: [Name] -> [Target] -> Name -> Q [Dec]
+deriveAll tyFam targets specName = do
+  typeReps <- concatMapM (\tn -> derive (TypeDefinition tn tyFam)) tyFam
+  arbIns   <- concatMapM (\tn -> deriveArbitrary tn specName) tyFam
+  tgtReps  <- concatMapM (\target -> derive (target {fam = tyFam})) targets
+  return (concat [typeReps, arbIns, tgtReps])

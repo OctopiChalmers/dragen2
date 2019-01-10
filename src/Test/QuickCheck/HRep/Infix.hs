@@ -1,5 +1,7 @@
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Test.QuickCheck.HRep.Infix where
 
@@ -13,17 +15,19 @@ import Test.QuickCheck.Branching
 type (:*) = Freq
 infixl 6 :*
 
-type (:|) = Sum
-infixl 5 :|
+type (:+) = Sum
+infixl 5 :+
 
-type (spec # k) = Lookup spec k
-infix 4 #
+type (spec :# k) = Lookup spec k
+infix 4 :#
 
 type (t :@ a) = Apply a t
 infixl 3 :@
 
-type (spec :@@ a) = ApplySpec a spec
-infixl 3 :@@
+-- type (spec :@@ a) = ApplySpec a spec
+-- infixl 3 :@@
 
-type (k := v) = '(k, v)
+type ((k :: kk) := (v :: vv)) = '(k, v)
 infix 2 :=
+
+type (f :> g) = Optimized f g

@@ -1,22 +1,23 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
--- {-# OPTIONS_GHC -Wno-unused-imports #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE ExistentialQuantification #-}
 
 module PredMutRec where
 
@@ -54,23 +55,42 @@ bar (LEq (Val a) _i2) = Bool True
 bar b                 = b
 
 
-deriveHRep [''IExp, ''BExp]
+-- deriveHRep
+--   [''IExp, ''BExp]
+--   [ patterns_ 'foo
+--   , patterns_ 'bar
+--   , module_   ''IExp ]
+-- deriveArbitrary ''ExpS [''IExp, ''BExp]
+
+-- type ExpS = '[
+--   "IExp" := HRep "IExp"
+--          :| HRep "foo",
+--   "BExp" := HRep "BExp"
+--          :| HRep "bar"
+--   ]
+
+type ExpS =
+  '[ "IExp"
+       := Term (Con 'Val) :* 1
+       :+ Con 'Add        :* 2
+       :+ Con 'If         :* 3
+   , "BExp"
+       := Term (Con 'Bool)
+       :+ Con 'LEq
+   ]
+
+deriveAll
+  [ ''IExp, ''BExp ]
   [ patterns_ 'foo
   , patterns_ 'bar
   , module_   ''IExp ]
+  ''ExpS
 
-type ExpS
-  = Spec
-    '[ IExp
-       := HRep IExp
-       :| HRep "foo"
-     , BExp
-       := HRep BExp
-       :| HRep "bar"
-     ]
-
-deriveArbitrary [''IExp, ''BExp] ''ExpS
-
+type instance Optimized "ExpS" "SomeDist"
+  = SetSpecFreqs (MkSpec ExpS)
+      '[ '[ 4, 5, 6]
+       , '[ 1, 1]
+       ]
 
 -- dumpTHInfo ''SpecExp
 

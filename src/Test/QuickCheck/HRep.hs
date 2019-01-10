@@ -177,7 +177,7 @@ instance ( FixArbitrary f a, f #> ff, f @> ff0
 -- | Type families to hide TH unique names
 
 -- | Whole types, functions or modules
-type family HRep (t :: k) :: Type -> Type
+type family HRep (t :: Symbol) :: Type -> Type
 
 -- | A single constructor
 type family Con (c :: k) :: Type -> Type

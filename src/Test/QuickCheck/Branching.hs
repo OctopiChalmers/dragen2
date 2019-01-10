@@ -1,13 +1,13 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE QuantifiedConstraints #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoStarIsType #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -36,7 +36,6 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
 import Debug.Trace
-
 
 ----------------------------------------
 -- | Some type synonyms
@@ -124,52 +123,10 @@ instance (BranchingType f, BranchingFam fs) => BranchingFam (f ': fs) where
   famBeta = Vector.singleton (typeBeta @f) <> famBeta @fs
   famEta = Vector.singleton (typeEta @f) <> famEta @fs
 
-type family Length (xs :: [k]) :: Nat where
-  Length '[]       = 0
-  Length (_ ': xs) = 1 + Length xs
+type Branching fam = (BranchingFam fam
+                     ,KnownNat (Length fam)
+                     ,KnownNatss (MapRepFreqs fam))
 
-famSize :: forall xs n a. (Length xs ~ n, Reifies n Integer, Num a) => a
-famSize = fromIntegral (reflect (Proxy @n))
-
--- type family (xs :: [k]) !! (n :: Nat) :: k where
---   (x ':  _) !! 0 = x
---   (_ ': xs) !! n = xs !! (n - 1)
---   x         !! n = TypeError ('Text "!!: index out of bounds")
-
-type family Lookup (map :: [(k, v)]) (key :: k) :: v where
-  Lookup ('(k, v) ': m) k = v
-  Lookup (_       ': m) k = Lookup m k
-  Lookup '[]            k = TypeError
-    ('Text "Lookup: key not found" ':<>: 'ShowType k)
-
-type family Ix (map :: [(k, v)]) (key :: k) :: Nat where
-  Ix ('(k,  _) ': m) k = 0
-  Ix ('(k', _) ': m) k = 1 + Ix m k
-  Ix '[]         k = TypeError
-    ('Text "Ix: key not found" ':<>: 'ShowType k)
-
-type family Keys (map :: [(k, v)]) :: [k] where
-  Keys '[] = '[]
-  Keys ('(k, _) ': kvs) = k ': Keys kvs
-
-type family Values (map :: [(k, v)]) :: [v] where
-  Values '[] = '[]
-  Values ('(_, v) ': kvs) = v ': Values kvs
-
-type family ApplySpec (a :: Type) (ts :: [(k, Type -> Type)])
-  :: [(k, Type -> Type)] where
-  ApplySpec _ '[] = '[]
-  ApplySpec a ('(k, t) ': ts) = '(k, Apply a t) ': ApplySpec a ts
-
-
-type Branching fam
-  = ( BranchingFam fam
-    , KnownNat (Length fam))
-
-type HasSpec spec root
-  = ( Branching (Values spec)
-    , KnownNat (Length (Values spec))
-    , KnownNat (Ix spec root))
 
 ----------------------------------------
 -- | Vector dereferences
@@ -196,26 +153,12 @@ atomicNames :: forall fam. Branching fam => Vector2 String
 atomicNames = flip Vector.imap (famNames @fam)
   (\fix -> Vector.ifilter (\cix  -> const ((! cix) (atomic @fam fix))))
 
-----------------------------------------
--- | Vector and Matrix utilities
-
-(.+.), (.*.) :: Vector Double -> Vector Double -> Vector Double
-(.+.) = Vector.zipWith (+)
-(.*.) = Vector.zipWith (*)
-
-col, row :: Vector a -> Matrix a
-col = Matrix.colVector
-row = Matrix.rowVector
-
-vec :: Matrix a -> Vector a
-vec = Matrix.getRow 1
-
-build :: Int -> Int -> (Int -> Int -> Matrix a) -> Matrix a
-build rn cn mkElem = foldr1 (<->) (mkRow <$> [1..rn])
-  where mkRow r = foldr1 (<|>) (mkElem r <$> [1..cn])
 
 ----------------------------------------
 -- | Prediction
+
+famSize :: forall xs n a. (Length xs ~ n, Reifies n Integer, Num a) => a
+famSize = fromIntegral (reflect (Proxy @n))
 
 initial :: forall fam. Branching fam => FamIx -> Matrix Double
 initial ix = row (foldr1 (<>) (Vector.imap nullify (famProbs @fam)))
@@ -266,30 +209,159 @@ predictRep' ix size = branchingLevels @fam ix size + lastLevel @fam ix size
 predict' :: forall fam. Branching fam => FamIx -> QCSize -> Matrix Double
 predict' ix size = predictRep' @fam ix size * expand @fam
 
+----------------------------------------
+-- | Prediction with mutated frequencies
 
-predictRep :: forall spec root fam ix.
-  ( HasSpec spec root
-  , fam ~ Values spec
-  , ix ~ Ix spec root
-  ) => QCSize -> Hist
-predictRep size
-  = Map.fromList $ zip
-    (Vector.toList (foldr1 (<>) (famNames @fam)))
-    (Matrix.toList (predictRep' @fam (numVal @ix) size))
+applyFreqsToProbs :: Vector2 Double -> [[Integer]] -> [[Integer]] ->  Vector2 Double
+applyFreqsToProbs ogProbs ogFreqs freqs
+  | matchSize ogProbs newFreqs = newProbs
+  | otherwise = error $ "applyFreqsToProbs: sized don't match:\n"
+                ++ "* " ++ show ogProbs ++ "\n"
+                ++ "* " ++ show newFreqs
+  where
+    newFreqs = Vector.fromList (Vector.fromList <$> freqs)
+    newProbs = normalize <$> Vector.zipWith3 transform ogProbs newFreqs ratios
 
-predict :: forall spec root fam ix.
-  ( HasSpec spec root
-  , fam ~ Values spec
-  , ix  ~ Ix spec root
-  ) => QCSize -> Hist
-predict size
-  = Map.fromList $ zip
-    (Vector.toList (foldr1 (<>) (atomicNames @fam)))
-    (Matrix.toList (predict' @fam (numVal @ix) size))
+    transform ogPs newFs r = Vector.zipWith (transform' r) ogPs newFs
+    transform' r ogP newF = r * ogP * (fromIntegral newF)
 
+    ratios   = ogSums ./. newSums
+    ogSums   = Vector.fromList (fromIntegral . sum <$> ogFreqs)
+    newSums  = fromIntegral . sum <$> newFreqs
+
+
+famProbsWith :: forall fam freqs.
+                ( Branching fam
+                , freqs ~ MapRepFreqs fam
+                , KnownNatss freqs
+                ) => [[Integer]] -> Vector2 Double
+famProbsWith = applyFreqsToProbs (famProbs @fam) (natValss (Proxy @freqs))
+
+
+famProbs'With :: forall fam freqs.
+                ( Branching fam
+                , freqs ~ MapRepFreqs fam
+                , KnownNatss freqs
+                ) => [[Integer]] -> Vector2 Double
+famProbs'With = applyFreqsToProbs (famProbs' @fam) (natValss (Proxy @freqs))
+
+
+probsWith :: forall fam. Branching fam => [[Integer]] -> FamIx -> Vector Double
+probsWith newFreqs ix = famProbsWith @fam newFreqs ! ix
+
+
+probs'With :: forall fam. Branching fam => [[Integer]] -> FamIx -> Vector Double
+probs'With newFreqs ix = famProbs'With @fam newFreqs ! ix
+
+initialWith :: forall fam. Branching fam
+            => [[Integer]] -> FamIx -> Matrix Double
+initialWith newFreqs ix
+  = row (foldr1 (<>) (Vector.imap nullify (famProbsWith @fam newFreqs)))
+  where nullify ix' | ix == ix' = id
+        nullify _               = fmap (const 0)
+
+meanWith :: forall fam. Branching fam
+         => [[Integer]] -> Matrix Double
+meanWith newFreqs = build (famSize @fam) (famSize @fam) mkElem
+  where mkElem r c = col (beta  @fam (r-1) (c-1))
+                   * row (probsWith @fam newFreqs (c-1))
+
+mean'With :: forall fam. Branching fam
+         => [[Integer]] -> Matrix Double
+mean'With newFreqs = build (famSize @fam) (famSize @fam) mkElem
+  where mkElem r c = col (beta  @fam (r-1) (c-1))
+                   * row (probs'With @fam newFreqs (c-1))
+
+levelsWith :: forall fam. Branching fam => [[Integer]] -> FamIx -> [Matrix Double]
+levelsWith newFreqs ix = scanl Matrix.multStd2
+                (initialWith @fam newFreqs ix)
+                (repeat (meanWith @fam newFreqs))
+
+levelWith :: forall fam. Branching fam => [[Integer]] -> FamIx -> Level -> Matrix Double
+levelWith newFreqs ix lvl = levelsWith @fam newFreqs ix !! lvl
+
+branchingLevelsWith :: forall fam. Branching fam
+                    => [[Integer]] -> FamIx -> QCSize -> Matrix Double
+branchingLevelsWith newFreqs ix size
+  = foldr1 (+) (take size (levelsWith @fam newFreqs ix))
+
+lastLevelWith :: forall fam. Branching fam
+              => [[Integer]] -> FamIx -> QCSize -> Matrix Double
+lastLevelWith newFreqs ix size = accumLast (0 :: Int) emptyAcc prevLvl
+  where
+    prevLvl = levelWith @fam newFreqs ix (size - 1)
+    emptyAcc = const 0 <$> prevLvl
+    branch = (* (mean'With @fam newFreqs))
+
+    accumLast n acc prev
+      | n == 100    = trace "lastLevel: could not reach a fixed point!" acc
+      | acc == acc' = acc
+      | otherwise   = accumLast (n + 1) acc' (branch prev)
+      where acc' = acc + branch prev
+
+-- | Predict the representation distribution
+predictRep'With :: forall fam. Branching fam
+                => [[Integer]] -> FamIx -> QCSize -> Matrix Double
+predictRep'With newFreqs ix size
+  = branchingLevelsWith @fam newFreqs  ix size
+  + lastLevelWith @fam newFreqs ix size
+
+-- | Predict the original distribution by expanding the representation
+predict'With :: forall fam. Branching fam
+             => [[Integer]] -> FamIx -> QCSize -> Matrix Double
+predict'With newFreqs ix size
+  = predictRep'With @fam newFreqs ix size
+  * expand @fam
 
 ----------------------------------------
--- | Prediction confirmation
+-- | Specifications prediction and confirmation
+
+type Spec = [(Symbol, Type -> Type)]
+
+type HasSpec (spec :: Spec) (root :: Symbol)
+  = ( Branching (Values spec)
+    , KnownNat (Length (Values spec))
+    , KnownNat (Ix spec root))
+
+predictRep :: forall spec root fam ix.
+              ( HasSpec spec root
+              , fam ~ Values spec
+              , ix ~ Ix spec root
+              ) => QCSize -> Hist
+predictRep size = Map.fromList $ zip
+                  (Vector.toList (foldr1 (<>) (famNames @fam)))
+                  (Matrix.toList (predictRep' @fam (numVal @ix) size))
+
+
+predict :: forall spec root fam ix.
+           ( HasSpec spec root
+           , fam ~ Values spec
+           , ix  ~ Ix spec root
+           ) => QCSize -> Hist
+predict size = Map.fromList $ zip
+               (Vector.toList (foldr1 (<>) (atomicNames @fam)))
+               (Matrix.toList (predict' @fam (numVal @ix) size))
+
+predictRepWith :: forall spec root fam ix.
+                  ( HasSpec spec root
+                  , fam ~ Values spec
+                  , ix ~ Ix spec root
+                  ) => [[Integer]] -> QCSize -> Hist
+predictRepWith newFreqs size
+  = Map.fromList $ zip
+    (Vector.toList (foldr1 (<>) (famNames @fam)))
+    (Matrix.toList (predictRep'With @fam newFreqs (numVal @ix) size))
+
+
+predictWith :: forall spec root fam ix.
+           ( HasSpec spec root
+           , fam ~ Values spec
+           , ix  ~ Ix spec root
+           ) => [[Integer]] -> QCSize -> Hist
+predictWith newFreqs size
+  = Map.fromList $ zip
+    (Vector.toList (foldr1 (<>) (atomicNames @fam)))
+    (Matrix.toList (predict'With @fam newFreqs (numVal @ix) size))
 
 confirm :: forall spec root hrep target.
   ( HasSpec spec root
@@ -304,95 +376,222 @@ confirm size = do
   return (consAvg (count <$> values))
 
 ----------------------------------------
--- | Optimization
+-- | Specifications optimization
 
--- type family All (c :: k -> Constraint) (xs :: [k]) :: Constraint where
---   All c '[] = ()
---   All c (x ': xs) = (c x, All c xs)
-
-
-class KnownNatL (ns :: [Nat]) where
-  natLVal  :: proxy ns -> [Integer]
-
-instance KnownNatL '[] where
-  natLVal  _ = []
-
-instance (KnownNat n, KnownNatL ns) => KnownNatL (n ': ns) where
-  natLVal  _ = natVal (Proxy :: Proxy n) : natLVal (Proxy :: Proxy ns)
-
-class KnownNatLL (ns :: [[Nat]]) where
-  natLLVal :: proxy ns -> [[Integer]]
-
-instance KnownNatLL '[] where
-  natLLVal  _ = []
-
-instance (KnownNatL n, KnownNatLL ns) => KnownNatLL (n ': ns) where
-  natLLVal  _ = natLVal (Proxy :: Proxy n) : natLLVal (Proxy :: Proxy ns)
-
-type family (f :: [k]) ++ (g :: [k]) :: [k] where
-  '[] ++ g       = g
-  (f ': fs) ++ g = f ': (fs ++ g)
+type family
+  MkSpec (spec :: Spec) :: Spec where
+  MkSpec spec = Flatten spec
 
 
-
-type family RepToList (rep :: Type -> Type) :: [Type -> Type] where
-  RepToList (Sum f g) = RepToList f ++ RepToList g
-  RepToList t = '[t]
-
-type family SpecToList (spec :: [(k, Type -> Type)]) :: [(k, [Type -> Type])] where
-  SpecToList '[] = '[]
-  SpecToList ('(k, t) ': ts) = '(k, RepToList t) ': SpecToList ts
-
-type family ListToRep (xs :: [Type -> Type]) :: Type -> Type where
-  ListToRep '[] = TypeError ('Text "ListToRep: empty list")
-  ListToRep '[t] = t
-  ListToRep (x ': xs) = Sum x (ListToRep xs)
+type family
+  ApplySpec (a :: Type) (ts :: Spec) :: Spec where
+  ApplySpec _ '[] = '[]
+  ApplySpec a ('(k, t) ': ts) = '(k, Apply a t) ': ApplySpec a ts
 
 
-type family ListToSpec (xs :: [(k, [Type -> Type])]) :: [(k, Type -> Type)] where
-  ListToSpec '[] = '[]
-  ListToSpec ('(k, t) ': ts) = '(k, ListToRep t) ': ListToSpec ts
+type family
+  Flatten (spec :: Spec) :: Spec where
+  Flatten '[] = '[]
+  Flatten ('(k, t) ': ts) = '(k, List2Rep (Rep2List t)) ': Flatten ts
 
-type family FlattenRep (rep :: Type -> Type) :: Type -> Type where
-  FlattenRep rep = ListToRep (RepToList rep)
+type family
+  Rep2List (rep :: Type -> Type) :: [Type -> Type] where
+  Rep2List (Sum f g) = Rep2List f ++ Rep2List g
+  Rep2List t = '[t]
 
-type family FlattenSpec (spec :: [(k, Type -> Type)]) :: [(k, Type -> Type)] where
-  FlattenSpec '[] = '[]
-  FlattenSpec ('(k, t) ': ts) = '(k, FlattenRep t) ': FlattenSpec ts
-
-
-
-type family RepFreqList (elem :: Type -> Type) :: [Nat] where
-  RepFreqList (Sum f g) = RepFreqList f ++ RepFreqList g
-  RepFreqList f = '[Frequency f]
-
-type family FamFreqList (elem :: [Type -> Type]) :: [[Nat]] where
-  FamFreqList '[] = '[]
-  FamFreqList (x ': xs) = RepFreqList x ': FamFreqList xs
+type family
+  List2Rep (xs :: [Type -> Type]) :: Type -> Type where
+  List2Rep '[t] = t
+  List2Rep (x ': xs) = Sum x (List2Rep xs)
 
 
+-- | Extract the frequencies from a spec
+type family
+  SpecFreqs (spec :: Spec) :: [[Nat]] where
+  SpecFreqs '[] = '[]
+  SpecFreqs ('(k, x) ': xs) = RepFreqs x ': SpecFreqs xs
 
-type family SetFreq (rep :: Type -> Type) (freq :: Nat) :: Type -> Type where
-  SetFreq (Freq t _) n = Freq t n
-  SetFreq t          n = Freq t n
+type family
+  RepFreqs (rep :: Type -> Type) :: [Nat] where
+  RepFreqs (Sum f g) = RepFreqs f ++ RepFreqs g
+  RepFreqs f = '[Frequency f]
 
-type family SetRepFreqs (rep :: Type -> Type) (freqsL :: [Nat]) :: Type -> Type where
-  SetRepFreqs (Sum f g) (ff ': gg) = Sum (SetFreq f ff) (SetRepFreqs g gg)
-  SetRepFreqs t '[f] = Freq t f
-  SetRepFreqs _ _ = TypeError ('Text "SetRepFreqs: mismatched sizes")
+type family
+  MapRepFreqs (reps :: [Type -> Type]) :: [[Nat]] where
+  MapRepFreqs '[] = '[]
+  MapRepFreqs (x ': xs) = RepFreqs x ': MapRepFreqs xs
 
-type family SetSpecFreqs (spec :: [(k, Type -> Type)]) (freqs :: [[Nat]])
-  :: [(k, Type -> Type)] where
+-- | Update the frequencies of a spec
+type family
+  SetSpecFreqs (spec :: Spec) (freqs :: [[Nat]]) :: Spec where
   SetSpecFreqs '[] '[] = '[]
   SetSpecFreqs ('(k, t) ': ts) (f ': fs) = '(k, SetRepFreqs t f) ': SetSpecFreqs ts fs
   SetSpecFreqs _ _ = TypeError ('Text "SetFamFreqs: mismatched sizes")
 
+type family
+  SetRepFreqs (rep :: Type -> Type) (freqsL :: [Nat]) :: Type -> Type where
+  SetRepFreqs (Sum f g) (ff ': gg) = Sum (SetFreq f ff) (SetRepFreqs g gg)
+  SetRepFreqs t '[f] = Freq t f
+  SetRepFreqs _ _ = TypeError ('Text "SetRepFreqs: mismatched sizes")
 
-type family Spec (spec :: [(k, Type -> Type)]) :: [(k, Type -> Type)] where
-  Spec spec = FlattenSpec spec
+type family
+  SetFreq (rep :: Type -> Type) (freq :: Nat) :: Type -> Type where
+  SetFreq (Freq t n) m = Freq t (n * m)
+  SetFreq t          n = Freq t n
+
+type family Optimized (spec :: Symbol) (alias :: Symbol) :: Spec
+
+----------------------------------------
+-- | Nested lists reflection
+
+class KnownNats (ns :: [Nat]) where
+  natVals  :: Proxy ns -> [Integer]
+
+instance KnownNats '[] where
+  natVals  _ = []
+
+instance (KnownNat n, KnownNats ns) => KnownNats (n ': ns) where
+  natVals  _ = natVal  (Proxy @n)
+             : natVals (Proxy @ns)
+
+class KnownNatss (ns :: [[Nat]]) where
+  natValss :: Proxy ns -> [[Integer]]
+
+instance KnownNatss '[] where
+  natValss  _ = []
+
+instance (KnownNats n, KnownNatss ns) => KnownNatss (n ': ns) where
+  natValss _ = natVals  (Proxy @n)
+             : natValss (Proxy @ns)
+
+----------------------------------------
+-- | Vector and Matrix utilities
+
+mutate :: Integer -> [[Integer]] -> [[[Integer]]]
+mutate _ [] = [[]]
+mutate n (x : xs) = ((:) <$> mutate' n x) <*> mutate n xs
+
+mutate' :: Integer -> [Integer] -> [[Integer]]
+mutate' _ [] = [[]]
+mutate' n (x : xs) = [((max 0 (x-n)):), (x:), ((x+n):)] <*> mutate' n xs
+
+normalize :: Vector Double -> Vector Double
+normalize v = Vector.map (/ vsum) v
+  where vsum = Vector.foldr (+) 0 v
+
+matchSize :: Vector2 a -> Vector2 b -> Bool
+matchSize v1 v2
+  | length v1 == length v2 = all (uncurry (==))
+    (Vector.zip (Vector.length <$> v1) (Vector.length <$> v2))
+  | otherwise = False
+
+(.+.), (.*.), (./.) :: Vector Double -> Vector Double -> Vector Double
+(.+.) = Vector.zipWith (+)
+(.*.) = Vector.zipWith (*)
+(./.) = Vector.zipWith (/)
+
+col, row :: Vector a -> Matrix a
+col = Matrix.colVector
+row = Matrix.rowVector
+
+vec :: Matrix a -> Vector a
+vec = Matrix.getRow 1
+
+build :: Int -> Int -> (Int -> Int -> Matrix a) -> Matrix a
+build rn cn mkElem = foldr1 (<->) (mkRow <$> [1..rn])
+  where mkRow r = foldr1 (<|>) (mkElem r <$> [1..cn])
+
+----------------------------------------
+-- | Type families
+
+type family
+  (f :: [k]) ++ (g :: [k]) :: [k] where
+  '[] ++ g       = g
+  (f ': fs) ++ g = f ': (fs ++ g)
+
+type family
+  Length (xs :: [k]) :: Nat where
+  Length '[]       = 0
+  Length (_ ': xs) = 1 + Length xs
+
+type family
+  Lookup (map :: [(k, v)]) (key :: k) :: v where
+  Lookup ('(k, v) ': m) k = v
+  Lookup (_       ': m) k = Lookup m k
+  Lookup '[]            k = TypeError
+    ('Text "Lookup: key not found" ':<>: 'ShowType k)
+
+type family
+  Ix (map :: [(k, v)]) (key :: k) :: Nat where
+  Ix ('(k,  _) ': m) k = 0
+  Ix ('(k', _) ': m) k = 1 + Ix m k
+  Ix '[]         k = TypeError
+    ('Text "Ix: key not found" ':<>: 'ShowType k)
+
+type family
+  Keys (map :: [(k, v)]) :: [k] where
+  Keys '[] = '[]
+  Keys ('(k, _) ': kvs) = k ': Keys kvs
+
+type family
+  Values (map :: [(k, v)]) :: [v] where
+  Values '[] = '[]
+  Values ('(_, v) ': kvs) = v ': Values kvs
+
+type family
+  All (c :: k -> Constraint) (xs :: [k]) :: Constraint where
+  All c '[] = ()
+  All c (x ': xs) = (c x, All c xs)
+
+----------------------------------------
+
+-- type family DoubleL (xs :: [Nat]) :: [Nat] where
+--   DoubleL '[] = '[]
+--   DoubleL (x ': xs) = x + x ': DoubleL xs
+
+
+-- newtype MagicNatL r = MagicNatL (forall (xs :: [Nat]). All KnownNat xs => Proxy xs -> r)
+
+-- reifyNatL :: forall r. [Integer]
+--          -> (forall (xs :: [Nat]). All KnownNat xs => Proxy xs -> r)
+--          -> r
+-- reifyNatL xs k = unsafeCoerce (MagicNatL k :: MagicNatL r) xs Proxy
+
+-- instance Reifies '[] [Integer] where
+--   reflect _ = []
+
+-- instance ( Reifies x Integer
+--          , Reifies xs [Integer]
+--          ) => Reifies (x ': xs) [Integer]
+--   where
+--     reflect _ = reflect (undefined :: Proxy x)
+--               : reflect (undefined :: Proxy xs)
+
+
+-- predictWithFreqs :: forall spec root freqs spec'.
+--                 ( spec' ~ SetSpecFreqs spec freqs
+--                 , HasSpec spec' root
+--                 ) => QCSize -> Hist
+-- predictWithFreqs size = predict @spec' @root size
+
+
+
+-- predictWithFreqs :: forall spec root. (HasSpec spec root)
+--                  => Integer -> [Integer] -> QCSize -> Hist
+-- predictWithFreqs ix freqs
+--   = reifyNat ix $ \(Proxy :: Proxy ix')
+--   -> reifyNatL freqs $ \(Proxy :: Proxy freqs')
+--   -> predict @(SetFamIxFreqs spec ix' freqs') @root
+
+----------------------------------------
+
+-- test :: [Integer] -> [Integer]
+-- test xs = reifyNatL xs $ \(Proxy :: Proxy xs')
+--   -> let proxy = Proxy :: xs'' ~ Proxy (DoubleL xs') => xs''
+--      in reflect proxy
 
 -- type family SetFreqs spec freqs where
---   SetFreqs spec freqs = SetSpecFreqs (FlattenSpec spec) freqs
+--   SetFreqs spec freqs = SetSpecFreqs (Flatten spec) freqs
 
 -- type family AltRepFreq (rep :: [Type -> Type])
 --   (ix :: Nat) (f :: Nat)
@@ -420,17 +619,43 @@ type family Spec (spec :: [(k, Type -> Type)]) :: [(k, Type -> Type)] where
 --   AltSpecFreq (t ': ts) fix tix f = t ': AltSpecFreq ts (fix - 1) tix f
 --   AltSpecFreq _         _   _   _ = TypeError ('Text "AltSpecFreq: index out of bounds")
 
-predictWithFreqs :: forall spec root freqs spec'.
-                ( spec' ~ SetSpecFreqs spec freqs
-                , HasSpec spec' root
-                ) => QCSize -> Hist
-predictWithFreqs size = predict @spec' @root size
-  -- =  reifyNat fix $ \(Proxy :: Proxy fix')
-  -- -> reifyNat tix $ \(Proxy :: Proxy tix')
-  -- -> reifyNat f   $ \(Proxy :: Proxy f')
-
-
   -- SetFreq (Sum (Freq t _) ts) 0 n = Sum (Freq t n) ts
   -- SetFreq (Sum t          ts) 0 n = Sum (Freq t n) ts
   -- SetFreq (Sum t          ts) i n = Sum t (SetFreq ts (i - 1) n)
   -- SetFreq _                   _ _ = TypeError ('Text "SetFreq: index out of bounds")
+
+-- type family (xs :: [k]) !! (n :: Nat) :: k where
+--   (x ':  _) !! 0 = x
+--   (_ ': xs) !! n = xs !! (n - 1)
+--   x         !! n = TypeError ('Text "!!: index out of bounds")
+
+-- type family
+--   SpecToList (spec :: Spec) :: [(Symbol, [Type -> Type])]
+--   where
+--   SpecToList '[] = '[]
+--   SpecToList ('(k, t) ': ts) = '(k, RepToList t) ': SpecToList ts
+
+-- type family
+--   ListToSpec (xs :: [(Symbol, [Type -> Type])]) :: Spec
+--   where
+--   ListToSpec '[] = '[]
+--   ListToSpec ('(k, t) ': ts) = '(k, ListToRep t) ': ListToSpec ts
+
+-- type family
+--   SetFamIxFreqs (spec :: Spec) (ix :: Nat) (freqs :: [Nat]) :: Spec
+--   where
+--   SetFamIxFreqs ('(k, x) ': xs) 0 freqs = '(k, SetRepFreqs x freqs) ': xs
+--   SetFamIxFreqs ('(k, x) ': xs) n freqs = '(k, x) : SetFamIxFreqs xs (n - 1) freqs
+--   SetFamIxFreqs _               _ _ = TypeError ('Text "SetFamIxFreqs: index out of bounds")
+
+
+-- type family
+--   Mutations (xs :: [Nat]) :: [[Nat]]
+--   where
+--   Mutations xs = Mutations' '[] xs
+
+-- type family
+--   Mutations' (hs :: [[Nat]]) (xs :: [Nat])
+--   where
+--   Mutations' hs '[] = hs
+--   Mutations' hs (x ': xs) = Snoc hs x xs

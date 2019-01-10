@@ -30,8 +30,9 @@ deriveTypeDefinitionRep tyName tyFam = do
   -- | Create the representation for each constructor
   conReps <- concatMapM (deriveConRep tyFam) ogCons
 
-  -- | Create the default Rep type instance
-  let repTyIns = DTySynInstD ''HRep.HRep (DTySynEqn [DConT tyName] rhs)
+  -- | Create the default HRep type instance
+  let repTyIns = DTySynInstD ''HRep.HRep (DTySynEqn [tyLit] rhs)
+      tyLit = DLitT (StrTyLit (nameBase tyName))
       rhs = foldr1 mkSumType (mkConExp <$> ogCons)
 
       mkConExp c
