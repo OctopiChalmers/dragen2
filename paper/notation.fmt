@@ -1,0 +1,21 @@
+%format delta = "\Delta"
+%format epsilon = "\varepsilon"
+
+%format compose = "\!\circ\!"
+%format squared = "\!^2"
+%format pp = "\;\;\vert"
+
+%format <$> = "\mathop{\langle \$ \rangle}"
+%format <*> = "\mathop{\langle \ast \rangle}"
+
+%format pred = "(n{-}1)"
+
+%format ===> = "\Longrightarrow"
+
+%format divisor = "\;|\;"
+%format inlinesep = "|"
+
+% Local Variables:
+% TeX-master: "main.lhs.tex"
+% TeX-command-default: "Make"
+% End:

@@ -18,16 +18,16 @@ infixl 6 :*
 type (:+) = Sum
 infixl 5 :+
 
-type (spec :# k) = Lookup spec k
-infix 4 :#
+type (spec ~> k) = Lookup spec k
+infix 4 ~>
 
-type (t :@ a) = Apply a t
-infixl 3 :@
+type (t $ a) = Apply a t
+infixl 3 $
 
--- type (spec :@@ a) = ApplySpec a spec
--- infixl 3 :@@
+type (spec :@@ a) = ApplySpec a spec
+infixl 3 :@@
 
 type ((k :: kk) := (v :: vv)) = '(k, v)
 infix 2 :=
 
-type (f :> g) = Optimized f g
+-- type (f :> g) = Optimized f g

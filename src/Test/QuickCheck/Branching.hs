@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -13,8 +14,13 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 
 module Test.QuickCheck.Branching where
+
+import Data.Maybe
+import Data.List
+import Data.Ord
 
 import Data.Kind
 import Data.Proxy
@@ -34,6 +40,9 @@ import qualified Data.Vector as Vector
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+
+import System.IO.Unsafe
+import System.IO
 
 import Debug.Trace
 
@@ -95,6 +104,46 @@ instance (BranchingType f, BranchingType g, f #> ff, f @> ff', g #> gg, g @> gg'
     where ff' = numVal @ff'; gg' = numVal @gg'; tot' = ff' + gg'
   typeBeta = typeBeta @f <> typeBeta @g
   typeEta  = typeEta  @f <> typeEta  @g
+
+instance (forall a. BranchingType (f a)) => BranchingType (Some1 f) where
+  typeNames  = typeNames  @(f ())
+  typeAtomic = typeAtomic @(f ())
+  typeProbs  = typeProbs  @(f ())
+  typeProbs' = typeProbs' @(f ())
+  typeBeta   = typeBeta   @(f ())
+  typeEta    = typeEta    @(f ())
+
+instance (forall a b. BranchingType (f a b)) => BranchingType (Some2 f) where
+  typeNames  = typeNames  @(f () ())
+  typeAtomic = typeAtomic @(f () ())
+  typeProbs  = typeProbs  @(f () ())
+  typeProbs' = typeProbs' @(f () ())
+  typeBeta   = typeBeta   @(f () ())
+  typeEta    = typeEta    @(f () ())
+
+instance (forall a b c. BranchingType (f a b c)) => BranchingType (Some3 f) where
+  typeNames  = typeNames  @(f () () ())
+  typeAtomic = typeAtomic @(f () () ())
+  typeProbs  = typeProbs  @(f () () ())
+  typeProbs' = typeProbs' @(f () () ())
+  typeBeta   = typeBeta   @(f () () ())
+  typeEta    = typeEta    @(f () () ())
+
+instance (forall a b c d. BranchingType (f a b c d)) => BranchingType (Some4 f) where
+  typeNames  = typeNames  @(f () () () ())
+  typeAtomic = typeAtomic @(f () () () ())
+  typeProbs  = typeProbs  @(f () () () ())
+  typeProbs' = typeProbs' @(f () () () ())
+  typeBeta   = typeBeta   @(f () () () ())
+  typeEta    = typeEta    @(f () () () ())
+
+instance (forall a b c d e. BranchingType (f a b c d e)) => BranchingType (Some5 f) where
+  typeNames = typeNames   @(f () () () () ())
+  typeAtomic = typeAtomic @(f () () () () ())
+  typeProbs = typeProbs   @(f () () () () ())
+  typeProbs' = typeProbs' @(f () () () () ())
+  typeBeta = typeBeta     @(f () () () () ())
+  typeEta = typeEta       @(f () () () () ())
 
 ----------------------------------------
 -- | BranchingFam type class
@@ -196,7 +245,8 @@ lastLevel ix size = accumLast (0 :: Int) emptyAcc prevLvl
     branch = (* (mean' @fam))
 
     accumLast n acc prev
-      | n == 100    = trace "lastLevel: could not reach a fixed point!" acc
+      -- | n == 10    = trace "lastLevel: could not reach a fixed point!" acc
+      | n == 10     = acc
       | acc == acc' = acc
       | otherwise   = accumLast (n + 1) acc' (branch prev)
       where acc' = acc + branch prev
@@ -294,7 +344,8 @@ lastLevelWith newFreqs ix size = accumLast (0 :: Int) emptyAcc prevLvl
     branch = (* (mean'With @fam newFreqs))
 
     accumLast n acc prev
-      | n == 100    = trace "lastLevel: could not reach a fixed point!" acc
+      | n == 10    = trace "lastLevelWith: could not reach a fixed point!" acc
+      | n == 10     = acc
       | acc == acc' = acc
       | otherwise   = accumLast (n + 1) acc' (branch prev)
       where acc' = acc + branch prev
@@ -363,6 +414,18 @@ predictWith newFreqs size
     (Vector.toList (foldr1 (<>) (atomicNames @fam)))
     (Matrix.toList (predict'With @fam newFreqs (numVal @ix) size))
 
+confirmRep :: forall spec root hrep target.
+  ( HasSpec spec root
+  , hrep ~ Lookup spec root
+  , HasFixArbitrary hrep target
+  , Countable (Fix hrep)
+  ) => QCSize -> IO ConsAvg
+confirmRep size = do
+  let samples = 50000
+      gen = genFix @hrep
+  values <- sequence (replicate samples (generate (resize size gen)))
+  return (consAvg (count <$> values))
+
 confirm :: forall spec root hrep target.
   ( HasSpec spec root
   , hrep ~ Lookup spec root
@@ -377,6 +440,71 @@ confirm size = do
 
 ----------------------------------------
 -- | Specifications optimization
+
+data Mode = Rep | Target
+
+type DistFun = forall (spec :: Spec) (root :: Symbol). HasSpec spec root
+  => Proxy spec -> Proxy root -> Mode -> Int -> [[Integer]] -> Double
+
+chiSquareVec :: Floating a => [a] -> [a] -> a
+chiSquareVec expected observed
+  = sum (zipWith (\o e -> (o - e)^2 / e) observed expected)
+
+chiSquare :: Floating a => a -> [a] -> a
+chiSquare expected observed = chiSquareVec (repeat expected) observed
+
+uniform :: DistFun
+uniform (Proxy :: Proxy spec) (Proxy :: Proxy root) mode size freqs
+  = chiSquare (fromIntegral size) observed
+  where observed = Map.elems (predictRepWith @spec @root freqs size)
+
+weighted :: [(String, Int)] -> DistFun
+weighted weights (Proxy :: Proxy spec) (Proxy :: Proxy root) mode size freqs
+  = chiSquareVec expected observed
+  where
+    prediction = predictRepWith @spec @root freqs size
+    (cnames, observed) = unzip (Map.toList (Map.filterWithKey hasWeight prediction))
+    hasWeight cn _ = isJust (lookup cn weights)
+    expected = multWeight <$> cnames
+    multWeight cn = fromIntegral (fromJust (lookup cn weights) * size)
+
+takeEvery :: Int -> [a] -> [a]
+takeEvery n xs
+  | length xs >= n = xs !! (n-1) : takeEvery n (drop n xs)
+  | otherwise      = []
+
+epsilon = 0.001
+
+dot :: a -> a
+dot x = unsafePerformIO (putStr "*" >> hFlush stdout >> return x)
+
+optimizeFreqs :: forall spec root. HasSpec spec root
+  => Mode -> QCSize -> DistFun -> [[Integer]] -> [[Integer]]
+optimizeFreqs mode size dist freqs
+  = localSearch @spec @root mode size (fromIntegral size) dist freqs []
+
+localSearch :: forall spec root. HasSpec spec root
+            => Mode -> QCSize -> Int -> DistFun
+            -> [[Integer]] -> [[[Integer]]] -> [[Integer]]
+localSearch mode size heat dist focus visited
+  | null newNeighbors
+  = focus
+  | delta <= epsilon && heat == 1
+  = focus
+  | delta <= epsilon
+  = dot $ localSearch @spec @root mode size 1 dist bestNeighbor newFrontier
+  | otherwise
+  = dot $ localSearch @spec @root mode size newHeat dist bestNeighbor newFrontier
+  where
+    delta = focusDist - bestNeighborDist
+    focusDist = dist (Proxy @spec) (Proxy @root) mode size focus
+    (bestNeighbor, bestNeighborDist) = minimumBy (comparing snd) neighborsDists
+    neighborsDists = zip newNeighbors (dist (Proxy @spec) (Proxy @root) mode size <$> newNeighbors)
+    newNeighbors = mutate (fromIntegral heat) focus \\ (focus:visited)
+    newHeat = floor (max 1 ((fromIntegral heat / (1 + 0.001 * (gainRatio / fromIntegral size)))))
+    gainRatio = bestNeighborDist / focusDist
+    newFrontier = newNeighbors ++ (take (sum (length <$> focus) ^ 2)) visited
+
 
 type family
   MkSpec (spec :: Spec) :: Spec where
@@ -431,7 +559,7 @@ type family
 type family
   SetRepFreqs (rep :: Type -> Type) (freqsL :: [Nat]) :: Type -> Type where
   SetRepFreqs (Sum f g) (ff ': gg) = Sum (SetFreq f ff) (SetRepFreqs g gg)
-  SetRepFreqs t '[f] = Freq t f
+  SetRepFreqs t '[f] = SetFreq t f
   SetRepFreqs _ _ = TypeError ('Text "SetRepFreqs: mismatched sizes")
 
 type family
@@ -439,7 +567,8 @@ type family
   SetFreq (Freq t n) m = Freq t (n * m)
   SetFreq t          n = Freq t n
 
-type family Optimized (spec :: Symbol) (alias :: Symbol) :: Spec
+-- type family Optimized (spec :: Symbol) (alias :: Symbol) :: Spec
+type family Optimized (alias :: Symbol) :: Spec
 
 ----------------------------------------
 -- | Nested lists reflection
@@ -468,12 +597,34 @@ instance (KnownNats n, KnownNatss ns) => KnownNatss (n ': ns) where
 -- | Vector and Matrix utilities
 
 mutate :: Integer -> [[Integer]] -> [[[Integer]]]
-mutate _ [] = [[]]
-mutate n (x : xs) = ((:) <$> mutate' n x) <*> mutate n xs
+mutate n xss = map (mutateAt n xss) [0.. sum (length <$> xss) - 1]
 
-mutate' :: Integer -> [Integer] -> [[Integer]]
-mutate' _ [] = [[]]
-mutate' n (x : xs) = [((max 0 (x-n)):), (x:), ((x+n):)] <*> mutate' n xs
+mutateAt :: Integer -> [[Integer]] -> Int -> [[Integer]]
+mutateAt n (xs : xss) ix
+  | ix < length xs
+  = (take ix xs ++ [(xs !! ix) + n]  ++ drop (ix+1) xs) : xss
+  | otherwise
+  = xs : mutateAt n xss (ix - length xs)
+
+  -- take ix xss
+  --                 ++ concatMap (mutateType n (xss !! ix)) [0 .. length (xss !! ix)]
+  --                 ++ drop (ix + 1) xss
+
+
+
+
+
+mutateType :: Integer -> [Integer] -> Integer -> [Integer]
+mutateType = undefined
+
+
+-- mutate :: Integer -> [[Integer]] -> [[[Integer]]]
+-- mutate _ [] = [[]]
+-- mutate n (x : xs) = ((:) <$> mutate' n x) <*> mutate n xs
+
+-- mutate' :: Integer -> [Integer] -> [[Integer]]
+-- mutate' _ [] = [[]]
+-- mutate' n (x : xs) = [(x:), ((x+n):)] <*> mutate' n xs
 
 normalize :: Vector Double -> Vector Double
 normalize v = Vector.map (/ vsum) v
@@ -481,7 +632,8 @@ normalize v = Vector.map (/ vsum) v
 
 matchSize :: Vector2 a -> Vector2 b -> Bool
 matchSize v1 v2
-  | length v1 == length v2 = all (uncurry (==))
+  | Vector.length v1 == Vector.length v2
+  = all (uncurry (==))
     (Vector.zip (Vector.length <$> v1) (Vector.length <$> v2))
   | otherwise = False
 

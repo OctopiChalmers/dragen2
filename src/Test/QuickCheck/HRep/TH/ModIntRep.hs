@@ -12,7 +12,7 @@ import qualified Language.Haskell.Exts as Ext
 
 import qualified Test.QuickCheck as QC
 import qualified Test.QuickCheck.HRep as HRep
--- import qualified Test.QuickCheck.Branching as Branching
+import qualified Test.QuickCheck.Branching as Branching
 
 import Test.QuickCheck.HRep.TH.Common
 
@@ -20,8 +20,8 @@ import Test.QuickCheck.HRep.TH.Common
 -- | Derive the complete representation of every combinator of a module that
 -- returns the desired type, plus the module interface representation as a sum
 -- of each combinator.
-deriveModuleInterfaceRep :: Name -> String -> Q [Dec]
-deriveModuleInterfaceRep tyName modAlias = do
+deriveModIntRep :: Name -> String -> [Name] -> Q [Dec]
+deriveModIntRep tyName modAlias tyFam = do
 
   -- | Convert the module alias to a safe identifier
   let modAliasId = toIdentStr modAlias
@@ -30,7 +30,7 @@ deriveModuleInterfaceRep tyName modAlias = do
   combNames <- filterM (returnsType tyName) =<< reifyModNames
 
   -- | Create the representation for each combinator
-  combsRep <- concatMapM (deriveCombRep tyName modAliasId) combNames
+  combsRep <- concatMapM (deriveCombRep tyName modAliasId tyFam) combNames
 
   -- | Create the default HRep type instance
   let repTyIns = DTySynInstD ''HRep.HRep repTyInsEqn
@@ -54,8 +54,8 @@ returnsType tyName funName
 ----------------------------------------
 -- | Derive the complete representation of a single value of the abstract
 -- interface of a module.
-deriveCombRep :: Name -> String -> Name -> Q [DDec]
-deriveCombRep tyName modAlias funName = do
+deriveCombRep :: Name -> String -> [Name] -> Name -> Q [DDec]
+deriveCombRep tyName modAlias tyFam funName = do
 
   -- | Some "fresh" names
   repName    <- newName ("HRep_Comb_" ++ toIdentStr modAlias ++ "_" ++ nameBase funName)
@@ -107,6 +107,7 @@ deriveCombRep tyName modAlias funName = do
 
       mkCxt v = DAppPr (DConPr ''QC.Arbitrary) (DVarT v)
 
+  -- | Representation HRep type instance
   let repFunTyIns = DTySynInstD ''HRep.Fun repFunInsEqn
       repFunInsEqn = DTySynEqn [DLitT (StrTyLit (nameBase funName))] someTy
       someTy | null ogVars
@@ -114,7 +115,26 @@ deriveCombRep tyName modAlias funName = do
              | otherwise
              = someTH (length ogVars) (DConT repName)
 
-  return [repDataDec, repAlgIns, repArbIns, repFunTyIns]
+  -- | Representation BranchingType instance
+  let repBrIns = DInstanceD Nothing [] repBrTy repBrLetDecs
+      repBrTy = ''Branching.BranchingType <<| [repConTy2Ty]
+      repBrLetDecs = uncurry mkBranchingDec <$> zip branchingFunNames brFunExps
+
+      mkBranchingDec brFun funExp
+        = DLetDec (DFunD brFun [DClause [] funExp])
+
+      brFunExps = singletonTH <$>
+        [ stringLit (nameBase funName)
+        , DConE 'False
+        , intLit 1
+        , intLit 1
+        , vectorTH  (intLit . beta <$> tyFam)
+        , DAppE (DVarE 'error) (DLitE (StringL "unsuported operation!"))
+        ]
+
+      beta tn = length (filter ((tn ==) . tyHead) funArgTys)
+
+  return [repDataDec, repAlgIns, repArbIns, repFunTyIns, repBrIns]
 
 ----------------------------------------
 -- | Extract a list of top-level names from a module using an external parser.

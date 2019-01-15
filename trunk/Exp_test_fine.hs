@@ -57,3 +57,18 @@ type instance Rep "foo" = Rep "foo#1" .* 2
 --   alg (AddEq e) = Add e e
 
 -- type Exp_pat = ExpR + Pats + AddEq
+
+-- twice :: IExp -> IExp
+-- twice e = Add e e
+
+-- thrice :: IExp -> IExp
+-- thrice e = Add e (twice e)
+
+-- weird :: IExp -> IExp -> IExp -> IExp
+-- weird x y z = If (And (LEq x y) (LEq y z)) (Add x y) (Add y z)
+
+-- equals :: IExp -> IExp -> BExp
+-- equals x y = And (LEq x y) (LEq y x)
+
+-- and3 :: BExp -> BExp -> BExp -> BExp
+-- and3 x y z = And x (And y z)

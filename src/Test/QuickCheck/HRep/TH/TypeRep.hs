@@ -18,8 +18,8 @@ import Test.QuickCheck.HRep.TH.Common
 ----------------------------------------
 -- | Derive the complete representation for every constructor of a type, plus
 -- the type representation as a sized sum of each constructor.
-deriveTypeDefinitionRep :: Name -> [Name] -> Q [Dec]
-deriveTypeDefinitionRep tyName tyFam = do
+deriveTypeRep :: Name -> [Name] -> Q [Dec]
+deriveTypeRep tyName tyFam = do
 
   -- | Reify the original data declaration name and desugar it
   (vs, cons) <- getDataD mempty tyName

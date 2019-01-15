@@ -74,7 +74,7 @@ deriving instance (Generic (f a), Generic (g a)) => Generic (Sum f g a)
 class Functor f => Algebra f a | f -> a where
   alg :: f a -> a
 
--- | Catamorphisms, a.k.a generic foldings over fix points
+-- | Catamorphisms
 cata :: Functor f => (f a -> a) -> Fix f -> a
 cata f = f . fmap (cata f) . unFix
 
@@ -182,7 +182,7 @@ type family HRep (t :: Symbol) :: Type -> Type
 -- | A single constructor
 type family Con (c :: k) :: Type -> Type
 
--- | A single pattern matchings
+-- | A single pattern matching
 type family Pat (p :: Symbol) (n :: Nat) :: Type -> Type
 
 -- | A single function in a module
@@ -208,7 +208,7 @@ data Some5 (f :: Type -> Type -> Type -> Type -> Type -> Type -> Type) (r :: Typ
   = forall (e :: Type) (d :: Type) (c :: Type) (b :: Type) (a :: Type)
   . Some5 (f a b c d e r)
 
-type family Apply (a :: Type) (t :: Type -> Type) where
+type family Apply (a :: Type) (t :: Type -> Type) :: Type -> Type where
   Apply a (Freq t n) = Freq (Apply a t) n
   Apply a (Term t) = Term (Apply a t)
   Apply a (Sum l r) = Sum (Apply a l) (Apply a r)

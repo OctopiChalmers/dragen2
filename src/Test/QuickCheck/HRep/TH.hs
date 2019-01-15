@@ -1,9 +1,16 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Test.QuickCheck.HRep.TH where
+
+import Data.Proxy
 
 import Control.Monad.Extra
 
@@ -13,6 +20,7 @@ import Language.Haskell.TH.Desugar
 import Test.QuickCheck.HRep.TH.TypeRep
 import Test.QuickCheck.HRep.TH.FunPatsRep
 import Test.QuickCheck.HRep.TH.ModIntRep
+import Test.QuickCheck.Branching
 
 import Test.QuickCheck.HRep.TH.Common
 
@@ -47,11 +55,11 @@ module_ tyName = ModuleInterface tyName ("<" ++ nameBase tyName ++ ">") []
 
 derive :: Target -> Q [Dec]
 derive (TypeDefinition tyName tyFam)
-  = deriveTypeDefinitionRep tyName tyFam
+  = deriveTypeRep tyName tyFam
 derive (FunctionPatterns funName funArgNr tyFam)
-  = deriveFunctionPatternsRep funName funArgNr tyFam
-derive (ModuleInterface tyName modAlias _)
-  = deriveModuleInterfaceRep tyName modAlias
+  = deriveFunPatsRep funName funArgNr tyFam
+derive (ModuleInterface tyName modAlias tyFam)
+  = deriveModIntRep tyName modAlias tyFam
 
 deriveHRep :: [Name] -> [Target] -> Q [Dec]
 deriveHRep fam' targets = concatMapM derive
@@ -93,3 +101,29 @@ deriveAll tyFam targets specName = do
   arbIns   <- concatMapM (\tn -> deriveArbitrary tn specName) tyFam
   tgtReps  <- concatMapM (\target -> derive (target {fam = tyFam})) targets
   return (concat [typeReps, arbIns, tgtReps])
+
+----------------------------------------
+-- | Optimize the frequencies of a specification
+
+optimize :: forall spec root. HasSpec spec root
+         => Name -> String -> DistFun -> QCSize -> Q [Dec]
+optimize specName alias dist size = do
+  let !newFreqs = optimizeFreqs @spec @root Rep size dist ogFreqs
+      ogFreqs   = natValss (Proxy @(MapRepFreqs (Values spec)))
+
+      promoteList = foldr (\n -> appT (appT promotedConsT (litT (numTyLit n)))) promotedNilT
+      promoteSpec = foldr (\t -> appT (appT promotedConsT (promoteList t))) promotedNilT
+
+  [d| type instance Optimized $(litT (strTyLit alias))
+        = SetSpecFreqs (MkSpec $(conT specName)) $(promoteSpec newFreqs)
+   |]
+
+----------------------------------------
+-- | Optimize the frequencies of a specification
+deriveTySyn :: Name -> [[Integer]] -> Q Type
+deriveTySyn specName freqs = do
+
+  let promoteList = foldr (\n -> appT (appT promotedConsT (litT (numTyLit n)))) promotedNilT
+      promoteSpec = foldr (\t -> appT (appT promotedConsT (promoteList t))) promotedNilT
+
+  [t| SetSpecFreqs (MkSpec $(conT specName)) $(promoteSpec freqs) |]

@@ -28,233 +28,141 @@ import Test.QuickCheck.Branching
 import Test.QuickCheck.HRep
 import Test.QuickCheck.HRep.Infix
 import Test.QuickCheck.HRep.TH
-import Test.QuickCheck.HRep.TH.Common
 
 ----------------------------------------
-
-type Var = Char
-
-data IExp a
-  = Val a
-  | Add (IExp a) (IExp a)
-  | If  (BExp a) (IExp a) (IExp a)
-  deriving Show
-
-data BExp a
-  = Bool Bool
-  | LEq  (IExp a) (IExp a)
-  deriving Show
-
-foo :: IExp a -> IExp a
-foo (Add (Add (Val a)   _i1) _i2) = undefined
-foo (Add (If _b (Val a) _i1) _i2) = undefined
-foo _                             = undefined
-
-bar :: BExp a -> BExp a
-bar (LEq (Val a) _i2) = Bool True
-bar b                 = b
-
-
--- deriveHRep
---   [''IExp, ''BExp]
---   [ patterns_ 'foo
---   , patterns_ 'bar
---   , module_   ''IExp ]
--- deriveArbitrary ''ExpS [''IExp, ''BExp]
-
--- type ExpS = '[
---   "IExp" := HRep "IExp"
---          :| HRep "foo",
---   "BExp" := HRep "BExp"
---          :| HRep "bar"
---   ]
-
-type ExpS =
-  '[ "IExp"
-       := Term (Con 'Val) :* 1
-       :+ Con 'Add        :* 2
-       :+ Con 'If         :* 3
-   , "BExp"
-       := Term (Con 'Bool)
-       :+ Con 'LEq
-   ]
-
-deriveAll
-  [ ''IExp, ''BExp ]
-  [ patterns_ 'foo
-  , patterns_ 'bar
-  , module_   ''IExp ]
-  ''ExpS
-
-type instance Optimized "ExpS" "SomeDist"
-  = SetSpecFreqs (MkSpec ExpS)
-      '[ '[ 4, 5, 6]
-       , '[ 1, 1]
-       ]
-
--- dumpTHInfo ''SpecExp
-
--- type SpecExp' =
---   '[ IExp := Term (Con 'Val) :* 2
---           :| Con 'Add
---           :| Con 'If :* 3
---           :| Pat "foo" 1
---           :| Pat "foo" 2
---    , BExp := Term (Con 'Bool)
---           :| Con 'LEq
---           :| Pat "bar" 1 :* 2
---   ]
 
 deriving instance Generic Int
-deriving instance Generic a => Generic (IExp a)
-deriving instance Generic a => Generic (BExp a)
 
-----------------------------------------
+-- Given the following mutually recursive data types
 
--- data T1 = A | B T1 T2 deriving Show
--- data T2 = C T1 T2 | D T1 deriving Show
+data IExp
+  = Val Int
+  | Add IExp IExp
+  | If  BExp IExp IExp
+  deriving (Show, Generic)
 
+data BExp
+  = Bool Bool
+  | And  BExp BExp
+  | LEq  IExp IExp
+  deriving (Show, Generic)
 
--- deriveHRep [''T1, ''T2] []
+-- And the following functions defined using pattern matching on them
 
--- type SpecT = '[ T1 := HRep T1
---               , T2 := HRep T2 ]
+foo :: IExp -> a
+foo (Add (Add (Val _)   _) _) = undefined
+foo (Add (If _ (Val _) _) _)  = undefined
+foo _                         = undefined
 
--- instance Arbitrary T1 where arbitrary = genEval @(SpecT :! T1)
--- instance Arbitrary T2 where arbitrary = genEval @(SpecT :! T2)
-
--- deriving instance Generic T1
--- deriving instance Generic T2
-
-----------------------------------------
-
-
--- type TFam = '[ T1 := Con 'Add
---                   :| Con 'Val
---                   :| Con 'Val
---              , T2 := Con 'Mul
---              ]
-
--- type IExp'' = HRep IExp + HRep "foo"
--- type IExp'' = HRep IExp + HRep "foo" + HRep IExp
--- type BExp'' = HRep BExp + HRep "bar"
-
--- instance Arbitrary IExp where arbitrary = genEval @IExp'
--- instance Arbitrary BExp where arbitrary = genEval @BExp'
--- derive TypeRep    { ty  = ''IExp, fam = [''IExp, ''BExp] }
--- derive TypeRep    { ty  = ''BExp, fam = [''IExp, ''BExp] }
--- derive FunPatsRep { fun = 'foo  , fam = [''IExp, ''BExp], arg = 1 }
--- derive FunPatsRep { fun = 'bar  , fam = [''IExp, ''BExp], arg = 1 }
-
--- type IExp'
---   = Term (Con 'Val) :* 2
---   :+ Con 'Add
---   :+ Con 'If :* 3
---   :+ "foo" #1
---   :+ "foo" #2
+bar :: BExp -> a
+bar (LEq (Val _) _)          = undefined
+bar (And (Bool _) (LEq _ _)) = undefined
+bar _                        = undefined
 
 
--- type BExp'
---   = Term (Con 'Bool)
---   :+ Con 'LEq
---   :+ "bar" #1 :* 2
+-- We can write a "generation specification"
+type ExpS =
+  '[ "IExp" := HRep "IExp"
+            :+ HRep "foo"
+   , "BExp" := HRep "BExp"
+            :+ HRep "bar"
+   ]
 
--- type ExpFam = '[IExp', BExp']
--- -- | Pattern expansion matrices
--- expIExp'2IExp :: Matrix Double
--- expIExp'2IExp = Matrix.fromLists
---             {-   Val   |  Add   |   If   -}
--- {-  Val  -} [[    1    ,   0    ,    0    ]
--- {-  Add  -} ,[    0    ,   1    ,    0    ]
--- {-  If   -} ,[    0    ,   0    ,    1    ]
--- {- foo#1 -} ,[    1    ,   2    ,    0    ]
--- {- foo#2 -} ,[    1    ,   1    ,    1    ]]
+-- Which is equivalent to the following "fine grained" specification
+type ExpS_fine =
+  '[ "IExp" := Term (Con 'Val)  :* 1
+            :+ Con 'Add         :* 1
+            :+ Con 'If          :* 1
+            :+ Pat "foo" 1      :* 1
+            :+ Pat "foo" 2      :* 1
+   , "BExp" := Term (Con 'Bool) :* 1
+            :+ Con 'LEq         :* 1
+            :+ Pat "bar" 1      :* 1
+            :+ Pat "bar" 2      :* 1
+   ]
 
--- expBExp'2IExp :: Matrix Double
--- expBExp'2IExp = Matrix.fromLists
---             {-   Val   |  Add   |   If   -}
--- {-  Bool -} [[    0    ,   0    ,    0    ]
--- {-  LEq  -} ,[    0    ,   0    ,    0    ]
--- {- pbar1 -} ,[    1    ,   0    ,    0    ]]
+-- And derive all the require machinery for it
+-- NOTE: load this file in ghci with the flag -ddump-splices to see the generated code!
+deriveHRep
+  [''IExp, ''BExp]  -- Family of types
+  [ patterns_ 'foo  -- Targets
+  , patterns_ 'bar
+  ]
 
--- -- | Pattern expansion matrices
--- expIExp'2BExp :: Matrix Double
--- expIExp'2BExp = Matrix.fromLists
---             {-   Bool  |  LEq   -}
--- {-  Val  -} [[    0    ,   0     ]
--- {-  Add  -} ,[    0    ,   0     ]
--- {-  If   -} ,[    0    ,   0     ]
--- {- foo#1 -} ,[    0    ,   0     ]
--- {- foo#2 -} ,[    0    ,   0     ]]
 
--- expBExp'2BExp :: Matrix Double
--- expBExp'2BExp = Matrix.fromLists
---             {-   Bool  |   LEq  -}
--- {-  Bool -} [[    1    ,    0    ]
--- {-  LEq  -} ,[    0    ,    1    ]
--- {- pbar1 -} ,[    0    ,    1    ]]
+{-
+With the representation and the prediction mechanism in place, we can optimize
+the frequencies in the same way as we did before.
 
--- expand' :: Matrix Double
--- expand' = (expIExp'2IExp <|> expIExp'2BExp)
---      <-> (expBExp'2IExp <|> expBExp'2BExp)
+NOTE: not really, Haskell stage restriction forbids to use the type "ExpS" as a
+parameter of a TH function because it was generated in a splice within the same
+module. There are some ways to "jailbreak" this restriction but I need to find
+how to make them work here :(
 
-----------------------------------------
+So, I have optimized the following frequencies using ghci and pasted them here for now.
+-}
 
--- -- | Branching probabilities
--- pVal, pAdd, pIf, pfoo1, pfoo2 :: Double
--- pVal: pAdd: pIf: pfoo1: pfoo2:_ = Vector.toList $ (probs @IExp') ! 0
+-- freqs :: [[Integer]]
+-- freqs = optimizeFreqs
+--         @ExpS @"IExp"
+--         Rep
+--         10
+--         (weighted [("Add", 2), ("foo#1", 3)])
+--         [ [1, 1, 1, 1, 1]
+--         , [1, 1, 1, 1, 1] ]
+-- ===>
+-- [[11,9,1,14,1],[10,12,8,1,1]]
 
--- pBool, pLEq, pbar1 :: Double
--- pBool: pLEq: pbar1:_ = Vector.toList $ (probs @BExp') ! 0
+type ExpS_Opt = SetSpecFreqs (MkSpec ExpS) '[ '[11,9,1,14,1], '[10,12,8,1,1]]
 
--- -- -- | ORDERING:
--- -- -- IExp, BExp
+{-  which is equivalent to:
+ghci> :kind!' ExpS_Opt
+===>
+[ '("IExp",
+       Sum
+         (Freq (Term HRep_Con_Val) 11)
+         (Sum
+            (Freq HRep_Con_Add 9)
+            (Sum
+               (Freq HRep_Con_If 1)
+               (Sum (Freq HRep_Pat_foo_1 14) (Freq HRep_Pat_foo_2 1))))),
+     '("BExp",
+       Sum
+         (Freq (Term HRep_Con_Bool) 10)
+         (Sum
+            (Freq HRep_Con_And 12)
+            (Sum
+               (Freq HRep_Con_LEq 8)
+               (Sum (Freq HRep_Pat_bar_1 1) (Freq HRep_Pat_bar_2 1)))))]
+-}
 
--- -- | Branching processes matrices
--- m11 :: Matrix Double
--- m11 = col (beta' @ExpFam 0 0) * row (probs' @ExpFam 0)
 
--- -- m11 :: Matrix Double
--- -- m11 = Matrix.fromLists
--- --              {-  Val  |   Add   |   If   |  foo#1  |  foo#2 -}
--- -- {-  Val  -} [[   0    ,   0     ,   0    ,    0    ,    0    ]
--- -- {-  Add  -} ,[ 2*pVal , 2*pAdd  , 2*pIf  , 2*pfoo1 , 2*pfoo2 ]
--- -- {-  If   -} ,[ 2*pVal , 2*pAdd  , 2*pIf  , 2*pfoo1 , 2*pfoo2 ]
--- -- {- foo#1 -} ,[  pVal  ,  pAdd   ,  pIf   ,  pfoo1  ,  pfoo2  ]
--- -- {- foo#2 -} ,[ 2*pVal , 2*pAdd  , 2*pIf  , 2*pfoo1 , 2*pfoo2 ]]
+instance Arbitrary IExp where arbitrary = genEval @(ExpS_Opt ~> "IExp")
+instance Arbitrary BExp where arbitrary = genEval @(ExpS_Opt ~> "BExp")
 
--- m12 :: Matrix Double
--- m12 = col (beta' @ExpFam 0 1) * row (probs' @ExpFam 1)
+{-
+We can predict the distribution and confirm it generating actual data:
 
--- -- m12 :: Matrix Double
--- -- m12 = Matrix.fromLists
--- --              {-  Bool  |  LEq   |  bar#1 -}
--- -- {-  Val  -} [[    0    ,   0    ,    0    ]
--- -- {-  Add  -} ,[    0    ,   0    ,    0    ]
--- -- {-  If   -} ,[  pBool  ,  pLEq  ,  pbar1  ]
--- -- {- foo#1 -} ,[    0    ,   0    ,    0    ]
--- -- {- foo#2 -} ,[  pBool  ,  pLEq  ,  pbar1  ]]
+It's difficult to see if the distribution follows the "desired" one because the
+all the representation cosntructors are gone.
 
--- m21 :: Matrix Double
--- m21 = col (beta' @ExpFam 1 0) * row (probs' @ExpFam 0)
+ghci> predict @ExpS_Opt  @"IExp" 10
+fromList [("Add",82.696734010464),("And",2.4670719614784673),("Bool",4.921783983563986),("If",4.3524596847612615),("LEq",1.897747662675744),("Val",91.84468902057674)]
 
--- -- m21 :: Matrix Double
--- -- m21 = Matrix.fromLists
--- --              {-  Val  |   Add  |   If  |  foo#1  |  foo#2 -}
--- -- {-  Bool -} [[   0    ,   0    ,   0   ,    0    ,    0    ]
--- -- {-  LEq  -} ,[ 2*pVal , 2*pAdd , 2*pIf , 2*pfoo1 , 2*pfoo2 ]
--- -- {- pbar1 -} ,[  pVal  ,  pAdd  ,  pIf  ,  pfoo1  ,  pfoo2  ]]
+confirm @ExpS_Opt  @"IExp" 10
+fromList [("Add",82.66198),("And",2.48682),("Bool",4.93628),("False",2.46942),("I#",91.8424),("If",4.35978),("LEq",1.91032),("True",2.46686),("Val",91.8424)]
 
--- m22 :: Matrix Double
--- m22 = col (beta' @ExpFam 1 1) * row (probs' @ExpFam 1)
+On the other hand, if we predict and confirm over the distribution, we obtain
+some nicer numbers (remember that we optimized the frequencies to follow:
+(2*size*Add) and (3*size*foo#1)):
 
--- -- -- m22 :: Matrix Double
--- -- -- m22 = Matrix.fromLists
--- -- --             {-  Bool  |  LEq   |  bar#1 -}
--- -- -- {-  Bool -} [[   0    ,   0    ,    0    ]
--- -- -- {-  LEq  -} ,[   0    ,   0    ,    0    ]
--- -- -- {- pbar1 -} ,[   0    ,   0    ,    0    ]]
+ghci> predictRep @ExpS_Opt @"IExp" 10
 
--- mC :: Matrix Double
--- mC =  (m11 <|> m12)
---   <-> (m21 <|> m22)
+fromList [("Add",19.58606858142568),("And",2.277297195210893),("Bool",4.732009217296412),("If",2.1762298423806308),("LEq",1.5181981301405951),("Val",59.01146661859969),("bar#1",0.1897747662675744),("bar#2",0.1897747662675744),("foo#1",30.46721779332884),("foo#2",2.1762298423806308)]
+
+However, confirming this distribution over the representation results in a lot of noise:
+
+ghci> confirmRep @ExpS_Opt  @"IExp" 10
+fromList [("Add",12.84046),("And",2.43924),("Bool",4.87554),("Con_Add",16.4112),("Con_If",1.82454),("Con_Val",46.6112),("False",2.4404),("Fix",92.2224),("FreqTag",92.2224),("I#",91.28438),("If",0.67398),("InL",90.39298),("InR",104.01608),("LEq",1.89164),("Pat_foo_1",25.54604),("Pat_foo_2",1.82942),("TermTag",46.6112),("True",2.43514),("Val",17.29772)]
+
+-}

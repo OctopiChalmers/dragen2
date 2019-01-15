@@ -1,0 +1,974 @@
+\documentclass[conference]{IEEEtran}
+
+%% ODER: format ==         = "\mathrel{==}"
+%% ODER: format /=         = "\neq "
+%
+%
+\makeatletter
+\@ifundefined{lhs2tex.lhs2tex.sty.read}%
+  {\@namedef{lhs2tex.lhs2tex.sty.read}{}%
+   \newcommand\SkipToFmtEnd{}%
+   \newcommand\EndFmtInput{}%
+   \long\def\SkipToFmtEnd#1\EndFmtInput{}%
+  }\SkipToFmtEnd
+
+\newcommand\ReadOnlyOnce[1]{\@ifundefined{#1}{\@namedef{#1}{}}\SkipToFmtEnd}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\DeclareFontFamily{OT1}{cmtex}{}
+\DeclareFontShape{OT1}{cmtex}{m}{n}
+  {<5><6><7><8>cmtex8
+   <9>cmtex9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmtex10}{}
+\DeclareFontShape{OT1}{cmtex}{m}{it}
+  {<-> ssub * cmtt/m/it}{}
+\newcommand{\texfamily}{\fontfamily{cmtex}\selectfont}
+\DeclareFontShape{OT1}{cmtt}{bx}{n}
+  {<5><6><7><8>cmtt8
+   <9>cmbtt9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmbtt10}{}
+\DeclareFontShape{OT1}{cmtex}{bx}{n}
+  {<-> ssub * cmtt/bx/n}{}
+\newcommand{\tex}[1]{\text{\texfamily#1}}	% NEU
+
+\newcommand{\Sp}{\hskip.33334em\relax}
+
+
+\newcommand{\Conid}[1]{\mathit{#1}}
+\newcommand{\Varid}[1]{\mathit{#1}}
+\newcommand{\anonymous}{\kern0.06em \vbox{\hrule\@width.5em}}
+\newcommand{\plus}{\mathbin{+\!\!\!+}}
+\newcommand{\bind}{\mathbin{>\!\!\!>\mkern-6.7mu=}}
+\newcommand{\rbind}{\mathbin{=\mkern-6.7mu<\!\!\!<}}% suggested by Neil Mitchell
+\newcommand{\sequ}{\mathbin{>\!\!\!>}}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\usepackage{polytable}
+
+%mathindent has to be defined
+\@ifundefined{mathindent}%
+  {\newdimen\mathindent\mathindent\leftmargini}%
+  {}%
+
+\def\resethooks{%
+  \global\let\SaveRestoreHook\empty
+  \global\let\ColumnHook\empty}
+\newcommand*{\savecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\savecolumns[#1]}}
+\newcommand*{\restorecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\restorecolumns[#1]}}
+\newcommand*{\aligncolumn}[2]%
+  {\g@addto@macro\ColumnHook{\column{#1}{#2}}}
+
+\resethooks
+
+\newcommand{\onelinecommentchars}{\quad-{}- }
+\newcommand{\commentbeginchars}{\enskip\{-}
+\newcommand{\commentendchars}{-\}\enskip}
+
+\newcommand{\visiblecomments}{%
+  \let\onelinecomment=\onelinecommentchars
+  \let\commentbegin=\commentbeginchars
+  \let\commentend=\commentendchars}
+
+\newcommand{\invisiblecomments}{%
+  \let\onelinecomment=\empty
+  \let\commentbegin=\empty
+  \let\commentend=\empty}
+
+\visiblecomments
+
+\newlength{\blanklineskip}
+\setlength{\blanklineskip}{0.66084ex}
+
+\newcommand{\hsindent}[1]{\quad}% default is fixed indentation
+\let\hspre\empty
+\let\hspost\empty
+\newcommand{\NB}{\textbf{NB}}
+\newcommand{\Todo}[1]{$\langle$\textbf{To do:}~#1$\rangle$}
+
+\EndFmtInput
+\makeatother
+%
+%
+%
+%
+%
+%
+% This package provides two environments suitable to take the place
+% of hscode, called "plainhscode" and "arrayhscode". 
+%
+% The plain environment surrounds each code block by vertical space,
+% and it uses \abovedisplayskip and \belowdisplayskip to get spacing
+% similar to formulas. Note that if these dimensions are changed,
+% the spacing around displayed math formulas changes as well.
+% All code is indented using \leftskip.
+%
+% Changed 19.08.2004 to reflect changes in colorcode. Should work with
+% CodeGroup.sty.
+%
+\ReadOnlyOnce{polycode.fmt}%
+\makeatletter
+
+\newcommand{\hsnewpar}[1]%
+  {{\parskip=0pt\parindent=0pt\par\vskip #1\noindent}}
+
+% can be used, for instance, to redefine the code size, by setting the
+% command to \small or something alike
+\newcommand{\hscodestyle}{}
+
+% The command \sethscode can be used to switch the code formatting
+% behaviour by mapping the hscode environment in the subst directive
+% to a new LaTeX environment.
+
+\newcommand{\sethscode}[1]%
+  {\expandafter\let\expandafter\hscode\csname #1\endcsname
+   \expandafter\let\expandafter\endhscode\csname end#1\endcsname}
+
+% "compatibility" mode restores the non-polycode.fmt layout.
+
+\newenvironment{compathscode}%
+  {\par\noindent
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed\)%
+   \par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\compaths}{\sethscode{compathscode}}
+
+% "plain" mode is the proposed default.
+% It should now work with \centering.
+% This required some changes. The old version
+% is still available for reference as oldplainhscode.
+
+\newenvironment{plainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newenvironment{oldplainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+% Here, we make plainhscode the default environment.
+
+\newcommand{\plainhs}{\sethscode{plainhscode}}
+\newcommand{\oldplainhs}{\sethscode{oldplainhscode}}
+\plainhs
+
+% The arrayhscode is like plain, but makes use of polytable's
+% parray environment which disallows page breaks in code blocks.
+
+\newenvironment{arrayhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\parray}%
+  {\endparray\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newcommand{\arrayhs}{\sethscode{arrayhscode}}
+
+% The mathhscode environment also makes use of polytable's parray 
+% environment. It is supposed to be used only inside math mode 
+% (I used it to typeset the type rules in my thesis).
+
+\newenvironment{mathhscode}%
+  {\parray}{\endparray}
+
+\newcommand{\mathhs}{\sethscode{mathhscode}}
+
+% texths is similar to mathhs, but works in text mode.
+
+\newenvironment{texthscode}%
+  {\(\parray}{\endparray\)}
+
+\newcommand{\texths}{\sethscode{texthscode}}
+
+% The framed environment places code in a framed box.
+
+\def\codeframewidth{\arrayrulewidth}
+\RequirePackage{calc}
+
+\newenvironment{framedhscode}%
+  {\parskip=\abovedisplayskip\par\noindent
+   \hscodestyle
+   \arrayrulewidth=\codeframewidth
+   \tabular{@{}|p{\linewidth-2\arraycolsep-2\arrayrulewidth-2pt}|@{}}%
+   \hline\framedhslinecorrect\\{-1.5ex}%
+   \let\endoflinesave=\\
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \framedhslinecorrect\endoflinesave{.5ex}\hline
+   \endtabular
+   \parskip=\belowdisplayskip\par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\framedhslinecorrect}[2]%
+  {#1[#2]}
+
+\newcommand{\framedhs}{\sethscode{framedhscode}}
+
+% The inlinehscode environment is an experimental environment
+% that can be used to typeset displayed code inline.
+
+\newenvironment{inlinehscode}%
+  {\(\def\column##1##2{}%
+   \let\>\undefined\let\<\undefined\let\\\undefined
+   \newcommand\>[1][]{}\newcommand\<[1][]{}\newcommand\\[1][]{}%
+   \def\fromto##1##2##3{##3}%
+   \def\nextline{}}{\) }%
+
+\newcommand{\inlinehs}{\sethscode{inlinehscode}}
+
+% The joincode environment is a separate environment that
+% can be used to surround and thereby connect multiple code
+% blocks.
+
+\newenvironment{joincode}%
+  {\let\orighscode=\hscode
+   \let\origendhscode=\endhscode
+   \def\endhscode{\def\hscode{\endgroup\def\@currenvir{hscode}\\}\begingroup}
+   %\let\SaveRestoreHook=\empty
+   %\let\ColumnHook=\empty
+   %\let\resethooks=\empty
+   \orighscode\def\hscode{\endgroup\def\@currenvir{hscode}}}%
+  {\origendhscode
+   \global\let\hscode=\orighscode
+   \global\let\endhscode=\origendhscode}%
+
+\makeatother
+\EndFmtInput
+%
+
+
+
+
+
+
+% Local Variables:
+% TeX-master: "main.lhs.tex"
+% TeX-command-default: "Make"
+% End:
+
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+
+\usepackage{todonotes}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{mathdots}
+\usepackage{yhmath}
+\usepackage{cancel}
+\usepackage{color}
+\usepackage{siunitx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{amssymb}
+\usepackage{gensymb}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{xspace}
+\usetikzlibrary{fadings}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Macros
+\newcommand{\tocite}{\textbf{CITATION NEEDED}}
+\newcommand{\quickcheck}{\emph{QuickCheck}\xspace}
+\newcommand{\megadeth}{\emph{MegaDeTH}\xspace}
+\newcommand{\dragen}{\textbf{DRAGEN}\xspace}
+
+
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Title
+\title{Synthesizing Random Generators via Higher-Order Representations}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Authors
+\author{
+  \IEEEauthorblockN{
+    % 1\textsuperscript{st}
+    Agust\'in Mista
+  }
+  \IEEEauthorblockA{
+    % \textit{Department of Computer Science and Engineering} \\
+    \textit{Chalmers University of Technology}\\
+    Gothenburg, Sweden \\
+    mista@chalmers.se
+  }
+\and
+\IEEEauthorblockN{
+  % 2\textsuperscript{nd}
+  Alejandro Russo
+  }
+  \IEEEauthorblockA{
+    % \textit{Department of Computer Science and Engineering} \\
+    \textit{Chalmers University of Technology}\\
+    Gothenburg, Sweden \\
+    russo@chalmers.se
+  }
+}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Abstract
+
+\begin{abstract}
+
+  Pellentesque dapibus suscipit ligula. Donec posuere augue in quam. Etiam vel
+  tortor sodales tellus ultricies commodo. Suspendisse potenti. Aenean in sem ac
+  leo mollis blandit. Donec neque quam, dignissim in, mollis nec, sagittis eu,
+  wisi. Phasellus lacus. Etiam laoreet quam sed arcu. Phasellus at dui in ligula
+  mollis ultricies. Mauris mollis tincidunt felis. Aliquam feugiat tellus ut
+  neque. Nulla facilisis, risus a rhoncus fermentum, tellus tellus lacinia
+  purus, et dictum nunc justo sit amet elit.
+
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Keywords
+\begin{IEEEkeywords}
+component, formatting, style, styling, insert
+\end{IEEEkeywords}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Sections
+
+\section{Introduction}
+
+Pellentesque dapibus suscipit ligula. Donec posuere augue in quam. Etiam vel
+tortor sodales tellus ultricies commodo. Suspendisse potenti. Aenean in sem ac
+leo mollis blandit. Donec neque quam, dignissim in, mollis nec, sagittis eu,
+wisi. Phasellus lacus. Etiam laoreet quam sed arcu. Phasellus at dui in ligula
+mollis ultricies. Integer placerat tristique nisl. Praesent augue. Fusce
+commodo. Vestibulum convallis, lorem a tempus semper, dui dui euismod elit,
+vitae placerat urna tortor vitae lacus. Nullam libero mauris, consequat quis,
+varius et, dictum id, arcu. Mauris mollis tincidunt felis. Aliquam feugiat
+tellus ut neque. Nulla facilisis, risus a rhoncus fermentum, tellus tellus
+lacinia purus, et dictum nunc justo sit amet elit.
+
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
+tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
+eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
+parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
+Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
+Nam vestibulum accumsan nisl.
+
+Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
+commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
+lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
+felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
+dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
+quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
+Nam euismod tellus id erat\cite{grieco2017}.
+
+The main contribuitions of this paper are:
+%
+\begin{itemize}
+  %
+\item We identify two patological scenarios for which standard type-driven
+  automatic derivation tools fail to synthesize practical random generators, due
+  to a lack of either type structure or domain knowleadge (Section
+  \ref{sec:randomtesting}).
+  %
+\item We present a generation technique able to encode stronger properties of
+  the target data by reifying the static information present on the program
+  codebase (Section \ref{sec:hrep}).
+  %
+\item We apply and extend the theory of branching processes to analitically
+  predict the average distribution of generated values.
+  %
+  Furthermore, we use the predictions to perform simulation-based optimization
+  of the random generation parameters (Section \ref{sec:synthesis}).
+  %
+\item We provide an implementation of our ideas in the form of a Haskell library
+  to perform automatic derivation of random generators capable to extract
+  useful structure information from the user source code.
+  %
+\end{itemize}
+\section{Type-Driven Random Generation} \label{sec:randomtesting}
+
+In this section we briefly describe the common technique used for automatically
+deriving random data generators in Haskell using a type-driven approach.
+%
+Then, we introduce its main drawbacks by considering two scenarios where this
+technique gives poor results in practice.
+%
+We remark that, altough this work makes focus on Haskell data types, this
+technique is general enough to be applied to most programming languages with
+some level of support for composite types.
+
+
+Haskell is a strongly typed programming language with a powerful type system.
+%
+It lets programmers encode a considerable amount of information about the
+properties of their systems using data types that can be checked at compilation
+time.
+%
+One of its key aspects is the support for Algebraic Data Types (ADTs).
+%
+Essentially, an ADTs is a composite type defined by combining other types.
+%
+In the most basic conception, types can be combined by \textbf{sums} (also known
+as \emph{variant types} or \emph{tagged disjoint unions}) and \textbf{products}
+(or tuples) of other data types.
+%
+To exemplify this, consider the following definition of the data type \ensuremath{\Conid{Exp}}
+encoding integer expressions:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{11}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{15}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{20}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{25}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;\Conid{Exp}{}\<[11]%
+\>[11]{}\mathrel{=}{}\<[15]%
+\>[15]{}\Conid{Val}\;{}\<[20]%
+\>[20]{}\Conid{Int}{}\<[E]%
+\\
+\>[11]{}\;\;\vert\;{}\<[15]%
+\>[15]{}\Conid{Add}\;{}\<[20]%
+\>[20]{}\Conid{Exp}\;{}\<[25]%
+\>[25]{}\Conid{Exp}{}\<[E]%
+\\
+\>[11]{}\;\;\vert\;{}\<[15]%
+\>[15]{}\Conid{Mul}\;{}\<[20]%
+\>[20]{}\Conid{Exp}\;{}\<[25]%
+\>[25]{}\Conid{Exp}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+In the previous definition, we declare \ensuremath{\Conid{Exp}} as the sum of three possible
+classes of values: \ensuremath{\Conid{Val}} represents literal values, whereas \ensuremath{\Conid{Add}} and \ensuremath{\Conid{Mul}}
+represent the addition and multiplication of two integer expressions,
+respectively.
+%
+In Haskell, \ensuremath{\Conid{Val}}, \ensuremath{\Conid{Add}} and \ensuremath{\Conid{Mul}} are called \emph{data constructors} and are
+used to distiguish which variant of the data type we are reffering to.
+%
+Each data constructor is then defined as a product of zero or more types known
+as \emph{fields}.
+%
+In particular, \ensuremath{\Conid{Val}} contains a field of type \ensuremath{\Conid{Int}}, while \ensuremath{\Conid{Add}} and \ensuremath{\Conid{Mul}}
+contain two fields of type \ensuremath{\Conid{Exp}} representing the operands of each operation.
+%
+Note that \ensuremath{\Conid{Exp}} is used as a field of at least one of its data constructors
+(case \ensuremath{\Conid{Add}} and \ensuremath{\Conid{Mul}}), making it a recursively defined ADT.
+%
+In general, we will say that a data constructor with no recursive fields is
+\emph{terminal}, and \emph{non-terminal} or \emph{recursive} if it has at least
+one field of such nature.
+%
+With this reprentation, the expression ``2 + (5 * 6)'' can be encoded simply by
+using \ensuremath{\Conid{Exp}} data constructors as \ensuremath{(\Conid{Add}\;(\Conid{Val}\;\mathrm{2})\;(\Conid{Mul}\;(\Conid{Val}\;\mathrm{5})\;(\Conid{Val}\;\mathrm{6})))}.
+%
+Furthermore, an evaluation function from \ensuremath{\Conid{Exp}}s to integer values can be defined
+very idiomatically:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{27}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{27E}{@{}l@{}}%
+\column{30}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{eval}\mathbin{::}\Conid{Exp}\to \Conid{Int}{}\<[E]%
+\\
+\>[B]{}\Varid{eval}\;(\Conid{Val}\;\Varid{n}){}\<[17]%
+\>[17]{}\mathrel{=}\Varid{n}{}\<[E]%
+\\
+\>[B]{}\Varid{eval}\;(\Conid{Add}\;\Varid{x}\;\Varid{y}){}\<[17]%
+\>[17]{}\mathrel{=}\Varid{eval}\;\Varid{x}{}\<[27]%
+\>[27]{}\mathbin{+}{}\<[27E]%
+\>[30]{}\Varid{eval}\;\Varid{y}{}\<[E]%
+\\
+\>[B]{}\Varid{eval}\;(\Conid{Mul}\;\Varid{x}\;\Varid{y}){}\<[17]%
+\>[17]{}\mathrel{=}\Varid{eval}\;\Varid{x}{}\<[27]%
+\>[27]{}\mathbin{*}{}\<[27E]%
+\>[30]{}\Varid{eval}\;\Varid{y}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+In the previous definition, \ensuremath{\Varid{eval}} is described using \emph{pattern matching}
+over each possible kind of value.
+%
+For the input case of a literal values, we simply return the value contained in
+the \ensuremath{\Conid{Val}} constructor.
+%
+On the other hand, if the input value matches either an \ensuremath{\Conid{Add}} or a \ensuremath{\Conid{Mul}} data
+constructor, where \ensuremath{\Varid{x}} and \ensuremath{\Varid{y}} are \emph{pattern variables} that match any
+subexpression, we recursively evaluate these subexpressions, combining them with
+the apropiate operation on each case.
+
+\subsection{\textbf{Type-Driven Generation of Random Values}}
+
+In order to perform random testing of a Haskell codebase involving user defined
+data types, most approaches require the user to provide a random data generator
+for each one of them.
+%
+This tends to be a cumbersome and error prone task that closely follows the data
+type structure.
+%
+For instance, consider the following definition of a \quickcheck random
+generator for the type \ensuremath{\Conid{Exp}}:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{7}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{7E}{@{}l@{}}%
+\column{10}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{15}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{30}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{genExp}\mathbin{::}\Conid{Gen}\;\Conid{Exp}{}\<[E]%
+\\
+\>[B]{}\Varid{genExp}\mathrel{=}\Varid{sized}\;\Varid{gen}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathbf{where}{}\<[E]%
+\\
+\>[3]{}\hsindent{2}{}\<[5]%
+\>[5]{}\Varid{gen}\;\mathrm{0}\mathrel{=}\Conid{Val}\mathop{\langle \$ \rangle}\Varid{arbitrary}{}\<[E]%
+\\
+\>[3]{}\hsindent{2}{}\<[5]%
+\>[5]{}\Varid{gen}\;\Varid{n}\mathrel{=}\Varid{oneof}{}\<[E]%
+\\
+\>[5]{}\hsindent{2}{}\<[7]%
+\>[7]{}[\mskip1.5mu {}\<[7E]%
+\>[10]{}\Conid{Val}{}\<[15]%
+\>[15]{}\mathop{\langle \$ \rangle}\Varid{arbitrary}{}\<[E]%
+\\
+\>[5]{}\hsindent{2}{}\<[7]%
+\>[7]{},{}\<[7E]%
+\>[10]{}\Conid{Add}{}\<[15]%
+\>[15]{}\mathop{\langle \$ \rangle}\Varid{gen}\;(n{-}1){}\<[30]%
+\>[30]{}\mathop{\langle \ast \rangle}\Varid{gen}\;(n{-}1){}\<[E]%
+\\
+\>[5]{}\hsindent{2}{}\<[7]%
+\>[7]{},{}\<[7E]%
+\>[10]{}\Conid{Mul}{}\<[15]%
+\>[15]{}\mathop{\langle \$ \rangle}\Varid{gen}\;(n{-}1){}\<[30]%
+\>[30]{}\mathop{\langle \ast \rangle}\Varid{gen}\;(n{-}1)\mskip1.5mu]{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+ %$
+
+This random generator is defined using \quickcheck's combinator \ensuremath{\Varid{sized}\mathbin{::}(\Conid{Int}\to \Conid{Gen}\;\Varid{a})\to \Conid{Gen}\;\Varid{a}} to paremetrize the generation process up to an external
+integer number known as the \emph{generation size}.
+%
+This parameter is used to limit the maximum amount of recursive call that this
+random generator can perform.
+%
+When called with a positive generation size (case \ensuremath{\Varid{gen}\;\Varid{n}}), the generator is free
+to randomly pick with uniform probability among any data constructor of \ensuremath{\Conid{Exp}}.
+%
+In the case it picks to generate a \ensuremath{\Conid{Val}} data constructor, it also generates a
+random \ensuremath{\Conid{Int}} value using the standard overloaded generator \ensuremath{\Varid{arbitrary}}
+(\quickcheck provides standard random generators for most base types like \ensuremath{\Conid{Int}},
+\ensuremath{\Conid{Bool}}, etc.).
+%
+On the other hand, when it randomly picks to generate either an \ensuremath{\Conid{Add}} or a \ensuremath{\Conid{Mul}}
+data constructor, it also generates independently two random subexpressions
+corresponding to the data constructor fields by calling itself recursively (\ensuremath{\Varid{gen}\;(n{-}1)}), ensuring to decrease the generation size by a unit on each recursive
+invocation.
+
+
+This procedure keeps calling itself recursively until the generation size
+reaches zero (case \ensuremath{\Varid{gen}\;\mathrm{0}}), where the generator is constrained to pick only
+among terminal data constructors, being \ensuremath{\Conid{Val}} the only possible choice in our
+particular case.
+%
+Strictly decreasing the the generation size by one on each recursive call
+results in a useful property over the generated data: every generated value has
+at most \ensuremath{\Varid{n}} levels, where \ensuremath{\Varid{n}} is the generation size set by the user.
+%
+This property enables us to model the generation process using the theory of
+branching processes introduced by \tocite, and extended in this work as
+described in Section \ref{sec:synthesis}.
+
+
+Having discussed the previous random generator definition, it easy to understand
+how to extend this generation procedure to any data type defined in an algebraic
+fashion.
+%
+Fortunately, there exists different meta-programming tools to avoid the user
+from having to mechanically write random generators over and over again for each
+user-defined ADT.
+%
+The simplest tool for such purpose is \megadeth.
+%
+Given the name of the target data type, it synthesizes a random generator for it
+that behaves pretty much like the previously defined one.
+%
+However, picking among different data constructors with uniform probability can
+lead to a generation process biased to generate (in average) very small values,
+regardless of the generation sized set by the user \tocite.
+
+\dragen is meta-programming tool conceived to mitigate this problem.
+%
+Instead of setting a uniform generation probability of data constructors, this
+tool considers the scenario where each one can be generated following a
+different (although fixed over time) generation probability.
+%
+Then, this tool uses the theory of branching processes to analitically predict
+the average distribution of data constructors generated on each random value.
+%
+This prediction mechanism is used to feedback a simulation-based optimization
+process that adjusts the generation probability of each data constructor in
+order to obtain a particular distribution of values that can be specified by the
+user, offering a more flexible testing environment while still being mostly
+automated.
+
+
+Both \megadeth and \dragen synthesize random generators that are theoretically
+capable to generate the whole space of values of the target data type, provided
+that we set a generation size suficiently big.
+%
+However, the limitations arise quickly when we consider that the underlying
+generation model is essentially the same: they pick a single data constructor
+and recusively generate each required subexpression independently.
+%
+In practice, this procedure is too generic to generate complex data that is
+useful enough to be used for random testing.
+
+
+In this work we identify two sources of complications that appear when using the
+aforementioned automatic derivation tools to obtain random data generators:
+
+\begin{enumerate}
+\item The target code behaves differently over inputs matching very specific
+  patterns.
+\item The target code behaves differently according to some dependency over
+  subexpressions of its inputs.
+\end{enumerate}
+
+To exemplify the first point, suppose we want to use randomly generated \ensuremath{\Conid{Exp}}s
+to test a property comprising the following function:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{foo}\mathbin{::}\Conid{Exp}\to \Conid{Exp}{}\<[E]%
+\\
+\>[B]{}\Varid{foo}\;(\Conid{Add}\;(\Conid{Add}\;\Varid{x}\;(\Conid{Val}\;\mathrm{50}))\;(\Conid{Add}\;(\Conid{Val}\;\mathrm{25})\;\Varid{y})){}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathrel{=}\Varid{error}\;\text{\ttfamily \char34 pattern~\#1\char34}{}\<[E]%
+\\
+\>[B]{}\Varid{foo}\;(\Conid{Mul}\;(\Conid{Mul}\;\Varid{x}\;(\Conid{Val}\;\mathrm{50}))\;(\Conid{Mul}\;(\Conid{Val}\;\mathrm{25})\;\Varid{y})){}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathrel{=}\Varid{error}\;\text{\ttfamily \char34 pattern~\#2\char34}{}\<[E]%
+\\
+\>[B]{}\Varid{foo}\;\Varid{x}\mathrel{=}\Varid{x}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+This function behaves mostly like an identity function, except for two very
+specific patterns of input values defined using three nested levels of pattern
+matching.
+%
+This is, \ensuremath{\Varid{foo}} does not only matches against the root data constructor, but also
+against the data constructors of its subexpressions and sub-subexpressions.
+
+If we consider that \quickcheck's default implementation for random \ensuremath{\Conid{Int}}s pick
+a number in the interval $[-n, n]$ with uniform distribution, we need to be able
+to identify which one is a sensible generation size to set based on wether our
+code branches on numbers or not, otherwise our random generator will not be able
+to generate random values to match against such numbers, leaving fragments of
+code completely untested.
+%
+Suppose that we pick the a generation size $50$, i.e. the minimum size that is
+big enough to produce an \ensuremath{\Conid{Int}} number equal to $50$.
+%
+Under this considerations, the probability of generating a value matching the
+first clause of \ensuremath{\Varid{foo}} (and hence triggering the error) are as follows:
+
+\begin{align*}
+  P(match(foo_1))
+  \!&&=\; &P(Add) \\
+  \!&&*\; &P(Add) * 1 * (P(Val) * (1/100)) \\
+  \!&&*\; &P(Add) * (P(Val) * (1/100)) * 1
+\end{align*}
+
+\todo[inline]{AM: COMPLETE}
+
+
+Despite the fact that the previous example might look artificial, branching
+against specific patterns of the input data is a common task.
+%
+For instance, the balancing function of a Red-Black tree need to consider a
+quite specific combination of color, left- and right subtrees and sub-subtrees
+in order to preserve the height invariant.
+%
+Moreover, Common Subexpression Elimination (CSE) is a compiler optimization that
+needs to consider very specific sequences of instructions that may be regrouped
+in a computationally more efficient way.
+
+We believe that if a certain pattern of values is relevant enough to appear in
+the codebase being tested, a practical random testing methodology should be able
+to produce values satisfying such pattern in a substantial proportion.
+
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{fortyTwo}\mathbin{::}\Conid{Exp}{}\<[E]%
+\\
+\>[B]{}\Varid{fortyTwo}\mathrel{=}\Conid{Val}\;\mathrm{42}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{twice}\mathbin{::}\Conid{Exp}\to \Conid{Exp}{}\<[E]%
+\\
+\>[B]{}\Varid{twice}\;\Varid{x}\mathrel{=}\Conid{Add}\;\Varid{x}\;\Varid{x}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{square}\mathbin{::}\Conid{Exp}\to \Conid{Exp}{}\<[E]%
+\\
+\>[B]{}\Varid{square}\;\Varid{x}\mathrel{=}\Conid{Mul}\;\Varid{x}\;\Varid{x}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{neg}\mathbin{::}\Conid{Exp}\to \Conid{Exp}{}\<[E]%
+\\
+\>[B]{}\Varid{neg}\;\Varid{x}\mathrel{=}\Conid{Mul}\;\Varid{x}\;(\Conid{Val}\;(\mathbin{-}\mathrm{1})){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{minus}\mathbin{::}\Conid{Exp}\to \Conid{Exp}\to \Conid{Exp}{}\<[E]%
+\\
+\>[B]{}\Varid{minus}\;\Varid{x}\;\Varid{y}\mathrel{=}\Conid{Add}\;\Varid{x}\;(\Varid{neg}\;\Varid{y}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+
+% \begin{code}
+% data IExp  =   VAL Int
+%            pp  ADD IExp IExp
+%            pp  IF BExp IExp IExp
+
+% data BExp  =   TRUE | FALSE
+%            pp  LE IExp IExp
+%            pp  AND BExp BExp
+% \end{code}
+
+% \begin{code}
+% foo :: IExp -> IExp
+% foo (ADD (IF TRUE (VAL 42) x) y)     = ...
+% foo (IF (LE (VAL 24) x) (VAL y)) z)  = ...
+% foo x                                = ...
+
+% bar :: BExp -> BExp
+% bar (LE (ADD (VAL 12) x) (VAL 34))   = ...
+% bar (LE (VAL 78) (IF FALSE x y)) z)  = ...
+% bar x                                = ...
+% \end{code}
+
+% \begin{code}
+% twice :: IExp -> IExp
+% twice e = ADD e e
+
+% equals :: IExp -> IExp -> BExp
+% equals x y = AND (LE x y) (LE y x)
+
+% and3 :: BExp -> BExp -> BExp -> BExp
+% and3 x y z = AND x (AND y z)
+% \end{code}
+\section{Extracting Structure} \label{sec:hrep}
+
+What to say here:
+
+\begin{itemize}
+\item Haskell ADTs
+\item Type driven generation
+\item Limitations
+\item Key idea: Higher order representations
+\item Canonical representation of the data type
+\item Pattern matchings representation
+\item Abstract interface representation
+\item Composing representations
+\end{itemize}
+
+\begin{figure}[b]
+  \centering
+  \input{tikz/hrep.tex}
+  \caption{The idea}
+\end{figure}
+
+Pellentesque dapibus suscipit ligula. Donec posuere augue in quam. Etiam vel
+tortor sodales tellus ultricies commodo. Suspendisse potenti. Aenean in sem ac
+leo mollis blandit. Donec neque quam, dignissim in, mollis nec, sagittis eu,
+wisi. Phasellus lacus. Etiam laoreet quam sed arcu. Phasellus at dui in ligula
+mollis ultricies. Integer placerat tristique nisl. Praesent augue. Fusce
+commodo. Vestibulum convallis, lorem a tempus semper, dui dui euismod elit,
+vitae placerat urna tortor vitae lacus. Nullam libero mauris, consequat quis,
+varius et, dictum id, arcu. Mauris mollis tincidunt felis. Aliquam feugiat
+tellus ut neque. Nulla facilisis, risus a rhoncus fermentum, tellus tellus
+lacinia purus, et dictum nunc justo sit amet elit.
+
+Nullam eu ante vel est convallis dignissim. Fusce suscipit, wisi nec facilisis
+facilisis, est dui fermentum leo, quis tempor ligula erat quis odio. Nunc porta
+vulputate tellus. Nunc rutrum turpis sed pede. Sed bibendum. Aliquam posuere.
+Nunc aliquet, augue nec adipiscing interdum, lacus tellus malesuada massa, quis
+varius mi purus non odio. Pellentesque condimentum, magna ut suscipit hendrerit,
+ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
+vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
+orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
+est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
+\section{Random Generators Synthesis} \label{sec:synthesis}
+
+Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
+commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
+lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
+felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
+dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
+quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
+Nam euismod tellus id erat.
+
+Nullam eu ante vel est convallis dignissim. Fusce suscipit, wisi nec facilisis
+facilisis, est dui fermentum leo, quis tempor ligula erat quis odio. Nunc porta
+vulputate tellus. Nunc rutrum turpis sed pede. Sed bibendum. Aliquam posuere.
+Nunc aliquet, augue nec adipiscing interdum, lacus tellus malesuada massa, quis
+varius mi purus non odio. Pellentesque condimentum, magna ut suscipit hendrerit,
+ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
+vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
+orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
+est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
+
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
+tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
+eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
+parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
+Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
+Nam vestibulum accumsan nisl.
+\section{Case Studies}
+
+Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
+commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
+lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
+felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
+dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
+quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
+Nam euismod tellus id erat.
+
+Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
+commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
+lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
+felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
+dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
+quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
+Nam euismod tellus id erat.
+
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
+tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
+eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
+parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
+Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
+Nam vestibulum accumsan nisl.
+
+Nullam eu ante vel est convallis dignissim. Fusce suscipit, wisi nec facilisis
+facilisis, est dui fermentum leo, quis tempor ligula erat quis odio. Nunc porta
+vulputate tellus. Nunc rutrum turpis sed pede. Sed bibendum. Aliquam posuere.
+Nunc aliquet, augue nec adipiscing interdum, lacus tellus malesuada massa, quis
+varius mi purus non odio. Pellentesque condimentum, magna ut suscipit hendrerit,
+ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
+vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
+orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
+est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
+\section{Related Work}
+
+Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
+commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
+lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
+felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
+dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
+quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
+Nam euismod tellus id erat.
+
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
+tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
+eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
+parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
+Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
+Nam vestibulum accumsan nisl.
+
+Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
+commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
+lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
+felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
+dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
+quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
+Nam euismod tellus id erat.
+
+Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
+commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
+lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
+felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
+dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
+quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
+Nam euismod tellus id erat.
+\section{Final Remarks}
+
+Nullam eu ante vel est convallis dignissim. Fusce suscipit, wisi nec facilisis
+facilisis, est dui fermentum leo, quis tempor ligula erat quis odio. Nunc porta
+vulputate tellus. Nunc rutrum turpis sed pede. Sed bibendum. Aliquam posuere.
+Nunc aliquet, augue nec adipiscing interdum, lacus tellus malesuada massa, quis
+varius mi purus non odio. Pellentesque condimentum, magna ut suscipit hendrerit,
+ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
+vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
+orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
+est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
+
+Nullam eu ante vel est convallis dignissim. Fusce suscipit, wisi nec facilisis
+facilisis, est dui fermentum leo, quis tempor ligula erat quis odio. Nunc porta
+vulputate tellus. Nunc rutrum turpis sed pede. Sed bibendum. Aliquam posuere.
+Nunc aliquet, augue nec adipiscing interdum, lacus tellus malesuada massa, quis
+varius mi purus non odio. Pellentesque condimentum, magna ut suscipit hendrerit,
+ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
+vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
+orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
+est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
+
+Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
+commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
+lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
+felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
+dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
+quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
+Nam euismod tellus id erat.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Bibliography
+\bibliographystyle{IEEEtran}
+\bibliography{references.bib}
+
+\end{document}
