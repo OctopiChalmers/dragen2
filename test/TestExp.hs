@@ -19,7 +19,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module PredMutRec where
+module TestExp where
 
 import GHC.Generics
 
