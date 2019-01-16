@@ -58,8 +58,8 @@ representation with an explicit generation frequency:
 data (f otimes n) a = Freq (f a)
 \end{code}
 
-This combinator is evaluated simply by piping the result from the inner
-representation.
+This combinator is evaluated back to our target data type simply by piping the
+result from the inner representation.
 %
 It does not change the evaluation semantics, as it is only considered at
 generation time:
@@ -69,18 +69,17 @@ instance (f otimes n down Exp) where
   step (Freq f) = step f
 \end{code}
 
+With the introduced combinators, we can easily create a type synonym |HRep_Exp|
+to refer to the canonical representation of our original data type |Exp|,
+tagging for instance the representation of the constuctor |Add| to be generated
+in double the proportion of rest of the representations:
 
 \begin{code}
-type HRep_Exp  = HRep_Val oplus'' HRep_Add oplus'' HRep_Mul
+type HRep_Exp  =       HRep_Val
+               oplus'  HRep_Add  otimes 2
+               oplus'  HRep_Mul
 \end{code}
 
-
-\begin{code}
-data (f otimes n) a = TagFreq (f a)
-
-instance (f otimes n down Exp) where
-  step (TagFreq f) = step f
-\end{code}
 
 
 \begin{code}
@@ -97,6 +96,12 @@ instance (HRep_foo_2 down Exp) where
   step (Mk_foo_2 x y)
     = Mul (Val 50) (Mul (Val x) y)
 \end{code}
+
+\begin{code}
+type HRep_foo  =       HRep_foo_1
+               oplus'  HRep_foo_2
+\end{code}
+
 
 \begin{code}
 data HRep_ten       a = Mk_ten
@@ -117,15 +122,12 @@ instance (HRep_minus down Exp) where
 
 
 \begin{code}
-type HRep_foo  =       HRep_foo_1
-               oplus'  HRep_foo_2
-\end{code}
-
-\begin{code}
 type HRep_M  =       HRep_ten
              oplus'  HRep_square
              oplus'  HRep_minus
 \end{code}
+
+
 
 \begin{code}
 type Spec_Exp  =       HRep_Exp  otimes 4
@@ -133,33 +135,20 @@ type Spec_Exp  =       HRep_Exp  otimes 4
                oplus'  HRep_M
 \end{code}
 
+This previous definition can be interpreted graphically as it is shown in the
+Figure \ref{fig:hrep}.
+%
+Curly arrows represent the structural information extracted using
+meta-programming.
 
-\begin{figure}[b]
+\begin{figure}[t]
   \centering
   \input{tikz/hrep.tex}
-  \caption{The idea}
+  \caption{Higher order representation of the data type |Exp|, using structural
+    information from the function |foo| and the abstract interface of the module
+    |M|.}
+  \label{fig:hrep}
 \end{figure}
-
-Pellentesque dapibus suscipit ligula. Donec posuere augue in quam. Etiam vel
-tortor sodales tellus ultricies commodo. Suspendisse potenti. Aenean in sem ac
-leo mollis blandit. Donec neque quam, dignissim in, mollis nec, sagittis eu,
-wisi. Phasellus lacus. Etiam laoreet quam sed arcu. Phasellus at dui in ligula
-mollis ultricies. Integer placerat tristique nisl. Praesent augue. Fusce
-commodo. Vestibulum convallis, lorem a tempus semper, dui dui euismod elit,
-vitae placerat urna tortor vitae lacus. Nullam libero mauris, consequat quis,
-varius et, dictum id, arcu. Mauris mollis tincidunt felis. Aliquam feugiat
-tellus ut neque. Nulla facilisis, risus a rhoncus fermentum, tellus tellus
-lacinia purus, et dictum nunc justo sit amet elit.
-
-Nullam eu ante vel est convallis dignissim. Fusce suscipit, wisi nec facilisis
-facilisis, est dui fermentum leo, quis tempor ligula erat quis odio. Nunc porta
-vulputate tellus. Nunc rutrum turpis sed pede. Sed bibendum. Aliquam posuere.
-Nunc aliquet, augue nec adipiscing interdum, lacus tellus malesuada massa, quis
-varius mi purus non odio. Pellentesque condimentum, magna ut suscipit hendrerit,
-ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
-vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
-orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
-est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
 
 % \begin{code}
 % data (Term f) a = TagTerm (f a)

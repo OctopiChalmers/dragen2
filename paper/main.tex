@@ -679,7 +679,7 @@ random data generators:
 \begin{enumerate}
 \item The target code behaves differently over inputs matching very specific
   patterns.
-\item The target code yields some of the responsability of preserving its
+\item The target code yields part of the responsability of preserving its
   invariants to the functions of its abstract interface.
 \end{enumerate}
 
@@ -742,9 +742,9 @@ first clause of \ensuremath{\Varid{foo}} (and hence triggering the first error) 
   \!&&*\; &P(Add) * (P(Val) * (1/100)) * 1
 \end{align*}
 
-If we use \megadeth to obtain a random generator for \ensuremath{\Conid{Exp}}, we obtain a uniform
-generation probability distribution over constructors, i.e., $P(\ensuremath{\Conid{Val}}) =
-P(\ensuremath{\Conid{Add}}) = P(\ensuremath{\Conid{Mul}}) = 1/3$.
+If we use \megadeth to automatically derive a random generator for \ensuremath{\Conid{Exp}}, we
+obtain a uniform generation probability distribution over constructors, i.e.,
+$P(\ensuremath{\Conid{Val}}) = P(\ensuremath{\Conid{Add}}) = P(\ensuremath{\Conid{Mul}}) = 1/3$.
 %
 In this setting, $P(match(foo\#1))$ results $1/2430000$, meaning that, in
 average, we will need to generate over than two million test cases in order to
@@ -755,7 +755,8 @@ random generator.
 %
 By optimizing the generation probabilities in order to benefit the generation of
 \ensuremath{\Conid{Add}} constructor in a ratio of $20:1$ with respect to the rest of them, we
-obtained a distribution of values where $P(match(foo\#1)) \sim 1/300000$.
+obtained a distribution of values where $P(match(foo\#1)) \approx 1/300000$.
+
 %
 Although this certainly improves the probability of generating a matching value,
 this probability is not substantial enough to become practical.
@@ -985,8 +986,8 @@ representation with an explicit generation frequency:
 \ColumnHook
 \end{hscode}\resethooks
 
-This combinator is evaluated simply by piping the result from the inner
-representation.
+This combinator is evaluated back to our target data type simply by piping the
+result from the inner representation.
 %
 It does not change the evaluation semantics, as it is only considered at
 generation time:
@@ -1002,29 +1003,30 @@ generation time:
 \ColumnHook
 \end{hscode}\resethooks
 
+With the introduced combinators, we can easily create a type synonym \ensuremath{\text{HRep}_{Exp}}
+to refer to the canonical representation of our original data type \ensuremath{\Conid{Exp}},
+tagging for instance the representation of the constuctor \ensuremath{\Conid{Add}} to be generated
+in double the proportion of rest of the representations:
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{16}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{24}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
 \>[B]{}\mathbf{type}\;\text{HRep}_{Exp}{}\<[16]%
-\>[16]{}\mathrel{=}\text{HRep}_{Val}\;\!\oplus\!\;\text{HRep}_{Add}\;\!\oplus\!\;\text{HRep}_{Mul}{}\<[E]%
-\ColumnHook
-\end{hscode}\resethooks
-
-
-\begin{hscode}\SaveRestoreHook
-\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
-\>[B]{}\mathbf{data}\;(\Varid{f}\;\otimes\;\Varid{n})\;\Varid{a}\mathrel{=}\Conid{TagFreq}\;(\Varid{f}\;\Varid{a}){}\<[E]%
-\\[\blanklineskip]%
-\>[B]{}\mathbf{instance}\;(\Varid{f}\;\otimes\;\Varid{n}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
+\>[16]{}\mathrel{=}{}\<[24]%
+\>[24]{}\text{HRep}_{Val}{}\<[E]%
 \\
-\>[B]{}\hsindent{3}{}\<[3]%
-\>[3]{}\Varid{step}\;(\Conid{TagFreq}\;\Varid{f})\mathrel{=}\Varid{step}\;\Varid{f}{}\<[E]%
+\>[16]{}\,\oplus\;{}\<[24]%
+\>[24]{}\text{HRep}_{Add}\;{}\<[34]%
+\>[34]{}\otimes\;\mathrm{2}{}\<[E]%
+\\
+\>[16]{}\,\oplus\;{}\<[24]%
+\>[24]{}\text{HRep}_{Mul}{}\<[E]%
 \ColumnHook
 \end{hscode}\resethooks
+
 
 
 \begin{hscode}\SaveRestoreHook
@@ -1061,6 +1063,21 @@ generation time:
 \>[5]{}\mathrel{=}\Conid{Mul}\;(\Conid{Val}\;\mathrm{50})\;(\Conid{Mul}\;(\Conid{Val}\;\Varid{x})\;\Varid{y}){}\<[E]%
 \ColumnHook
 \end{hscode}\resethooks
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{16}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{24}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\text{HRep}_{foo}{}\<[16]%
+\>[16]{}\mathrel{=}{}\<[24]%
+\>[24]{}\text{HRep}_{foo\#1}{}\<[E]%
+\\
+\>[16]{}\,\oplus\;{}\<[24]%
+\>[24]{}\text{HRep}_{foo\#2}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -1104,20 +1121,6 @@ generation time:
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{16}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{24}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
-\>[B]{}\mathbf{type}\;\text{HRep}_{foo}{}\<[16]%
-\>[16]{}\mathrel{=}{}\<[24]%
-\>[24]{}\text{HRep}_{foo\#1}{}\<[E]%
-\\
-\>[16]{}\,\oplus\;{}\<[24]%
-\>[24]{}\text{HRep}_{foo\#2}{}\<[E]%
-\ColumnHook
-\end{hscode}\resethooks
-
-\begin{hscode}\SaveRestoreHook
-\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{14}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{22}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -1132,6 +1135,8 @@ generation time:
 \>[22]{}\text{HRep}_{minus}{}\<[E]%
 \ColumnHook
 \end{hscode}\resethooks
+
+
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -1153,33 +1158,20 @@ generation time:
 \ColumnHook
 \end{hscode}\resethooks
 
+This previous definition can be interpreted graphically as it is shown in the
+Figure \ref{fig:hrep}.
+%
+Curly arrows represent the structural information extracted using
+meta-programming.
 
-\begin{figure}[b]
+\begin{figure}[t]
   \centering
   \input{tikz/hrep.tex}
-  \caption{The idea}
+  \caption{Higher order representation of the data type \ensuremath{\Conid{Exp}}, using structural
+    information from the function \ensuremath{\Varid{foo}} and the abstract interface of the module
+    \ensuremath{\Conid{M}}.}
+  \label{fig:hrep}
 \end{figure}
-
-Pellentesque dapibus suscipit ligula. Donec posuere augue in quam. Etiam vel
-tortor sodales tellus ultricies commodo. Suspendisse potenti. Aenean in sem ac
-leo mollis blandit. Donec neque quam, dignissim in, mollis nec, sagittis eu,
-wisi. Phasellus lacus. Etiam laoreet quam sed arcu. Phasellus at dui in ligula
-mollis ultricies. Integer placerat tristique nisl. Praesent augue. Fusce
-commodo. Vestibulum convallis, lorem a tempus semper, dui dui euismod elit,
-vitae placerat urna tortor vitae lacus. Nullam libero mauris, consequat quis,
-varius et, dictum id, arcu. Mauris mollis tincidunt felis. Aliquam feugiat
-tellus ut neque. Nulla facilisis, risus a rhoncus fermentum, tellus tellus
-lacinia purus, et dictum nunc justo sit amet elit.
-
-Nullam eu ante vel est convallis dignissim. Fusce suscipit, wisi nec facilisis
-facilisis, est dui fermentum leo, quis tempor ligula erat quis odio. Nunc porta
-vulputate tellus. Nunc rutrum turpis sed pede. Sed bibendum. Aliquam posuere.
-Nunc aliquet, augue nec adipiscing interdum, lacus tellus malesuada massa, quis
-varius mi purus non odio. Pellentesque condimentum, magna ut suscipit hendrerit,
-ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
-vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
-orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
-est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
 
 % \begin{code}
 % data (Term f) a = TagTerm (f a)
