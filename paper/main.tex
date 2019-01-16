@@ -753,14 +753,21 @@ be able to test the first clause of \ensuremath{\Varid{foo}} only once.
 This situation can be somewhat improved if we decide to use \dragen to obtain a
 random generator.
 %
-By optimizing the generation probabilities in order to benefit the generation of
-\ensuremath{\Conid{Add}} constructor in a ratio of $20:1$ with respect to the rest of them, we
-obtained a distribution of values where $P(match(foo\#1)) \approx 1/300000$.
-
+Using this tool, we can optimize the generation probabilities in order to
+benefit the generation of some data constructors over the rest.
+%
+Considering that the first pattern matching of \ensuremath{\Varid{foo}} involves the data
+constructor \ensuremath{\Conid{Add}} as the only recursive one, we can set an target generation
+proportion of \ensuremath{\Conid{Add}} data constructors of, for instance, $20:1$ with respect to
+the rest of the generated data constructors.
+%
+By doing so, the obtained distribution of values results such that
+$P(match(foo\#1)) \approx 1/300000$.
 %
 Although this certainly improves the probability of generating a matching value,
 this probability is not substantial enough to become practical.
-%
+
+
 Additionally, by favoring the generation probabilities towards the \ensuremath{\Conid{Add}}
 constructor, we found that the probability of generating a value matching the
 second clause of \ensuremath{\Varid{foo}} (which does not matches against it) also gets diminished
@@ -1028,6 +1035,7 @@ in double the proportion of rest of the representations:
 \end{hscode}\resethooks
 
 
+\subsection{\textbf{Representing Pattern Matchings}}
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -1078,6 +1086,7 @@ in double the proportion of rest of the representations:
 \ColumnHook
 \end{hscode}\resethooks
 
+\subsection{\textbf{Representing Abstract Interfaces}}
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -1117,7 +1126,6 @@ in double the proportion of rest of the representations:
 \>[3]{}\Varid{step}\;(\text{Mk}_{minus}\;\Varid{x}\;\Varid{y})\mathrel{=}\Varid{minus}\;\Varid{x}\;\Varid{y}{}\<[E]%
 \ColumnHook
 \end{hscode}\resethooks
-
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%

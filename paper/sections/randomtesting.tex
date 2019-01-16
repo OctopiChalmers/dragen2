@@ -253,14 +253,21 @@ be able to test the first clause of |foo| only once.
 This situation can be somewhat improved if we decide to use \dragen to obtain a
 random generator.
 %
-By optimizing the generation probabilities in order to benefit the generation of
-|Add| constructor in a ratio of $20:1$ with respect to the rest of them, we
-obtained a distribution of values where $P(match(foo\#1)) \approx 1/300000$.
-
+Using this tool, we can optimize the generation probabilities in order to
+benefit the generation of some data constructors over the rest.
+%
+Considering that the first pattern matching of |foo| involves the data
+constructor |Add| as the only recursive one, we can set an target generation
+proportion of |Add| data constructors of, for instance, $20:1$ with respect to
+the rest of the generated data constructors.
+%
+By doing so, the obtained distribution of values results such that
+$P(match(foo\#1)) \approx 1/300000$.
 %
 Although this certainly improves the probability of generating a matching value,
 this probability is not substantial enough to become practical.
-%
+
+
 Additionally, by favoring the generation probabilities towards the |Add|
 constructor, we found that the probability of generating a value matching the
 second clause of |foo| (which does not matches against it) also gets diminished

@@ -81,6 +81,7 @@ type HRep_Exp  =       HRep_Val
 \end{code}
 
 
+\subsection{\textbf{Representing Pattern Matchings}}
 
 \begin{code}
 data HRep_foo_1  a = Mk_foo_1 a a
@@ -102,6 +103,7 @@ type HRep_foo  =       HRep_foo_1
                oplus'  HRep_foo_2
 \end{code}
 
+\subsection{\textbf{Representing Abstract Interfaces}}
 
 \begin{code}
 data HRep_ten       a = Mk_ten
@@ -119,7 +121,6 @@ instance (HRep_square down Exp) where
 instance (HRep_minus down Exp) where
   step (Mk_minus x y) = minus x y
 \end{code}
-
 
 \begin{code}
 type HRep_M  =       HRep_ten
