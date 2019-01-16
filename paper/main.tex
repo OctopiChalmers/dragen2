@@ -265,6 +265,12 @@
 
 
 
+
+
+
+
+
+
 % Local Variables:
 % TeX-master: "main.lhs.tex"
 % TeX-command-default: "Make"
@@ -666,18 +672,26 @@ In practice, this procedure is too generic to generate complex data that is
 useful enough to be used for random testing.
 
 
-In this work we identify two sources of complications that appear when using the
-aforementioned automatic derivation tools to obtain random data generators:
+In this work we identify two sources of additional structure information which
+are not considered by the aforementioned automatic derivation tools to obtain
+random data generators:
 
 \begin{enumerate}
 \item The target code behaves differently over inputs matching very specific
   patterns.
-\item The target code behaves differently according to some dependency over
-  subexpressions of its inputs.
+\item The target code yields some of the responsability of preserving its
+  invariants to the functions of its abstract interface.
 \end{enumerate}
 
-To exemplify the first point, suppose we want to use randomly generated \ensuremath{\Conid{Exp}}s
-to test a property comprising the following function:
+This information can be reified in compile time and used to synthesize richer
+random generators automatically. We proceed to exemplify the previous points in
+detail.
+
+\subsection{\textbf{Presence of Complex Pattern Matchings}}
+
+To exemplify the firts problematic scenarion that may arise, suppose we want to
+use randomly generated \ensuremath{\Conid{Exp}}s to test a property comprising the following
+function:
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -690,7 +704,7 @@ to test a property comprising the following function:
 \>[B]{}\hsindent{3}{}\<[3]%
 \>[3]{}\mathrel{=}\Varid{error}\;\text{\ttfamily \char34 pattern~\#1\char34}{}\<[E]%
 \\
-\>[B]{}\Varid{foo}\;(\Conid{Mul}\;(\Conid{Mul}\;\Varid{x}\;(\Conid{Val}\;\mathrm{50}))\;(\Conid{Mul}\;(\Conid{Val}\;\mathrm{25})\;\Varid{y})){}\<[E]%
+\>[B]{}\Varid{foo}\;(\Conid{Mul}\;(\Conid{Val}\;\mathrm{50})\;(\Conid{Mul}\;(\Conid{Val}\;\Varid{x})\;\Varid{y})){}\<[E]%
 \\
 \>[B]{}\hsindent{3}{}\<[3]%
 \>[3]{}\mathrel{=}\Varid{error}\;\text{\ttfamily \char34 pattern~\#2\char34}{}\<[E]%
@@ -699,124 +713,446 @@ to test a property comprising the following function:
 \ColumnHook
 \end{hscode}\resethooks
 
-This function behaves mostly like an identity function, except for two very
-specific patterns of input values defined using three nested levels of pattern
-matching.
+This function behaves very much like an identity function, with the exception
+that it fails for two very specific patterns of input values defined using
+nested pattern matching.
 %
 This is, \ensuremath{\Varid{foo}} does not only matches against the root data constructor, but also
 against the data constructors of its subexpressions and sub-subexpressions.
 
-If we consider that \quickcheck's default implementation for random \ensuremath{\Conid{Int}}s pick
-a number in the interval $[-n, n]$ with uniform distribution, we need to be able
-to identify which one is a sensible generation size to set based on wether our
-code branches on numbers or not, otherwise our random generator will not be able
-to generate random values to match against such numbers, leaving fragments of
-code completely untested.
+
+\quickcheck's default implementation for random \ensuremath{\Conid{Int}}s pick a number in the
+interval $[-n, n]$ with uniform distribution.
 %
-Suppose that we pick the a generation size $50$, i.e. the minimum size that is
-big enough to produce an \ensuremath{\Conid{Int}} number equal to $50$.
+Hence, in principle we need to recognize what is a suitable generation size,
+which should be big enough for our generator be able to generate the numbers we
+pattern match against to, otherwise we will not be able to generate any value to
+match against \ensuremath{\Varid{foo}} clauses, leaving fragments of code completely untested.
 %
-Under this considerations, the probability of generating a value matching the
-first clause of \ensuremath{\Varid{foo}} (and hence triggering the error) are as follows:
+Suppose then that we pick the a generation size $50$, i.e. the minimum size that
+is big enough to produce an \ensuremath{\Conid{Int}} number equal to $50$.
+%
+Under this consideration, the probability of generating a value matching the
+first clause of \ensuremath{\Varid{foo}} (and hence triggering the first error) results as follows:
 
 \begin{align*}
-  P(match(foo_1))
+  P(match(foo\#1))
   \!&&=\; &P(Add) \\
   \!&&*\; &P(Add) * 1 * (P(Val) * (1/100)) \\
   \!&&*\; &P(Add) * (P(Val) * (1/100)) * 1
 \end{align*}
 
-\todo[inline]{AM: COMPLETE}
+If we use \megadeth to obtain a random generator for \ensuremath{\Conid{Exp}}, we obtain a uniform
+generation probability distribution over constructors, i.e., $P(\ensuremath{\Conid{Val}}) =
+P(\ensuremath{\Conid{Add}}) = P(\ensuremath{\Conid{Mul}}) = 1/3$.
+%
+In this setting, $P(match(foo\#1))$ results $1/2430000$, meaning that, in
+average, we will need to generate over than two million test cases in order to
+be able to test the first clause of \ensuremath{\Varid{foo}} only once.
+%
+This situation can be somewhat improved if we decide to use \dragen to obtain a
+random generator.
+%
+By optimizing the generation probabilities in order to benefit the generation of
+\ensuremath{\Conid{Add}} constructor in a ratio of $20:1$ with respect to the rest of them, we
+obtained a distribution of values where $P(match(foo\#1)) \sim 1/300000$.
+%
+Although this certainly improves the probability of generating a matching value,
+this probability is not substantial enough to become practical.
+%
+Additionally, by favoring the generation probabilities towards the \ensuremath{\Conid{Add}}
+constructor, we found that the probability of generating a value matching the
+second clause of \ensuremath{\Varid{foo}} (which does not matches against it) also gets diminished
+into an impractival value.
 
 
 Despite the fact that the previous example might look artificial, branching
 against specific patterns of the input data is a common task.
 %
 For instance, the balancing function of a Red-Black tree need to consider a
-quite specific combination of color, left- and right subtrees and sub-subtrees
+quite specific combination of color, left and right subtrees and sub-subtrees
 in order to preserve the height invariant.
 %
 Moreover, Common Subexpression Elimination (CSE) is a compiler optimization that
 needs to consider very specific sequences of instructions that may be regrouped
-in a computationally more efficient way.
+in a computationally more efficient way, to cite a few.
 
-We believe that if a certain pattern of values is relevant enough to appear in
-the codebase being tested, a practical random testing methodology should be able
-to produce values satisfying such pattern in a substantial proportion.
 
+
+\subsection{\textbf{Data Invariants Encoded on Abstract Interfaces}}
+
+A common choice when implementing a data structure is to transfer the
+responsability of preserving its invariants to the functions that manipulates
+its values.
+%
+Consider for instance the following possible implementation of a basic \ensuremath{\Conid{HTML}}
+manipulation library:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;\Conid{Html}\mathrel{=}\Conid{Html}\;\Conid{String}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{head}\mathbin{::}\Conid{Html}\to \Conid{Html}{}\<[E]%
+\\
+\>[B]{}\Varid{head}\;(\Conid{Html}\;\Varid{inner}){}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathrel{=}\Conid{Html}\;(\text{\ttfamily \char34 <head>\char34}\plus \Varid{inner}\plus \text{\ttfamily \char34 </head>\char34}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{body}\mathbin{::}\Conid{Html}\to \Conid{Html}{}\<[E]%
+\\
+\>[B]{}\Varid{body}\;(\Conid{Html}\;\Varid{inner}){}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathrel{=}\Conid{Html}\;(\text{\ttfamily \char34 <body>\char34}\plus \Varid{t}\plus \text{\ttfamily \char34 </body>\char34}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{br}\mathbin{::}\Conid{Html}{}\<[E]%
+\\
+\>[B]{}\Varid{br}\mathrel{=}\Conid{Html}\;\text{\ttfamily \char34 <br~/>\char34}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{concat}\mathbin{::}\Conid{Html}\to \Conid{Html}\to \Conid{Html}{}\<[E]%
+\\
+\>[B]{}\Varid{concat}\;(\Conid{Html}\;\Varid{x})\;(\Conid{Html}\;\Varid{y})\mathrel{=}\Conid{Html}\;(\Varid{x}\plus \Varid{y}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+In the previous definition, the \ensuremath{\Conid{Html}} data type is defined using a single data
+constructor that contains the textual representation of the Html code it
+represents in plain text.
+%
+Later, the combinator functions defined over \ensuremath{\Conid{HTML}} are the ones in charge of
+transforming this plain text representation with the invariant that, given valid
+\ensuremath{\Conid{Html}} parameters, they always return a valid \ensuremath{\Conid{Html}} value.
+%
+This is a very commmon programming pattern that can be found in a variety of
+Haskell libraries \tocite{}.
+
+
+If we use a standard type-driven approach to derive a random generator for
+\ensuremath{\Conid{Html}}, the only ``structural'' information that we can use in the derivation
+process is that \ensuremath{\Conid{Html}} values are composed of strings.
+%
+As a consequence, we essentially end up generating random strings, which rarely
+represents a valid (or at least well structured) Html value.
+%
+Additionally, if our test suite contains properties constrained by certain
+preconditions, this lack of domain knowleadge may lead in an impractically high
+discard ratio of randomly generated test.
+%
+For instance, suposse we write a property to verify that \ensuremath{\Varid{head}} preserves the
+invariant previously mentioned:
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
-\>[B]{}\Varid{fortyTwo}\mathbin{::}\Conid{Exp}{}\<[E]%
+\>[B]{}\Varid{prop\char95 head\char95 inv}\mathbin{::}\Conid{Html}\to \Conid{Bool}{}\<[E]%
 \\
-\>[B]{}\Varid{fortyTwo}\mathrel{=}\Conid{Val}\;\mathrm{42}{}\<[E]%
+\>[B]{}\Varid{prop\char95 head\char95 inv}\;\Varid{x}\mathrel{=}\Varid{valid}\;\Varid{x}\Longrightarrow\Varid{valid}\;(\Varid{head}\;\Varid{x}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+In the previous definition we state that \ensuremath{\Varid{head}} always returns a valid \ensuremath{\Conid{Html}}
+value (\ensuremath{\Varid{valid}\;(\Varid{head}\;\Varid{x})}), provided that we are given a valid \ensuremath{\Conid{Html}} as input
+(\ensuremath{\Varid{valid}\;\Varid{x}}).
+%
+Then, while testing this property we rarely satisfy its precondition, in which
+case \quickcheck discards the whole test, retrying with a diferent random input,
+degradating this way the testing performance.
+
+
+We believe that, if certain patterns of values are relevant enough to appear in
+the codebase being tested, a practical random testing methodology should be able
+to produce values satisfying such patterns in a substantial proportion.
+%
+The next section introduces a reprentation model that let us encode the
+structure information presented here into our automatically derived random
+generators in a modular and flexible way.
+
+
+% Consider the following Haskell module |M| which defines combinators for the type
+% |Exp|:
+
+% \begin{code}
+% module M where
+
+% ten :: Exp
+% ten = Val 10
+
+% square :: Exp -> Exp
+% square x = Mul x x
+
+% minus :: Exp -> Exp -> Exp
+% minus x y = Add x (Mul y (Val (-1)))
+% \end{code}
+\section{Extracting Structure} \label{sec:hrep}
+
+In this work, we ...
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{16}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;\text{HRep}_{Val}\;{}\<[16]%
+\>[16]{}\Varid{a}\mathrel{=}\text{Mk}_{Val}\;\Conid{Int}{}\<[E]%
+\\
+\>[B]{}\mathbf{data}\;\text{HRep}_{Add}\;{}\<[16]%
+\>[16]{}\Varid{a}\mathrel{=}\text{Mk}_{Add}\;\Varid{a}\;\Varid{a}{}\<[E]%
+\\
+\>[B]{}\mathbf{data}\;\text{HRep}_{Mul}\;{}\<[16]%
+\>[16]{}\Varid{a}\mathrel{=}\text{Mk}_{Mul}\;\Varid{a}\;\Varid{a}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+For this purpose, we employ Haskell's type classes mechanism \tocite{}.
+%
+We define an evaluation type class $(\Downarrow)$ which specifies how to perform
+a single transformation \ensuremath{\Varid{step}} from the higher-order representation back into a
+concrete value of the target:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{class}\;(\Varid{rep}\;\Downarrow\;\Varid{target})\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\mathbin{::}\Varid{rep}\;\Varid{target}\to \Varid{target}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Then, we can define the following overloaded instances of the \ensuremath{\Varid{step}} operation
+for the canonical representations of data constructors simply by mapping each
+lifted constructor back into its corresponding one.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{instance}\;(\text{HRep}_{Val}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;(\text{Mk}_{Val}\;\Varid{n})\mathrel{=}\Conid{Val}\;\Varid{n}{}\<[E]%
 \\[\blanklineskip]%
-\>[B]{}\Varid{twice}\mathbin{::}\Conid{Exp}\to \Conid{Exp}{}\<[E]%
+\>[B]{}\mathbf{instance}\;(\text{HRep}_{Add}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
 \\
-\>[B]{}\Varid{twice}\;\Varid{x}\mathrel{=}\Conid{Add}\;\Varid{x}\;\Varid{x}{}\<[E]%
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;(\text{Mk}_{Add}\;\Varid{x}\;\Varid{y})\mathrel{=}\Conid{Add}\;\Varid{x}\;\Varid{y}{}\<[E]%
 \\[\blanklineskip]%
-\>[B]{}\Varid{square}\mathbin{::}\Conid{Exp}\to \Conid{Exp}{}\<[E]%
+\>[B]{}\mathbf{instance}\;(\text{HRep}_{Mul}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
 \\
-\>[B]{}\Varid{square}\;\Varid{x}\mathrel{=}\Conid{Mul}\;\Varid{x}\;\Varid{x}{}\<[E]%
-\\[\blanklineskip]%
-\>[B]{}\Varid{neg}\mathbin{::}\Conid{Exp}\to \Conid{Exp}{}\<[E]%
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;(\text{Mk}_{Mul}\;\Varid{x}\;\Varid{y})\mathrel{=}\Conid{Mul}\;\Varid{x}\;\Varid{y}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+With these individual representations, we can define a type combinator
+$(\oplus)$ to compose two representations into a single one:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;(\Varid{f}\;\oplus\;\Varid{g})\;\Varid{a}\mathrel{=}\Conid{L}\;(\Varid{f}\;\Varid{a})\mid \Conid{R}\;(\Varid{g}\;\Varid{a}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Then, a composite representation can be transformed back into the concrete
+target type by pattern matching on the data type variant and applying the \ensuremath{\Varid{step}}
+tranformation to the inner representation:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{instance}\;(\Varid{f}\;\oplus\;\Varid{g}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
 \\
-\>[B]{}\Varid{neg}\;\Varid{x}\mathrel{=}\Conid{Mul}\;\Varid{x}\;(\Conid{Val}\;(\mathbin{-}\mathrm{1})){}\<[E]%
-\\[\blanklineskip]%
-\>[B]{}\Varid{minus}\mathbin{::}\Conid{Exp}\to \Conid{Exp}\to \Conid{Exp}{}\<[E]%
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;(\Conid{L}\;\Varid{f})\mathrel{=}\Varid{step}\;\Varid{f}{}\<[E]%
 \\
-\>[B]{}\Varid{minus}\;\Varid{x}\;\Varid{y}\mathrel{=}\Conid{Add}\;\Varid{x}\;(\Varid{neg}\;\Varid{y}){}\<[E]%
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;(\Conid{R}\;\Varid{g})\mathrel{=}\Varid{step}\;\Varid{g}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Furthermore, we can define a type combinator ($\otimes$) to tag every
+representation with an explicit generation frequency:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;(\Varid{f}\;\otimes\;\Varid{n})\;\Varid{a}\mathrel{=}\Conid{Freq}\;(\Varid{f}\;\Varid{a}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+This combinator is evaluated simply by piping the result from the inner
+representation.
+%
+It does not change the evaluation semantics, as it is only considered at
+generation time:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{instance}\;(\Varid{f}\;\otimes\;\Varid{n}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;(\Conid{Freq}\;\Varid{f})\mathrel{=}\Varid{step}\;\Varid{f}{}\<[E]%
 \ColumnHook
 \end{hscode}\resethooks
 
 
-% \begin{code}
-% data IExp  =   VAL Int
-%            pp  ADD IExp IExp
-%            pp  IF BExp IExp IExp
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{16}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\text{HRep}_{Exp}{}\<[16]%
+\>[16]{}\mathrel{=}\text{HRep}_{Val}\;\!\oplus\!\;\text{HRep}_{Add}\;\!\oplus\!\;\text{HRep}_{Mul}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 
-% data BExp  =   TRUE | FALSE
-%            pp  LE IExp IExp
-%            pp  AND BExp BExp
-% \end{code}
 
-% \begin{code}
-% foo :: IExp -> IExp
-% foo (ADD (IF TRUE (VAL 42) x) y)     = ...
-% foo (IF (LE (VAL 24) x) (VAL y)) z)  = ...
-% foo x                                = ...
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;(\Varid{f}\;\otimes\;\Varid{n})\;\Varid{a}\mathrel{=}\Conid{TagFreq}\;(\Varid{f}\;\Varid{a}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{instance}\;(\Varid{f}\;\otimes\;\Varid{n}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;(\Conid{TagFreq}\;\Varid{f})\mathrel{=}\Varid{step}\;\Varid{f}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 
-% bar :: BExp -> BExp
-% bar (LE (ADD (VAL 12) x) (VAL 34))   = ...
-% bar (LE (VAL 78) (IF FALSE x y)) z)  = ...
-% bar x                                = ...
-% \end{code}
 
-% \begin{code}
-% twice :: IExp -> IExp
-% twice e = ADD e e
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{18}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;\text{HRep}_{foo\#1}\;{}\<[18]%
+\>[18]{}\Varid{a}\mathrel{=}\text{Mk}_{foo\#1}\;\Varid{a}\;\Varid{a}{}\<[E]%
+\\
+\>[B]{}\mathbf{data}\;\text{HRep}_{foo\#2}\;{}\<[18]%
+\>[18]{}\Varid{a}\mathrel{=}\text{Mk}_{foo\#2}\;\Conid{Int}\;\Varid{a}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 
-% equals :: IExp -> IExp -> BExp
-% equals x y = AND (LE x y) (LE y x)
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{instance}\;(\text{HRep}_{foo\#1}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;(\text{Mk}_{foo\#1}\;\Varid{x}\;\Varid{y}){}\<[E]%
+\\
+\>[3]{}\hsindent{2}{}\<[5]%
+\>[5]{}\mathrel{=}\Conid{Add}\;(\Conid{Add}\;\Varid{x}\;(\Conid{Val}\;\mathrm{50}))\;(\Conid{Add}\;(\Conid{Val}\;\mathrm{25})\;\Varid{y}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{instance}\;(\text{HRep}_{foo\#2}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;(\text{Mk}_{foo\#2}\;\Varid{x}\;\Varid{y}){}\<[E]%
+\\
+\>[3]{}\hsindent{2}{}\<[5]%
+\>[5]{}\mathrel{=}\Conid{Mul}\;(\Conid{Val}\;\mathrm{50})\;(\Conid{Mul}\;(\Conid{Val}\;\Varid{x})\;\Varid{y}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 
-% and3 :: BExp -> BExp -> BExp -> BExp
-% and3 x y z = AND x (AND y z)
-% \end{code}
-\section{Extracting Structure} \label{sec:hrep}
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{21}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{37}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;\text{HRep}_{ten}\;{}\<[21]%
+\>[21]{}\Varid{a}\mathrel{=}\text{Mk}_{ten}{}\<[E]%
+\\
+\>[B]{}\mathbf{data}\;\text{HRep}_{square}\;{}\<[21]%
+\>[21]{}\Varid{a}\mathrel{=}\text{Mk}_{square}\;{}\<[37]%
+\>[37]{}\Varid{a}{}\<[E]%
+\\
+\>[B]{}\mathbf{data}\;\text{HRep}_{minus}\;{}\<[21]%
+\>[21]{}\Varid{a}\mathrel{=}\text{Mk}_{minus}\;{}\<[37]%
+\>[37]{}\Varid{a}\;\Varid{a}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 
-What to say here:
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{instance}\;(\text{HRep}_{ten}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;\text{Mk}_{ten}\mathrel{=}\Varid{ten}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{instance}\;(\text{HRep}_{square}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;(\text{Mk}_{square}\;\Varid{x})\mathrel{=}\Varid{square}\;\Varid{x}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{instance}\;(\text{HRep}_{minus}\;\Downarrow\;\Conid{Exp})\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{step}\;(\text{Mk}_{minus}\;\Varid{x}\;\Varid{y})\mathrel{=}\Varid{minus}\;\Varid{x}\;\Varid{y}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 
-\begin{itemize}
-\item Haskell ADTs
-\item Type driven generation
-\item Limitations
-\item Key idea: Higher order representations
-\item Canonical representation of the data type
-\item Pattern matchings representation
-\item Abstract interface representation
-\item Composing representations
-\end{itemize}
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{16}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{24}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\text{HRep}_{foo}{}\<[16]%
+\>[16]{}\mathrel{=}{}\<[24]%
+\>[24]{}\text{HRep}_{foo\#1}{}\<[E]%
+\\
+\>[16]{}\,\oplus\;{}\<[24]%
+\>[24]{}\text{HRep}_{foo\#2}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{14}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{22}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\text{HRep}_{M}{}\<[14]%
+\>[14]{}\mathrel{=}{}\<[22]%
+\>[22]{}\text{HRep}_{ten}{}\<[E]%
+\\
+\>[14]{}\,\oplus\;{}\<[22]%
+\>[22]{}\text{HRep}_{square}{}\<[E]%
+\\
+\>[14]{}\,\oplus\;{}\<[22]%
+\>[22]{}\text{HRep}_{minus}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{16}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{24}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\text{Spec}_{Exp}{}\<[16]%
+\>[16]{}\mathrel{=}{}\<[24]%
+\>[24]{}\text{HRep}_{Exp}\;{}\<[34]%
+\>[34]{}\otimes\;\mathrm{4}{}\<[E]%
+\\
+\>[16]{}\,\oplus\;{}\<[24]%
+\>[24]{}\text{HRep}_{foo}\;{}\<[34]%
+\>[34]{}\otimes\;\mathrm{2}{}\<[E]%
+\\
+\>[16]{}\,\oplus\;{}\<[24]%
+\>[24]{}\text{HRep}_{M}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
 
 \begin{figure}[b]
   \centering
@@ -844,6 +1180,13 @@ ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
 vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
 orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
 est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
+
+% \begin{code}
+% data (Term f) a = TagTerm (f a)
+
+% instance (Term f down Exp) where
+%   step (TagTerm f) = step f
+% \end{code}
 \section{Random Generators Synthesis} \label{sec:synthesis}
 
 Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
@@ -870,64 +1213,8 @@ eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
 parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
 Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
 Nam vestibulum accumsan nisl.
-\section{Case Studies}
-
-Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
-commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
-lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
-felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
-dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
-quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
-Nam euismod tellus id erat.
-
-Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
-commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
-lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
-felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
-dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
-quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
-Nam euismod tellus id erat.
-
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
-tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
-eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
-parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
-Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
-Nam vestibulum accumsan nisl.
-
-Nullam eu ante vel est convallis dignissim. Fusce suscipit, wisi nec facilisis
-facilisis, est dui fermentum leo, quis tempor ligula erat quis odio. Nunc porta
-vulputate tellus. Nunc rutrum turpis sed pede. Sed bibendum. Aliquam posuere.
-Nunc aliquet, augue nec adipiscing interdum, lacus tellus malesuada massa, quis
-varius mi purus non odio. Pellentesque condimentum, magna ut suscipit hendrerit,
-ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
-vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
-orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
-est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
+% %include sections/casestudies.tex
 \section{Related Work}
-
-Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
-commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
-lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
-felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
-dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
-quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
-Nam euismod tellus id erat.
-
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
-tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
-eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
-parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
-Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
-Nam vestibulum accumsan nisl.
-
-Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
-commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
-lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
-felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
-dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
-quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
-Nam euismod tellus id erat.
 
 Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
 commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
@@ -947,24 +1234,6 @@ ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
 vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
 orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
 est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
-
-Nullam eu ante vel est convallis dignissim. Fusce suscipit, wisi nec facilisis
-facilisis, est dui fermentum leo, quis tempor ligula erat quis odio. Nunc porta
-vulputate tellus. Nunc rutrum turpis sed pede. Sed bibendum. Aliquam posuere.
-Nunc aliquet, augue nec adipiscing interdum, lacus tellus malesuada massa, quis
-varius mi purus non odio. Pellentesque condimentum, magna ut suscipit hendrerit,
-ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
-vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
-orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
-est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
-
-Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
-commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
-lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
-felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
-dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
-quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
-Nam euismod tellus id erat.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Bibliography

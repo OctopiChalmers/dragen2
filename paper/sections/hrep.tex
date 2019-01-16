@@ -1,17 +1,138 @@
 \section{Extracting Structure} \label{sec:hrep}
 
-What to say here:
+In this work, we ...
 
-\begin{itemize}
-\item Haskell ADTs
-\item Type driven generation
-\item Limitations
-\item Key idea: Higher order representations
-\item Canonical representation of the data type
-\item Pattern matchings representation
-\item Abstract interface representation
-\item Composing representations
-\end{itemize}
+\begin{code}
+data HRep_Val  a = Mk_Val Int
+data HRep_Add  a = Mk_Add a a
+data HRep_Mul  a = Mk_Mul a a
+\end{code}
+
+For this purpose, we employ Haskell's type classes mechanism \tocite{}.
+%
+We define an evaluation type class $(\Downarrow)$ which specifies how to perform
+a single transformation |step| from the higher-order representation back into a
+concrete value of the target:
+
+\begin{code}
+class (rep down target) where
+  step :: rep target -> target
+\end{code}
+
+Then, we can define the following overloaded instances of the |step| operation
+for the canonical representations of data constructors simply by mapping each
+lifted constructor back into its corresponding one.
+
+\begin{code}
+instance (HRep_Val down Exp) where
+  step (Mk_Val n) = Val n
+
+instance (HRep_Add down Exp) where
+  step (Mk_Add x y) = Add x y
+
+instance (HRep_Mul down Exp) where
+  step (Mk_Mul x y) = Mul x y
+\end{code}
+
+With these individual representations, we can define a type combinator
+$(\oplus)$ to compose two representations into a single one:
+
+\begin{code}
+data (f oplus g) a = L (f a) | R (g a)
+\end{code}
+
+Then, a composite representation can be transformed back into the concrete
+target type by pattern matching on the data type variant and applying the |step|
+tranformation to the inner representation:
+
+\begin{code}
+instance (f oplus g down Exp) where
+  step (L f) = step f
+  step (R g) = step g
+\end{code}
+
+Furthermore, we can define a type combinator ($\otimes$) to tag every
+representation with an explicit generation frequency:
+
+\begin{code}
+data (f otimes n) a = Freq (f a)
+\end{code}
+
+This combinator is evaluated simply by piping the result from the inner
+representation.
+%
+It does not change the evaluation semantics, as it is only considered at
+generation time:
+
+\begin{code}
+instance (f otimes n down Exp) where
+  step (Freq f) = step f
+\end{code}
+
+
+\begin{code}
+type HRep_Exp  = HRep_Val oplus'' HRep_Add oplus'' HRep_Mul
+\end{code}
+
+
+\begin{code}
+data (f otimes n) a = TagFreq (f a)
+
+instance (f otimes n down Exp) where
+  step (TagFreq f) = step f
+\end{code}
+
+
+\begin{code}
+data HRep_foo_1  a = Mk_foo_1 a a
+data HRep_foo_2  a = Mk_foo_2 Int a
+\end{code}
+
+\begin{code}
+instance (HRep_foo_1 down Exp) where
+  step (Mk_foo_1 x y)
+    = Add (Add x (Val 50)) (Add (Val 25) y)
+
+instance (HRep_foo_2 down Exp) where
+  step (Mk_foo_2 x y)
+    = Mul (Val 50) (Mul (Val x) y)
+\end{code}
+
+\begin{code}
+data HRep_ten       a = Mk_ten
+data HRep_square    a = Mk_square   a
+data HRep_minus     a = Mk_minus    a a
+\end{code}
+
+\begin{code}
+instance (HRep_ten down Exp) where
+  step Mk_ten = ten
+
+instance (HRep_square down Exp) where
+  step (Mk_square x) = square x
+
+instance (HRep_minus down Exp) where
+  step (Mk_minus x y) = minus x y
+\end{code}
+
+
+\begin{code}
+type HRep_foo  =       HRep_foo_1
+               oplus'  HRep_foo_2
+\end{code}
+
+\begin{code}
+type HRep_M  =       HRep_ten
+             oplus'  HRep_square
+             oplus'  HRep_minus
+\end{code}
+
+\begin{code}
+type Spec_Exp  =       HRep_Exp  otimes 4
+               oplus'  HRep_foo  otimes 2
+               oplus'  HRep_M
+\end{code}
+
 
 \begin{figure}[b]
   \centering
@@ -39,3 +160,10 @@ ipsum augue ornare nulla, non luctus diam neque sit amet urna. Curabitur
 vulputate vestibulum lorem. Fusce sagittis, libero non molestie mollis, magna
 orci ultrices dolor, at vulputate neque nulla lacinia eros. Sed id ligula quis
 est convallis tempor. Curabitur lacinia pulvinar nibh. Nam a sapien.
+
+% \begin{code}
+% data (Term f) a = TagTerm (f a)
+
+% instance (Term f down Exp) where
+%   step (TagTerm f) = step f
+% \end{code}

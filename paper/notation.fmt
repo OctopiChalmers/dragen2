@@ -1,3 +1,39 @@
+
+%format HRep_Val      = "\text{HRep}_{Val}"
+%format HRep_Add      = "\text{HRep}_{Add}"
+%format HRep_Mul      = "\text{HRep}_{Mul}"
+%format HRep_foo_1    = "\text{HRep}_{foo\#1}"
+%format HRep_foo_2    = "\text{HRep}_{foo\#2}"
+%format HRep_ten      = "\text{HRep}_{ten}"
+%format HRep_twice    = "\text{HRep}_{twice}"
+%format HRep_square   = "\text{HRep}_{square}"
+%format HRep_neg      = "\text{HRep}_{neg}"
+%format HRep_minus    = "\text{HRep}_{minus}"
+
+%format Mk_Val      = "\text{Mk}_{Val}"
+%format Mk_Add      = "\text{Mk}_{Add}"
+%format Mk_Mul      = "\text{Mk}_{Mul}"
+%format Mk_foo_1    = "\text{Mk}_{foo\#1}"
+%format Mk_foo_2    = "\text{Mk}_{foo\#2}"
+%format Mk_ten      = "\text{Mk}_{ten}"
+%format Mk_twice    = "\text{Mk}_{twice}"
+%format Mk_square   = "\text{Mk}_{square}"
+%format Mk_neg      = "\text{Mk}_{neg}"
+%format Mk_minus    = "\text{Mk}_{minus}"
+
+%format HRep_Exp    = "\text{HRep}_{Exp}"
+%format HRep_foo    = "\text{HRep}_{foo}"
+%format HRep_M      = "\text{HRep}_{M}"
+%format Spec_Exp    = "\text{Spec}_{Exp}"
+
+%format down = "\Downarrow"
+
+%format Term = "\text{Term}"
+%format oplus = "\oplus"
+%format oplus' = "\,\oplus"
+%format oplus'' = "\!\oplus\!"
+%format otimes = "\otimes"
+
 %format delta = "\Delta"
 %format epsilon = "\varepsilon"
 

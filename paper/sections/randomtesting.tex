@@ -183,121 +183,190 @@ In practice, this procedure is too generic to generate complex data that is
 useful enough to be used for random testing.
 
 
-In this work we identify two sources of complications that appear when using the
-aforementioned automatic derivation tools to obtain random data generators:
+In this work we identify two sources of additional structure information which
+are not considered by the aforementioned automatic derivation tools to obtain
+random data generators:
 
 \begin{enumerate}
 \item The target code behaves differently over inputs matching very specific
   patterns.
-\item The target code behaves differently according to some dependency over
-  subexpressions of its inputs.
+\item The target code yields some of the responsability of preserving its
+  invariants to the functions of its abstract interface.
 \end{enumerate}
 
-To exemplify the first point, suppose we want to use randomly generated |Exp|s
-to test a property comprising the following function:
+This information can be reified in compile time and used to synthesize richer
+random generators automatically. We proceed to exemplify the previous points in
+detail.
+
+\subsection{\textbf{Presence of Complex Pattern Matchings}}
+
+To exemplify the firts problematic scenarion that may arise, suppose we want to
+use randomly generated |Exp|s to test a property comprising the following
+function:
 
 \begin{code}
 foo :: Exp -> Exp
 foo (Add (Add x (Val 50)) (Add (Val 25) y))
   = error "pattern #1"
-foo (Mul (Mul x (Val 50)) (Mul (Val 25) y))
+foo (Mul (Val 50) (Mul (Val x) y))
   = error "pattern #2"
 foo x = x
 \end{code}
 
-This function behaves mostly like an identity function, except for two very
-specific patterns of input values defined using three nested levels of pattern
-matching.
+This function behaves very much like an identity function, with the exception
+that it fails for two very specific patterns of input values defined using
+nested pattern matching.
 %
 This is, |foo| does not only matches against the root data constructor, but also
 against the data constructors of its subexpressions and sub-subexpressions.
 
-If we consider that \quickcheck's default implementation for random |Int|s pick
-a number in the interval $[-n, n]$ with uniform distribution, we need to be able
-to identify which one is a sensible generation size to set based on wether our
-code branches on numbers or not, otherwise our random generator will not be able
-to generate random values to match against such numbers, leaving fragments of
-code completely untested.
+
+\quickcheck's default implementation for random |Int|s pick a number in the
+interval $[-n, n]$ with uniform distribution.
 %
-Suppose that we pick the a generation size $50$, i.e. the minimum size that is
-big enough to produce an |Int| number equal to $50$.
+Hence, in principle we need to recognize what is a suitable generation size,
+which should be big enough for our generator be able to generate the numbers we
+pattern match against to, otherwise we will not be able to generate any value to
+match against |foo| clauses, leaving fragments of code completely untested.
 %
-Under this considerations, the probability of generating a value matching the
-first clause of |foo| (and hence triggering the error) are as follows:
+Suppose then that we pick the a generation size $50$, i.e. the minimum size that
+is big enough to produce an |Int| number equal to $50$.
+%
+Under this consideration, the probability of generating a value matching the
+first clause of |foo| (and hence triggering the first error) results as follows:
 
 \begin{align*}
-  P(match(foo_1))
+  P(match(foo\#1))
   \!&&=\; &P(Add) \\
   \!&&*\; &P(Add) * 1 * (P(Val) * (1/100)) \\
   \!&&*\; &P(Add) * (P(Val) * (1/100)) * 1
 \end{align*}
 
-\todo[inline]{AM: COMPLETE}
+If we use \megadeth to obtain a random generator for |Exp|, we obtain a uniform
+generation probability distribution over constructors, i.e., $P(|Val|) =
+P(|Add|) = P(|Mul|) = 1/3$.
+%
+In this setting, $P(match(foo\#1))$ results $1/2430000$, meaning that, in
+average, we will need to generate over than two million test cases in order to
+be able to test the first clause of |foo| only once.
+%
+This situation can be somewhat improved if we decide to use \dragen to obtain a
+random generator.
+%
+By optimizing the generation probabilities in order to benefit the generation of
+|Add| constructor in a ratio of $20:1$ with respect to the rest of them, we
+obtained a distribution of values where $P(match(foo\#1)) \sim 1/300000$.
+%
+Although this certainly improves the probability of generating a matching value,
+this probability is not substantial enough to become practical.
+%
+Additionally, by favoring the generation probabilities towards the |Add|
+constructor, we found that the probability of generating a value matching the
+second clause of |foo| (which does not matches against it) also gets diminished
+into an impractival value.
 
 
 Despite the fact that the previous example might look artificial, branching
 against specific patterns of the input data is a common task.
 %
 For instance, the balancing function of a Red-Black tree need to consider a
-quite specific combination of color, left- and right subtrees and sub-subtrees
+quite specific combination of color, left and right subtrees and sub-subtrees
 in order to preserve the height invariant.
 %
 Moreover, Common Subexpression Elimination (CSE) is a compiler optimization that
 needs to consider very specific sequences of instructions that may be regrouped
-in a computationally more efficient way.
+in a computationally more efficient way, to cite a few.
 
-We believe that if a certain pattern of values is relevant enough to appear in
-the codebase being tested, a practical random testing methodology should be able
-to produce values satisfying such pattern in a substantial proportion.
 
+
+\subsection{\textbf{Data Invariants Encoded on Abstract Interfaces}}
+
+A common choice when implementing a data structure is to transfer the
+responsability of preserving its invariants to the functions that manipulates
+its values.
+%
+Consider for instance the following possible implementation of a basic |HTML|
+manipulation library:
 
 \begin{code}
-fortyTwo :: Exp
-fortyTwo = Val 42
+data Html = Html String
 
-twice :: Exp -> Exp
-twice x = Add x x
+head :: Html -> Html
+head (Html inner)
+  = Html ("<head>" ++ inner ++ "</head>")
 
-square :: Exp -> Exp
-square x = Mul x x
+body :: Html -> Html
+body (Html inner)
+  = Html ("<body>" ++ t ++ "</body>")
 
-neg :: Exp -> Exp
-neg x = Mul x (Val (-1))
+br :: Html
+br = Html "<br />"
 
-minus :: Exp -> Exp -> Exp
-minus x y = Add x (neg y)
+concat :: Html -> Html -> Html
+concat (Html x) (Html y) = Html (x ++ y)
 \end{code}
 
+In the previous definition, the |Html| data type is defined using a single data
+constructor that contains the textual representation of the Html code it
+represents in plain text.
+%
+Later, the combinator functions defined over |HTML| are the ones in charge of
+transforming this plain text representation with the invariant that, given valid
+|Html| parameters, they always return a valid |Html| value.
+%
+This is a very commmon programming pattern that can be found in a variety of
+Haskell libraries \tocite{}.
+
+
+If we use a standard type-driven approach to derive a random generator for
+|Html|, the only ``structural'' information that we can use in the derivation
+process is that |Html| values are composed of strings.
+%
+As a consequence, we essentially end up generating random strings, which rarely
+represents a valid (or at least well structured) Html value.
+%
+Additionally, if our test suite contains properties constrained by certain
+preconditions, this lack of domain knowleadge may lead in an impractically high
+discard ratio of randomly generated test.
+%
+For instance, suposse we write a property to verify that |head| preserves the
+invariant previously mentioned:
+
+\begin{code}
+prop_head_inv :: Html -> Bool
+prop_head_inv x = valid x ===> valid (head x)
+\end{code}
+
+In the previous definition we state that |head| always returns a valid |Html|
+value (|valid (head x)|), provided that we are given a valid |Html| as input
+(|valid x|).
+%
+Then, while testing this property we rarely satisfy its precondition, in which
+case \quickcheck discards the whole test, retrying with a diferent random input,
+degradating this way the testing performance.
+
+
+We believe that, if certain patterns of values are relevant enough to appear in
+the codebase being tested, a practical random testing methodology should be able
+to produce values satisfying such patterns in a substantial proportion.
+%
+The next section introduces a reprentation model that let us encode the
+structure information presented here into our automatically derived random
+generators in a modular and flexible way.
+
+
+% Consider the following Haskell module |M| which defines combinators for the type
+% |Exp|:
 
 % \begin{code}
-% data IExp  =   VAL Int
-%            pp  ADD IExp IExp
-%            pp  IF BExp IExp IExp
+% module M where
 
-% data BExp  =   TRUE | FALSE
-%            pp  LE IExp IExp
-%            pp  AND BExp BExp
-% \end{code}
+% ten :: Exp
+% ten = Val 10
 
-% \begin{code}
-% foo :: IExp -> IExp
-% foo (ADD (IF TRUE (VAL 42) x) y)     = ...
-% foo (IF (LE (VAL 24) x) (VAL y)) z)  = ...
-% foo x                                = ...
+% square :: Exp -> Exp
+% square x = Mul x x
 
-% bar :: BExp -> BExp
-% bar (LE (ADD (VAL 12) x) (VAL 34))   = ...
-% bar (LE (VAL 78) (IF FALSE x y)) z)  = ...
-% bar x                                = ...
-% \end{code}
-
-% \begin{code}
-% twice :: IExp -> IExp
-% twice e = ADD e e
-
-% equals :: IExp -> IExp -> BExp
-% equals x y = AND (LE x y) (LE y x)
-
-% and3 :: BExp -> BExp -> BExp -> BExp
-% and3 x y z = AND x (AND y z)
+% minus :: Exp -> Exp -> Exp
+% minus x y = Add x (Mul y (Val (-1)))
 % \end{code}
