@@ -1,3 +1,24 @@
+%format HRep = "\text{HRep}"
+
+%format gen_HRep      = "gen_{\text{HRep}}"
+%format gen_r         = "gen_{r}"
+%format gen_f_plus_g  = "gen_{f \oplus g}"
+%format gen_f_times_n = "gen_{f \otimes n}"
+%format gen_f_term    = "gen_{f^\bullet}"
+%format gen_t_f       = "gen_{T f}"
+%format gen_f         = "gen_{f}"
+%format gen_g         = "gen_{g}"
+%format gen_Exp       = "gen_{Exp}"
+%format gen_Val       = "gen_{Val}"
+%format gen_Add       = "gen_{Add}"
+%format gen_Mul       = "gen_{Mul}"
+%format gen_foo_1     = "gen_{foo\#1}"
+%format gen_foo_2     = "gen_{foo\#2}"
+%format gen_ten       = "gen_{ten}"
+%format gen_twice     = "gen_{twice}"
+%format gen_square    = "gen_{square}"
+%format gen_neg       = "gen_{neg}"
+%format gen_minus     = "gen_{minus}"
 
 %format HRep_Val      = "\text{HRep}_{Val}"
 %format HRep_Add      = "\text{HRep}_{Add}"
@@ -21,18 +42,32 @@
 %format Mk_neg      = "\text{Mk}_{neg}"
 %format Mk_minus    = "\text{Mk}_{minus}"
 
+
 %format HRep_Exp    = "\text{HRep}_{Exp}"
 %format HRep_foo    = "\text{HRep}_{foo}"
 %format HRep_M      = "\text{HRep}_{M}"
-%format Spec_Exp    = "\text{Spec}_{Exp}"
 
 %format down = "\Downarrow"
 
-%format Term = "\text{Term}"
+%format term = "\_^\bullet"
+%format f_term = "f^\bullet"
+%format HRep_Val_term = "\text{HRep}_{Val}^\bullet"
+
 %format oplus = "\oplus"
-%format oplus' = "\,\oplus"
-%format oplus'' = "\!\oplus\!"
+%format oplus' = "\!\;\oplus"
+%format oplus'' = "\!\!\oplus\!\!"
 %format otimes = "\otimes"
+
+
+%format ox_op = "\llbracket"
+%format ox_cl = "\rrbracket"
+%format ox_cl_Exp = "\rrbracket_{Exp}"
+
+%format eval_x_Exp = "\evalrep{x}{Exp}"
+%format eval_y_Exp = "\evalrep{y}{Exp}"
+
+%format at_f = "\textit{@}\!f"
+%format at_g = "\textit{@}\!g"
 
 %format delta = "\Delta"
 %format epsilon = "\varepsilon"
@@ -41,8 +76,9 @@
 %format squared = "\!^2"
 %format pp = "\;\;\vert"
 
-%format <$> = "\mathop{\langle \$ \rangle}"
-%format <*> = "\mathop{\langle \ast \rangle}"
+%format <+> = "\mathop{\langle\! +\! \rangle}"
+%format <$> = "\mathop{\mathsmaller{\langle \$ \rangle}}"
+%format <*> = "\mathop{\mathsmaller{\langle \ast \rangle}}"
 
 %format pred = "(n{-}1)"
 

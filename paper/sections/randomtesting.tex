@@ -39,8 +39,9 @@ classes of values: |Val| represents literal values, whereas |Add| and |Mul|
 represent the addition and multiplication of two integer expressions,
 respectively.
 %
-In Haskell, |Val|, |Add| and |Mul| are called \emph{data constructors} and are
-used to distiguish which variant of the data type we are reffering to.
+In Haskell, |Val|, |Add| and |Mul| are called \emph{data constructors} (or
+constructors for short) and are used to distiguish which variant of the data
+type we are reffering to.
 %
 Each data constructor is then defined as a product of zero or more types known
 as \emph{fields}.
@@ -92,25 +93,25 @@ For instance, consider the following definition of a \quickcheck random
 generator for the type |Exp|:
 
 \begin{code}
-genExp :: Gen Exp
-genExp = sized gen
-  where
-    gen 0 = Val <$> arbitrary
-    gen n = oneof
-      [  Val  <$> arbitrary
-      ,  Add  <$> gen pred   <*> gen pred
-      ,  Mul  <$> gen pred   <*> gen pred ]
+gen_Exp = sized (\size ->
+   if size == 0
+   then Val <$> arbitrary
+   else frequency
+     [  (1, Val  <$> arbitrary)
+     ,  (2, Add  <$> smaller gen_Exp <*> smaller gen_Exp)
+     ,  (1, Mul  <$> smaller gen_Exp <*> smaller gen_Exp) ])
 \end{code} %$
 
-This random generator is defined using \quickcheck's combinator |sized :: (Int
--> Gen a) -> Gen a| to paremetrize the generation process up to an external
-integer number known as the \emph{generation size}.
+This random generator is defined using \quickcheck's combinator |sized| to
+paremetrize the generation process up to an external integer number known as the
+\emph{generation size}.
 %
 This parameter is used to limit the maximum amount of recursive call that this
 random generator can perform.
 %
-When called with a positive generation size (case |gen n|), the generator is free
-to randomly pick with uniform probability among any data constructor of |Exp|.
+When called with a positive generation size (case |gen n|), the generator will
+pick among any data constructor of |Exp| with a explicitly given frequency---two
+times more |Add|s than |Val| or |Mul|.
 %
 In the case it picks to generate a |Val| data constructor, it also generates a
 random |Int| value using the standard overloaded generator |arbitrary|
@@ -119,8 +120,8 @@ random |Int| value using the standard overloaded generator |arbitrary|
 %
 On the other hand, when it randomly picks to generate either an |Add| or a |Mul|
 data constructor, it also generates independently two random subexpressions
-corresponding to the data constructor fields by calling itself recursively (|gen
-pred|), ensuring to decrease the generation size by a unit on each recursive
+corresponding to the data constructor fields by calling itself recursively
+(|resize pred gen_Exp|), decreasing the generation size on each recursive
 invocation.
 
 
@@ -234,12 +235,11 @@ is big enough to produce an |Int| number equal to $50$.
 %
 Under this consideration, the probability of generating a value matching the
 first clause of |foo| (and hence triggering the first error) results as follows:
-
+%
 \begin{align*}
-  P(match(foo\#1))
-  \!&&=\; &P(Add) \\
-  \!&&*\; &P(Add) * 1 * (P(Val) * (1/100)) \\
-  \!&&*\; &P(Add) * (P(Val) * (1/100)) * 1
+  &P(match(foo\#1))\\
+  &\quad = P(Add)       * P(Add) * 1 * (P(Val) * (1/100)) \\
+  &\phantom{xxxxxxxxxx} * P(Add) * (P(Val) * (1/100)) * 1
 \end{align*}
 
 If we use \megadeth to automatically derive a random generator for |Exp|, we
@@ -250,8 +250,8 @@ In this setting, $P(match(foo\#1))$ results $1/2430000$, meaning that, in
 average, we will need to generate over than two million test cases in order to
 be able to test the first clause of |foo| only once.
 %
-This situation can be somewhat improved if we decide to use \dragen to obtain a
-random generator.
+This situation can be somewhat improved if we use \dragen to obtain a random
+generator.
 %
 Using this tool, we can optimize the generation probabilities in order to
 benefit the generation of some data constructors over the rest.
@@ -310,8 +310,8 @@ body (Html inner)
 br :: Html
 br = Html "<br />"
 
-concat :: Html -> Html -> Html
-concat (Html x) (Html y) = Html (x ++ y)
+(<+>) :: Html -> Html -> Html
+(Html x) <+> (Html y) = Html (x ++ y)
 \end{code}
 
 In the previous definition, the |Html| data type is defined using a single data
@@ -361,20 +361,3 @@ to produce values satisfying such patterns in a substantial proportion.
 The next section introduces a reprentation model that let us encode the
 structure information presented here into our automatically derived random
 generators in a modular and flexible way.
-
-
-% Consider the following Haskell module |M| which defines combinators for the type
-% |Exp|:
-
-% \begin{code}
-% module M where
-
-% ten :: Exp
-% ten = Val 10
-
-% square :: Exp -> Exp
-% square x = Mul x x
-
-% minus :: Exp -> Exp -> Exp
-% minus x y = Add x (Mul y (Val (-1)))
-% \end{code}

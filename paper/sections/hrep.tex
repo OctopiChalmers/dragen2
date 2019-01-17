@@ -1,58 +1,110 @@
 \section{Extracting Structure} \label{sec:hrep}
 
-In this work, we ...
+In this section we present a compositional representation to express the random
+generation of values following the internal structure of their data types along
+with the structure present on patterns matchings and abstract interfaces.
+
+
+The key idea of this work is to represent different sources of structured value
+information of a data type in a homogeneous way that we call a ``higher-level
+representation'' (|HRep| from now on).%
+\footnote{The notion of higher-level comes from that the generation process of
+  given target data type is entirely determined by the type of the chosen
+  representation, instead of by a concrete generator defined at the term level.}
+%
+For this purpose, we use a series of automatically derived data types, each one
+representing an atomic unit of information that can be randomly generated and
+then reflected back to the corresponding value of the original data type.
+
+
+We wil reuse the previously defined data type |Exp| and the function |foo| to
+explain the different concepts involved all across this section.
+
+
+\subsection{\textbf{Representing Data Constructors}}
+
+We begin by introducing the simplest representation that we can extract from our
+codebase: the representation of single data constructor.
+%
+Each original constructor can be represented by a automatically derived data
+type consisting of a single constructor with the same fields, except for the
+recursive ones that are abstracted away.
+%
+In this light, we represent each constructor of the data type |Exp| as follows:
 
 \begin{code}
-data HRep_Val  a = Mk_Val Int
-data HRep_Add  a = Mk_Add a a
-data HRep_Mul  a = Mk_Mul a a
+data HRep_Val  r = Mk_Val Int
+data HRep_Add  r = Mk_Add r r
+data HRep_Mul  r = Mk_Mul r r
 \end{code}
+
+Note that the previous definition are type parametric over the type parameter
+|r|.
+%
+This way we can replace |r| with any concrete data type, obtaining different
+possible values on each case.
+%
+For instance, the value (|Mk_Add 10 20|) has type |HRep_Add Int|, while the
+value (|Mk_Mul True False|) has type |HRep_Mul Bool|.
+%
+In practice, this parametricity let us instatiate |a| with the type of the
+chosen representation (which might change according to the user demands),
+without having to modify anything in the underlying machinery.
+
 
 For this purpose, we employ Haskell's type classes mechanism \tocite{}.
 %
 We define an evaluation type class $(\Downarrow)$ which specifies how to perform
-a single transformation |step| from the higher-order representation back into a
-concrete value of the target:
+a single transformation |step| from an |HRep| back into a concrete value of the
+target:
+%
+\begin{align*}
+  \llbracket \_ \rrbracket_{target}\ :\ rep_{target}\ \rightarrow\ target
+\end{align*}
 
-\begin{code}
-class (rep down target) where
-  step :: rep target -> target
-\end{code}
+% \begin{code}
+% class (rep down target) where
+%   step :: rep target -> target
+% \end{code}
 
 Then, we can define the following overloaded instances of the |step| operation
-for the canonical representations of data constructors simply by mapping each
-lifted constructor back into its corresponding one.
+for the canonical |HRep| of data constructors simply by mapping each lifted
+constructor back into its corresponding one.
+%
+\begin{alignat*}{4}
+  &\evalrep{|Mk_Val|\ n\ \ \ &&}{|Exp|}
+    &&= |Val|\ n \\
+  &\evalrep{|Mk_Add|\ x\ y   &&}{|Exp|}
+    &&= |Add|\ \evalrep{x}{|Exp|}\ \evalrep{y}{|Exp|} \\
+  &\evalrep{|Mk_Mul|\ x\ y   &&}{|Exp|}
+    &&= |Mul|\ \evalrep{x}{|Exp|}\ \evalrep{y}{|Exp|}
+\end{alignat*}
+
+
+% \begin{code}
+% instance (HRep_Val down Exp) where
+%   step (Mk_Val n) = Val n
+
+% instance (HRep_Add down Exp) where
+%   step (Mk_Add x y) = Add x y
+
+% instance (HRep_Mul down Exp) where
+%   step (Mk_Mul x y) = Mul x y
+% \end{code}
 
 \begin{code}
-instance (HRep_Val down Exp) where
-  step (Mk_Val n) = Val n
+  gen_Val  gen_r  = Mk_Val  <$> arbitrary
+  gen_Add  gen_r  = Mk_Add  <$> smaller gen_r <*> smaller gen_r
+  gen_Mul  gen_r  = Mk_Mul  <$> smaller gen_r <*> smaller gen_r
+\end{code} %$
 
-instance (HRep_Add down Exp) where
-  step (Mk_Add x y) = Add x y
+\subsection{\textbf{Type Level Combinators}}
 
-instance (HRep_Mul down Exp) where
-  step (Mk_Mul x y) = Mul x y
-\end{code}
+In order to compose the |HRep|s for the single data constructors already
+presented, we will need to define a series of type level combinators.
 
-With these individual representations, we can define a type combinator
-$(\oplus)$ to compose two representations into a single one:
-
-\begin{code}
-data (f oplus g) a = L (f a) | R (g a)
-\end{code}
-
-Then, a composite representation can be transformed back into the concrete
-target type by pattern matching on the data type variant and applying the |step|
-tranformation to the inner representation:
-
-\begin{code}
-instance (f oplus g down Exp) where
-  step (L f) = step f
-  step (R g) = step g
-\end{code}
-
-Furthermore, we can define a type combinator ($\otimes$) to tag every
-representation with an explicit generation frequency:
+In first place, we define a type combinator ($\otimes$) to tag a |HRep| with an
+explicit generation frequency:
 
 \begin{code}
 data (f otimes n) a = Freq (f a)
@@ -63,77 +115,207 @@ result from the inner representation.
 %
 It does not change the evaluation semantics, as it is only considered at
 generation time:
+%
+\begin{align*}
+  \evalrep{Freq\ x : f \otimes n}{t} = \evalrep{x : f}{t}
+\end{align*}
 
 \begin{code}
-instance (f otimes n down Exp) where
-  step (Freq f) = step f
+gen_f_times_n gen_r = Term <$> gen_f gen_r
 \end{code}
 
-With the introduced combinators, we can easily create a type synonym |HRep_Exp|
-to refer to the canonical representation of our original data type |Exp|,
-tagging for instance the representation of the constuctor |Add| to be generated
-in double the proportion of rest of the representations:
+% \begin{code}
+% instance (f otimes n down Exp) where
+%   step (Freq f) = step f
+% \end{code}
+
+% \begin{code}
+% instance Arbitrary1 (f otimes n) where
+%   liftArbitrary gen_HRep = Tag <$> gen_HRep
+% \end{code} %$
+
+When generating random values, we will only allow certain terminal
+representations to be generated at the moment that the generation size gets
+exhausted.
+%
+For this, we follow the same approach as before to define a combinator (|term|)
+to tag terminal representations.
 
 \begin{code}
-type HRep_Exp  =       HRep_Val
+data (f_term) a = Term (f a)
+\end{code}
+
+\begin{align*}
+  \evalrep{Term\ x : |f_term|}{t} = \evalrep{x : f}{t}
+\end{align*}
+
+\begin{code}
+gen_f_term gen_r = Term <$> gen_f gen_r
+\end{code}
+
+
+With these individual representations, we can define a type combinator
+$(\oplus)$ to compose two |HRep|s into a single one:
+
+\begin{code}
+data (f oplus g) a = L (f a) | R (g a)
+\end{code}
+
+Then, a composite representation can be transformed back into the concrete
+target type by pattern matching on the data type variant and applying the |step|
+tranformation to the inner |HRep|:
+%
+\begin{alignat*}{3}
+  &\evalrep{L\ x &&: f \oplus g}{t} = \evalrep{x : f &&}{t} \\
+  &\evalrep{R\ x &&: f \oplus g}{t} = \evalrep{y : g &&}{t}
+\end{alignat*}
+
+\begin{code}
+  gen_f_plus_g gen_r  = sized (\size ->
+    if size == 0
+    then frequency
+      [ (freq0  at_f,  L  <$> gen_f  gen_r  )
+      , (freq0  at_g,  R  <$> gen_g  gen_r  ) ]
+    else frequency
+      [ (freq   at_f,  L  <$> gen_f  gen_r  )
+      , (freq   at_g,  R  <$> gen_g  gen_r  ) ])
+\end{code} %$
+
+% \begin{code}
+% instance (f oplus g down Exp) where
+%   step (L f) = step f
+%   step (R g) = step g
+% \end{code}
+
+% \begin{code}
+% instance Arbitrary1 (f oplus g) where
+%   liftArbitrary gen_HRep
+%     = frequency
+%       [ (freq at_f, L <$> gen_HRep)
+%       , (freq at_g, R <$> gen_HRep) ]
+% \end{code} %$
+
+
+With the introduced combinators, we can easily create a type synonym |HRep_Exp|
+to refer to the canonical |HRep| of our original data type |Exp|, tagging for
+instance the representation of the constuctor |Add| to be generated in with
+double the frequency of rest:
+
+\begin{code}
+type HRep_Exp  =       HRep_Val_term
                oplus'  HRep_Add  otimes 2
                oplus'  HRep_Mul
 \end{code}
 
 
+\begin{code}
+  data Fix f = Fix (f (Fix f))
+\end{code}
+
+\begin{align*}
+  eval : Fix\ rep \rightarrow target
+\end{align*}
+
+
 \subsection{\textbf{Representing Pattern Matchings}}
 
 \begin{code}
-data HRep_foo_1  a = Mk_foo_1 a a
-data HRep_foo_2  a = Mk_foo_2 Int a
+data HRep_foo_1  r = Mk_foo_1 r r
+data HRep_foo_2  r = Mk_foo_2 Int r
 \end{code}
 
-\begin{code}
-instance (HRep_foo_1 down Exp) where
-  step (Mk_foo_1 x y)
-    = Add (Add x (Val 50)) (Add (Val 25) y)
+\begin{align*}
+  &\evalrep{|Mk_foo_1|\ x\ y}{Exp} = \\
+  &\ \ |Add (Add eval_x_Exp (Val 50)) (Add (Val 25) eval_y_Exp)|\\
+  &\evalrep{|Mk_foo_2|\ x\ y}{Exp} = \\
+  &\ \ |Mul (Val 50) (Mul (Val x) eval_y_Exp)|
+\end{align*}
 
-instance (HRep_foo_2 down Exp) where
-  step (Mk_foo_2 x y)
-    = Mul (Val 50) (Mul (Val x) y)
-\end{code}
+% \begin{code}
+% instance (HRep_foo_1 down Exp) where
+%   step (Mk_foo_1 x y)
+%     = Add (Add x (Val 50)) (Add (Val 25) y)
+
+% instance (HRep_foo_2 down Exp) where
+%   step (Mk_foo_2 x y)
+%     = Mul (Val 50) (Mul (Val x) y)
+% \end{code}
+
+% \begin{code}
+% instance Arbitrary1 HRep_foo_1 where
+%   liftArbitrary gen_HRep
+%     = Mk_foo_1 <$> gen_HRep <*> gen_HRep
+
+% instance Arbitrary1 HRep_foo_2 where
+%   liftArbitrary gen_HRep
+%     = Mk_foo_2 <$> arbitrary <*> gen_HRep
+% \end{code} %$
+
 
 \begin{code}
-type HRep_foo  =       HRep_foo_1
-               oplus'  HRep_foo_2
+type HRep_foo  = HRep_foo_1 oplus''  HRep_foo_2
 \end{code}
 
 \subsection{\textbf{Representing Abstract Interfaces}}
 
 \begin{code}
-data HRep_ten       a = Mk_ten
-data HRep_square    a = Mk_square   a
-data HRep_minus     a = Mk_minus    a a
+module M where
+
+ten :: Exp
+ten = Val 10
+
+square :: Exp -> Exp
+square x = Mul x x
+
+minus :: Exp -> Exp -> Exp
+minus x y = Add x (Mul y (Val (-1)))
 \end{code}
 
 \begin{code}
-instance (HRep_ten down Exp) where
-  step Mk_ten = ten
-
-instance (HRep_square down Exp) where
-  step (Mk_square x) = square x
-
-instance (HRep_minus down Exp) where
-  step (Mk_minus x y) = minus x y
+data HRep_ten       r = Mk_ten
+data HRep_square    r = Mk_square   r
+data HRep_minus     r = Mk_minus    r r
 \end{code}
 
+\begin{alignat*}{3}
+  &\evalrep{|Mk_ten|         &&}{Exp} = |ten| \\
+  &\evalrep{|Mk_square|\ x   &&}{Exp} = |square eval_x_Exp| \\
+  &\evalrep{|Mk_minus|\ x\ y &&}{Exp} = |minus  eval_x_Exp eval_y_Exp|
+\end{alignat*}
+
+% \begin{code}
+% instance (HRep_ten down Exp) where
+%   step Mk_ten = ten
+
+% instance (HRep_square down Exp) where
+%   step (Mk_square x) = square x
+
+% instance (HRep_minus down Exp) where
+%   step (Mk_minus x y) = minus x y
+% \end{code}
+
+% \begin{code}
+% instance Arbitrary1 HRep_ten where
+%   liftArbitrary gen_HRep = pure Mk_ten
+
+% instance Arbitrary1 HRep_square where
+%   liftArbitrary gen_HRep = Mk_square <$> gen_HRep
+
+% instance Arbitrary1 HRep_minus where
+%   liftArbitrary gen_HRep
+%     = Mk_minus <$> gen_HRep <*> gen_HRep
+% \end{code} %$
+
 \begin{code}
-type HRep_M  =       HRep_ten
-             oplus'  HRep_square
-             oplus'  HRep_minus
+type HRep_M  = HRep_ten oplus''  HRep_square oplus''  HRep_minus
 \end{code}
 
 
 
 \begin{code}
-type Spec_Exp  =       HRep_Exp  otimes 4
-               oplus'  HRep_foo  otimes 2
-               oplus'  HRep_M
+type Spec  =       HRep_Exp  otimes 4
+           oplus'  HRep_foo  otimes 2
+           oplus'  HRep_M
 \end{code}
 
 This previous definition can be interpreted graphically as it is shown in the
@@ -145,9 +327,9 @@ meta-programming.
 \begin{figure}[t]
   \centering
   \input{tikz/hrep.tex}
-  \caption{Higher order representation of the data type |Exp|, using structural
-    information from the function |foo| and the abstract interface of the module
-    |M|.}
+  \caption{Higher level representation of the data type |Exp|, defined using
+    structural information from the function |foo| and the abstract interface of
+    the module |M|.}
   \label{fig:hrep}
 \end{figure}
 

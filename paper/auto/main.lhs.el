@@ -2,7 +2,7 @@
  "main.lhs"
  (lambda ()
    (TeX-add-to-alist 'LaTeX-provided-class-options
-                     '(("IEEEtran" "conference")))
+                     '(("IEEEtran" "conference" "fleqn")))
    (TeX-run-style-hooks
     "latex2e"
     "IEEEtran"
@@ -28,8 +28,10 @@
     "tabularx"
     "booktabs"
     "caption"
-    "xspace")
+    "xspace"
+    "relsize")
    (TeX-add-symbols
+    '("evalrep" 2)
     "tocite"
     "quickcheck"
     "megadeth"
