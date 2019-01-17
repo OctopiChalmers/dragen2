@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.10.12)  17 JAN 2019 15:37
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.10.12)  18 JAN 2019 00:55
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1252,17 +1252,17 @@ LaTeX Font Info:    External font `yhcmex10' loaded for size
 \openout3 = `main.ptb'.
 
 
-Overfull \hbox (0.81721pt too wide) in paragraph at lines 966--988
+Overfull \hbox (3.23982pt too wide) in paragraph at lines 966--988
  [][][][][][][][] 
  []
 
 
-Overfull \hbox (0.81721pt too wide) in paragraph at lines 966--988
+Overfull \hbox (3.23982pt too wide) in paragraph at lines 966--988
  [][][][][][][][] 
  []
 
 
-Overfull \hbox (0.81721pt too wide) in paragraph at lines 966--988
+Overfull \hbox (3.23982pt too wide) in paragraph at lines 966--988
  [][][][][][][][] 
  []
 
@@ -1290,17 +1290,18 @@ Overfull \hbox (0.81721pt too wide) in paragraph at lines 966--988
 \openout3 = `main.ptb'.
 
 
-Overfull \hbox (15.73764pt too wide) in paragraph at lines 1265--1285
+Overfull \hbox (18.16025pt too wide) in paragraph at lines 1301--1321
  [][][][][][][][][][] 
  []
 
 
-Overfull \hbox (15.73764pt too wide) in paragraph at lines 1265--1285
+Overfull \hbox (18.16025pt too wide) in paragraph at lines 1301--1321
  [][][][][][][][][][] 
  []
 
 \openout3 = `main.ptb'.
 
+[5]
 \openout3 = `main.ptb'.
 
 \openout3 = `main.ptb'.
@@ -1308,17 +1309,17 @@ Overfull \hbox (15.73764pt too wide) in paragraph at lines 1265--1285
 \openout3 = `main.ptb'.
 
 
-Overfull \hbox (18.42685pt too wide) in paragraph at lines 1344--1368
+Overfull \hbox (20.84946pt too wide) in paragraph at lines 1403--1427
  [][][][][][] 
  []
 
 
-Overfull \hbox (18.42685pt too wide) in paragraph at lines 1344--1368
+Overfull \hbox (20.84946pt too wide) in paragraph at lines 1403--1427
  [][][][][][][][] 
  []
 
 
-Overfull \hbox (18.42685pt too wide) in paragraph at lines 1344--1368
+Overfull \hbox (20.84946pt too wide) in paragraph at lines 1403--1427
  [][][][][][][][][][] 
  []
 
@@ -1326,7 +1327,7 @@ Overfull \hbox (18.42685pt too wide) in paragraph at lines 1344--1368
 
 \openout3 = `main.ptb'.
 
-[5] (./tikz/hrep.tex) (./main.bbl)
+(./tikz/hrep.tex) (./main.bbl [6])
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -1338,35 +1339,39 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[6] (./main.aux) ) 
+[7
+
+] (./main.aux) ) 
 Here is how much of TeX's memory you used:
  27135 strings out of 492982
  554453 string characters out of 6134895
- 562998 words of memory out of 5000000
+ 565997 words of memory out of 5000000
  30274 multiletter control sequences out of 15000+600000
  580012 words of font info for 131 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 62i,11n,92p,10392b,676s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</
-usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/sh
-are/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/te
-xlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/t
-exmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-di
-st/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts
-/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1
-/public/amsfonts/cm/cmsy5.pfb></usr/share/texlive/texmf-dist/fonts/type1/public
-/amsfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfon
-ts/cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/
-cmti7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/stmaryrd/stmary10.p
-fb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/shar
-e/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf
--dist/fonts/type1/urw/times/utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts/ty
-pe1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/u
-tmri8a.pfb>
-Output written on main.pdf (6 pages, 209332 bytes).
+ 62i,11n,92p,10392b,678s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</us
+r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/shar
+e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texl
+ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/share/texlive/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist
+/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/pu
+blic/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/a
+msfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cm
+ti7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam
+5.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam7.
+pfb></usr/share/texlive/texmf-dist/fonts/type1/public/stmaryrd/stmary10.pfb></u
+sr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/share/texl
+ive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/
+fonts/type1/urw/times/utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/ur
+w/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a
+.pfb>
+Output written on main.pdf (7 pages, 227845 bytes).
 PDF statistics:
- 115 PDF objects out of 1000 (max. 8388607)
- 74 compressed objects within 1 object stream
+ 128 PDF objects out of 1000 (max. 8388607)
+ 84 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  109 words of extra memory for PDF output out of 10000 (max. 10000000)
 

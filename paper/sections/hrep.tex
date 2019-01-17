@@ -95,7 +95,7 @@ each recursive fields:
 In this work we define type level combinators which let the user combine the
 automatically derived |HRep|s in several ways.
 %
-In first place, we define a type combinator ($\_^\bullet$) to tag a |HRep| to be
+In first place, we define a type combinator (|term|) to tag a |HRep| to be
 terminal, i.e., a representation that is allowed be generated when the
 generation size gets exausted:
 %
@@ -223,8 +223,8 @@ Unlike the other combinators, to randomly generate a fixed point of a certain
 representation |f|, we do not parametrize the generation of the recursive fields
 of the inner represention over an external generator |gen_r|.
 %
-Instead, we can also tie the recursive knot in our random generator by piping
-the generation of the inner |HRep| parametrized recursively by the itself:
+Instead, we can tie the recursive knot in our random generator by piping the
+generation of the inner |HRep|, and calling itself to generate recursive values:
 
 \begin{code}
 genFix_f = Fix <$> gen_f genFix_f
@@ -236,20 +236,53 @@ that we define.
 With this generator, we can define a random generator for our target data type
 simply by evaluating a random value of the representation:
 
-
 \begin{code}
   gen_Exp = do  x <- genFix_HRep_Exp
                 return eval_x_Exp
 \end{code} %$
 
 
+So far we have introduced the representation machinery required to represent the
+random generation of a target data type considering only the structure encoded
+on its definition.
+%
+This approach has the advantage of being extendable with different sources of
+structured information.
+%
+We proceed to introduce two extensions that help to address the problematic
+testing scenarios presented in the previous section.
+
+
+
 \subsection*{\textbf{Representing Pattern Matchings}}
+
+We can follow a similar reasoning as before to represent the pattern matching
+structure from a given function.
+%
+Consider the function |foo| defined in the previous section.
+%
+We can derive a new data type for each one of its pattern matchings, whose
+fields represent each pattern variable present on the given pattern, abstracting
+away every pattern variable of type |Exp|.
+%
+Concretely, we define the following data types:
 
 \begin{code}
 data HRep_foo_1  r = Mk_foo_1 r r
 data HRep_foo_2  r = Mk_foo_2 Int r
 \end{code}
 
+The first pattern of |foo| conteins two pattern variables (|x| and |y|) of type
+|Exp| that are abstracted in the fields of |Mk_foo_1|.
+%
+Similarly, the second pattern of |foo| contains the pattern variable |x| of type
+|Int| represented by the first field of |Mk_foo_2|, along with the pattern
+variable |y| of type |Exp| that also is abstracted in the second field of
+|Mk_foo_2|.
+
+To evaluate these representations back to our target data type, we simply expand
+them it into the concrete value represented by the original pattern:
+%
 \begin{align*}
   &\evalrep{|Mk_foo_1|\ x\ y}{Exp} = \\
   &\ \ |Add (Add eval_x_Exp (Val 50)) (Add (Val 25) eval_y_Exp)|\\
@@ -257,16 +290,25 @@ data HRep_foo_2  r = Mk_foo_2 Int r
   &\ \ |Mul (Val 50) (Mul (Val x) eval_y_Exp)|
 \end{align*}
 
+And the random generation of pattern |HRep|s is defined in the same way as we
+did before with data constructors |HRep|s:
+
 \begin{code}
   gen_foo_1  gen_r  = Mk_foo_1  <$> smaller gen_r  <*> smaller gen_r
   gen_foo_2  gen_r  = Mk_foo_2  <$> arbitrary      <*> smaller gen_r
 \end{code} %$
+
+Finally, we can join the pattern matching representation of each clause of |foo|
+into a single one:
 
 \begin{code}
 type HRep_foo  = HRep_foo_1 oplus''  HRep_foo_2
 \end{code}
 
 \subsection*{\textbf{Representing Abstract Interfaces}}
+
+To introduce the higher level representation of module abstract interfaces,
+suppose we have a module |M| defining |Exp| combinators as follows:
 
 \begin{code}
 module M where
@@ -281,11 +323,25 @@ minus :: Exp -> Exp -> Exp
 minus x y = Add x (Mul y (Val (-1)))
 \end{code}
 
+We will represent each function of |M| returning a value of type |Exp| following
+the same idea as before, deriving a data type with a single data constructor for
+each one of them:
+
 \begin{code}
 data HRep_ten       r = Mk_ten
 data HRep_square    r = Mk_square   r
 data HRep_minus     r = Mk_minus    r r
 \end{code}
+
+In this case, each single constructor will have as fields the types of the
+inputs of the function that they represent.
+%
+As before, we abstract away any field representing and input of type |Exp| with
+a type parameter |r|.
+
+
+To evaluate these representations, we simply pipe the values on its fields as
+input parameter of each original function, returning its result.
 
 \begin{alignat*}{3}
   &\evalrep{|Mk_ten|         &&}{Exp} = |ten| \\
@@ -293,15 +349,25 @@ data HRep_minus     r = Mk_minus    r r
   &\evalrep{|Mk_minus|\ x\ y &&}{Exp} = |minus  eval_x_Exp eval_y_Exp|
 \end{alignat*}
 
+Moreover, the generation procedure for abstract interface representations
+follows the same pattern as before:
+
 \begin{code}
   gen_ten     gen_r  = Mk_ten
   gen_square  gen_r  = Mk_square  <$> smaller gen_r
   gen_minus  gen_r   = Mk_minus   <$> smaller gen_r  <*> smaller gen_r
 \end{code} %$
 
+We will also define a type synonym to join all the representations of the module
+|M| into a single one.
+
 \begin{code}
 type HRep_M  = HRep_ten oplus''  HRep_square oplus''  HRep_minus
 \end{code}
+
+Finally, we can put all the derived machinery together into a generation
+specification |Spec| for the type |Exp|, assigning (possibly) different
+generation frequencies to each individual |HRep| that constitutes it:
 
 \begin{code}
 type Spec  =       HRep_Exp  otimes 4
@@ -310,10 +376,8 @@ type Spec  =       HRep_Exp  otimes 4
 \end{code}
 
 This previous definition can be interpreted graphically as it is shown in the
-Figure \ref{fig:hrep}.
-%
-Curly arrows represent the structural information extracted using
-meta-programming.
+Figure \ref{fig:hrep}, where curly arrows represent the structural information
+extracted using meta-programming.
 
 \begin{figure}[t]
   \centering
@@ -323,6 +387,15 @@ meta-programming.
     the module |M|.}
   \label{fig:hrep}
 \end{figure}
+
+
+
+This representation can be extended to mutually recursive and parametric types
+...
+
+
+
+
 
 % \begin{align*}
 %   \llbracket \_ \rrbracket_{target}\ :\ rep_{target}\ \rightarrow\ target
