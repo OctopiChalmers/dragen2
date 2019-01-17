@@ -1,11 +1,15 @@
 %format HRep = "\text{HRep}"
 
+%format gen_fix_HRep_Exp = "gen_{Fix\, (\text{HRep}\,{Exp})}"
+%format genFix_HRep_Exp = "genFix_{(\text{HRep}\,{Exp})}"
 %format gen_HRep      = "gen_{\text{HRep}}"
 %format gen_r         = "gen_{r}"
 %format gen_f_plus_g  = "gen_{f \oplus g}"
 %format gen_f_times_n = "gen_{f \otimes n}"
 %format gen_f_term    = "gen_{f^\bullet}"
 %format gen_t_f       = "gen_{T f}"
+%format gen_fix_f     = "gen_{Fix\,f}"
+%format genFix_f      = "genFix_{f}"
 %format gen_f         = "gen_{f}"
 %format gen_g         = "gen_{g}"
 %format gen_Exp       = "gen_{Exp}"
@@ -65,6 +69,8 @@
 
 %format eval_x_Exp = "\evalrep{x}{Exp}"
 %format eval_y_Exp = "\evalrep{y}{Exp}"
+
+%format eval_x_HRep_Exp = "\evalrep{x\ :\ Fix (\text{HRep}_{Exp})}{Exp}"
 
 %format at_f = "\textit{@}\!f"
 %format at_g = "\textit{@}\!g"

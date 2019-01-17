@@ -80,7 +80,7 @@ constructor, where |x| and |y| are \emph{pattern variables} that match any
 subexpression, we recursively evaluate these subexpressions, combining them with
 the apropiate operation on each case.
 
-\subsection{\textbf{Type-Driven Generation of Random Values}}
+\subsection*{\textbf{Type-Driven Generation of Random Values}}
 
 In order to perform random testing of a Haskell codebase involving user defined
 data types, most approaches require the user to provide a random data generator
@@ -199,7 +199,7 @@ This information can be reified in compile time and used to synthesize richer
 random generators automatically. We proceed to exemplify the previous points in
 detail.
 
-\subsection{\textbf{Presence of Complex Pattern Matchings}}
+\subsection*{\textbf{Presence of Complex Pattern Matchings}}
 
 To exemplify the firts problematic scenarion that may arise, suppose we want to
 use randomly generated |Exp|s to test a property comprising the following
@@ -287,7 +287,7 @@ in a computationally more efficient way, to cite a few.
 
 
 
-\subsection{\textbf{Data Invariants Encoded on Abstract Interfaces}}
+\subsection*{\textbf{Data Invariants Encoded on Abstract Interfaces}}
 
 A common choice when implementing a data structure is to transfer the
 responsability of preserving its invariants to the functions that manipulates
