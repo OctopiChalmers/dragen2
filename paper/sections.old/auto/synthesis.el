@@ -1,7 +1,7 @@
 (TeX-add-style-hook
- "hrep"
+ "synthesis"
  (lambda ()
    (LaTeX-add-labels
-    "sec:hrep"))
+    "sec:synthesis"))
  :latex)
 

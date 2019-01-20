@@ -1,7 +1,7 @@
 (TeX-add-style-hook
- "hrep"
+ "randomtesting"
  (lambda ()
    (LaTeX-add-labels
-    "sec:hrep"))
+    "sec:randomtesting"))
  :latex)
 

@@ -1,97 +1,97 @@
-%format HRep = "\text{HRep}"
 
-%format gen_fix_HRep_Exp = "gen_{Fix\, (\text{HRep}\,{Exp})}"
-%format genFix_HRep_Exp = "genFix_{\,\text{HRep}_{Exp}}"
-%format gen_HRep      = "gen_{\text{HRep}}"
-%format gen_r         = "gen_{r}"
-%format gen_f_plus_g  = "gen_{f \oplus g}"
-%format gen_f_times_n = "gen_{f \otimes n}"
-%format gen_f_term    = "gen_{f^\bigstar}"
-%format gen_t_f       = "gen_{T f}"
-%format gen_fix_f     = "gen_{Fix\,f}"
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% HRep
+
+%format HtmlS      = "Html_S"
+%format HRep_      = "\hrep{}"
+%format HRepHtml   = "\hrep{Html}"
+%format HRepSimpl  = "\hrep{simpl}"
+%format HRepM      = "\hrep{M}"
+
+%format HRepText   = "\hrep{Text}"
+%format HRepJoin   = "\hrep{Join}"
+%format HRepSing   = "\hrep{Sing}"
+%format HRepTag    = "\hrep{Tag}"
+%format HRepSimpl1 = "\hrep{simpl\#1}"
+%format HRepSimpl2 = "\hrep{simpl\#2}"
+%format HRepdiv   = "\hrep{div}"
+%format HRepbold   = "\hrep{bold}"
+%format HRephr     = "\hrep{hr}"
+
+%format HRepText_term = "\term{\hrep{Text}}"
+%format HRepSing_term = "\term{\hrep{Sing}}"
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Constructor names
+
+%format ConText = "Con_{Text}"
+%format ConJoin = "Con_{Join}"
+%format ConSing = "Con_{Sing}"
+%format ConTag  = "Con_{Tag}"
+
+%format PatSimpl1 = "Pat_{simpl\#1}"
+%format PatSimpl2 = "Pat_{simpl\#2}"
+
+%format Fundiv = "Fun_{div}"
+%format Funbold = "Fun_{bold}"
+%format Funhr   = "Fun_{hr}"
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% gen
+
+%format genr = "\gen{r}"
+%format genf = "\gen{f}"
+%format geng = "\gen{g}"
+%format gen_f_term = "\gen{f}^\bigstar"
+%format gen_f_plus_g  = "\gen{f \oplus g}"
+%format gen_f_times_n  = "\gen{f \otimes n}"
 %format genFix_f      = "genFix_{f}"
-%format gen_f         = "gen_{f}"
-%format gen_g         = "gen_{g}"
-%format gen_Exp       = "gen_{Exp}"
-%format gen_Val       = "gen_{Val}"
-%format gen_Add       = "gen_{Add}"
-%format gen_Mul       = "gen_{Mul}"
-%format gen_foo_1     = "gen_{foo\#1}"
-%format gen_foo_2     = "gen_{foo\#2}"
-%format gen_ten       = "gen_{ten}"
-%format gen_twice     = "gen_{twice}"
-%format gen_square    = "gen_{square}"
-%format gen_neg       = "gen_{neg}"
-%format gen_minus     = "gen_{minus}"
+%format genFix_HRep_Html = "genFix_{\hrep{Html}}"
 
-%format HRep_Val      = "{H\!Rep}_{Val}"
-%format HRep_Add      = "{H\!Rep}_{Add}"
-%format HRep_Mul      = "{H\!Rep}_{Mul}"
-%format HRep_foo_1    = "{H\!Rep}_{foo\#1}"
-%format HRep_foo_2    = "{H\!Rep}_{foo\#2}"
-%format HRep_ten      = "{H\!Rep}_{ten}"
-%format HRep_twice    = "{H\!Rep}_{twice}"
-%format HRep_square   = "{H\!Rep}_{square}"
-%format HRep_neg      = "{H\!Rep}_{neg}"
-%format HRep_minus    = "{H\!Rep}_{minus}"
-%format HRep_Exp    = "{H\!Rep}_{Exp}"
-%format HRep_foo    = "{H\!Rep}_{foo}"
-%format HRep_M      = "{H\!Rep}_{M}"
-%format HRep_Val_term = "{H\!Rep}_{Val}^\bigstar"
+%format genHtml   = "gen_{Html}"
 
-%format Mk_Val      = "{Mk}_{Val}"
-%format Mk_Add      = "{Mk}_{Add}"
-%format Mk_Mul      = "{Mk}_{Mul}"
-%format Mk_foo_1    = "{Mk}_{foo\#1}"
-%format Mk_foo_2    = "{Mk}_{foo\#2}"
-%format Mk_ten      = "{Mk}_{ten}"
-%format Mk_twice    = "{Mk}_{twice}"
-%format Mk_square   = "{Mk}_{square}"
-%format Mk_neg      = "{Mk}_{neg}"
-%format Mk_minus    = "{Mk}_{minus}"
+%format genText = "\gen{Text}"
+%format genSing = "\gen{Sing}"
+%format genJoin = "\gen{Join}"
+%format genTag  = "\gen{Tag}"
+
+%format genSimpl1 = "\gen{simpl\#1}"
+%format genSimpl2 = "\gen{simpl\#2}"
+
+%format gendiv   = "\gen{div}"
+%format genbold   = "\gen{bold}"
+%format genhr     = "\gen{hr}"
 
 
+%format html_example = "<\!\!html\!\!>\!\!hello\!\!<\!\!hr\!\!>\!\!bye\!\!<\!\!/html\!\!>"
 
-%format down = "\Downarrow"
-
-%format term = "\_^\bigstar"
-%format f_term = "f^\bigstar"
+%format term = "\term{\_}"
+%format f_term = "\term{f}"
 
 %format oplus = "\oplus"
 %format oplus' = "\!\;\oplus"
 %format oplus'' = "\!\!\oplus\!\!"
 %format otimes = "\otimes"
 
-
-%format ox_op = "\llbracket"
-%format ox_cl = "\rrbracket"
-%format ox_cl_Exp = "\rrbracket_{Exp}"
-
-%format eval_x_Exp = "\evalrep{x}{Exp}"
-%format eval_y_Exp = "\evalrep{y}{Exp}"
-
-%format eval_x_HRep_Exp = "\evalrep{x\ :\ Fix ({H\!Rep}_{Exp})}{Exp}"
+%format eval_s_Html = "\evalrep{s}{Html}"
+%format eval_t1_Html = "\evalrep{t1}{Html}"
+%format eval_t2_Html = "\evalrep{t2}{Html}"
+%format eval_x_Html = "\evalrep{x}{Html}"
+%format eval_y_Html = "\evalrep{y}{Html}"
+%format eval_x_HRep_Html = "\evalrep{x\ :\ Fix (\hrep_{Html})}{Html}"
 
 %format at_f = "\textit{@}\!f"
 %format at_g = "\textit{@}\!g"
-
-%format delta = "\Delta"
-%format epsilon = "\varepsilon"
-
-%format compose = "\!\circ\!"
-%format squared = "\!^2"
-%format pp = "\;\;\vert"
 
 %format <+> = "\mathop{\langle\! +\! \rangle}"
 %format <$> = "\mathop{\mathsmaller{\langle \$ \rangle}}"
 %format <*> = "\mathop{\mathsmaller{\langle \ast \rangle}}"
 
 %format pred = "(n{-}1)"
+%format pp = "\,\ \vert"
 
 %format ===> = "\Longrightarrow"
-
-%format divisor = "\;|\;"
-%format inlinesep = "|"
 
 % Local Variables:
 % TeX-mbigstarer: "main.lhs.tex"

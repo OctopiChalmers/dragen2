@@ -1,363 +1,436 @@
-\section{Type-Driven Random Generation} \label{sec:randomtesting}
+\section{Random Data Generation in Haskell} \label{sec:randomtesting}
 
-In this section we briefly describe the common technique used for automatically
-deriving random data generators in Haskell using a type-driven approach.
-%
-Then, we introduce its main drawbacks by considering two scenarios where this
-technique gives poor results in practice.
-%
-We remark that, altough this work makes focus on Haskell data types, this
-technique is general enough to be applied to most programming languages with
-some level of support for composite types.
+In this section we briefly introduce the common approach for automatically
+deriving random data generators in Haskell using a type-driven approach, along
+with its main drawbacks.
 
 
 Haskell is a strongly typed programming language with a powerful type system.
 %
 It lets programmers encode a considerable amount of information about the
-properties of their systems using data types that can be checked at compilation
+structure of their systems using data types that can be checked at compilation
 time.
 %
 One of its key aspects is the support for Algebraic Data Types (ADTs).
 %
-Essentially, an ADTs is a composite type defined by combining other types.
+Essentially, an ADTs is a composite type defined by combining other types in
+terms of \textbf{sums} (also known as \emph{variant types}) and
+\textbf{products} (or tuples) of other data types.
 %
-In the most basic conception, types can be combined by \textbf{sums} (also known
-as \emph{variant types} or \emph{tagged disjoint unions}) and \textbf{products}
-(or tuples) of other data types.
+To exemplify this, consider the following type definition to encoding |Html|
+expressions:
 %
-To exemplify this, consider the following definition of the data type |Exp|
-encoding integer expressions:
-
 \begin{code}
-data Exp  =   Val  Int
-          pp  Add  Exp  Exp
-          pp  Mul  Exp  Exp
+data Html  =   Text  String
+           pp  Sing  String
+           pp  Join  Html    Html
+           pp  Tag   String  Html
 \end{code}
 
-In the previous definition, we declare |Exp| as the sum of three possible
-classes of values: |Val| represents literal values, whereas |Add| and |Mul|
-represent the addition and multiplication of two integer expressions,
-respectively.
+In the previous definition, we declare |Html| as the sum of four possible
+constructions: |Text| represents plain text values. |Sing| and |Tag| represent
+singular and paired Html tags, and |Join| concats two expression one after
+another.
 %
-In Haskell, |Val|, |Add| and |Mul| are called \emph{data constructors} (or
-constructors for short) and are used to distiguish which variant of the data
-type we are reffering to.
+We only encode a very small subset of the actual Html specification for
+illustrative reasons.
 %
-Each data constructor is then defined as a product of zero or more types known
-as \emph{fields}.
+In Haskell, |Text|, |Sing| and |Join| and |Tag| are known as \emph{data
+  constructors} (or constructors for short) and are used to distiguish which
+variant of the data type we are constructing.
 %
-In particular, |Val| contains a field of type |Int|, while |Add| and |Mul|
-contain two fields of type |Exp| representing the operands of each operation.
+Each data constructor is defined as a product of zero or more types known as
+\emph{fields}.
 %
-Note that |Exp| is used as a field of at least one of its data constructors
-(case |Add| and |Mul|), making it a recursively defined ADT.
+For instance, |Text| has a field of type |String|, whereas |Join| two recusive
+fields of type |Html|.
 %
 In general, we will say that a data constructor with no recursive fields is
 \emph{terminal}, and \emph{non-terminal} or \emph{recursive} if it has at least
 one field of such nature.
 %
-With this reprentation, the expression ``2 + (5 * 6)'' can be encoded simply by
-using |Exp| data constructors as |(Add (Val 2) (Mul (Val 5) (Val 6)))|.
+With this reprentation, the expression ``|html_example|'' can be encoded as:
 %
-Furthermore, an evaluation function from |Exp|s to integer values can be defined
-very idiomatically:
-
 \begin{code}
-eval :: Exp -> Int
-eval (Val n)    = n
-eval (Add x y)  = eval x  +  eval y
-eval (Mul x y)  = eval x  *  eval y
+Tag "html" (Join (Join
+  (Text "hello") (Sing "hr")) (Text "bye"))
+\end{code}
+%
+Additionally, we can define a function |render| to serialize |Html| values as
+follows:
+%
+\begin{code}
+render :: Html -> String
+render (Text t) = t
+render (Sing t) = "<" ++ t ++ ">"
+render (Join x y) = render x ++ render y
+render (Tag t x)
+  = "<" ++ t ++ ">" ++ render x ++ "</" ++ t ++ ">"
 \end{code}
 
-In the previous definition, |eval| is described using \emph{pattern matching}
+In the previous definition, |render| is described using \emph{pattern matching}
 over each possible kind of value.
 %
-For the input case of a literal values, we simply return the value contained in
-the |Val| constructor.
+Using pattern matching we can define functions idiomatically by defining
+different function clauses for each input pattern we are interested on.
 %
-On the other hand, if the input value matches either an |Add| or a |Mul| data
-constructor, where |x| and |y| are \emph{pattern variables} that match any
-subexpression, we recursively evaluate these subexpressions, combining them with
-the apropiate operation on each case.
+Patterns can be defined to match specific constructors, literal values or
+variable subexpressions (like |t|, |x| and |y| in the definition of |render|).
+%
+They can also be nested in order to match very specific patterns of values.
+
 
 \subsection*{\textbf{Type-Driven Generation of Random Values}}
 
-In order to perform random testing of a Haskell codebase involving user defined
-data types, most approaches require the user to provide a random data generator
-for each one of them.
+In order to generate random value of types involving user defined ADTs, most
+approaches require the user to provide a random data generator for each one of
+them.
 %
-This tends to be a cumbersome and error prone task that closely follows the data
-type structure.
+This is a cumbersome and error prone task that closely follows the data type
+structure.
 %
 For instance, consider the following definition of a \quickcheck random
-generator for the type |Exp|:
-
+generator for the type |Html|:
+%
 \begin{code}
-gen_Exp = sized (\size ->
+genHtml = sized (\size ->
    if size == 0
-   then Val <$> arbitrary
+   then frequency
+     [  (2,  Text  <$> arbitrary)
+     ,  (1,  Sing  <$> arbitrary) ]
    else frequency
-     [  (1, Val  <$> arbitrary)
-     ,  (2, Add  <$> smaller gen_Exp <*> smaller gen_Exp)
-     ,  (1, Mul  <$> smaller gen_Exp <*> smaller gen_Exp) ])
+     [  (2,  Text  <$> arbitrary)
+     ,  (1,  Sing  <$> arbitrary)
+     ,  (3,  Join  <$> smaller genHtml <*> smaller genHtml)
+     ,  (4,  Tag   <$> arbitrary <*> smaller genHtml) ])
 \end{code} %$
-
+%
 This random generator is defined using \quickcheck's combinator |sized| to
-paremetrize the generation process up to an external integer number known as the
+paremetrize the generation process up to an external natural number known as the
 \emph{generation size}.
 %
-This parameter is used to limit the maximum amount of recursive call that this
-random generator can perform.
+This parameter is chosen by the user, and we use to limit the maximum amount of
+recursive calls that this random generator can perform.
 %
-When called with a positive generation size (case |gen n|), the generator will
-pick among any data constructor of |Exp| with a explicitly given frequency---two
-times more |Add|s than |Val| or |Mul|.
+When called with a positive generation size, this generator can pick to generate
+among any |Html| data constructor of with a explicitly given frequency that can
+be chosen by the user (2, 1, 3 and 4 for |Text|, |Sing|, |Join| and |Tag|
+constructors, respectively).
 %
-In the case it picks to generate a |Val| data constructor, it also generates a
-random |Int| value using the standard overloaded generator |arbitrary|
-(\quickcheck provides standard random generators for most base types like |Int|,
-|Bool|, etc.).
+When it picks to generate a |Val| or a |Sing| data constructor, it also
+generates a random |String| value using the standard overloaded generator
+|arbitrary| (\quickcheck provides standard random generators for most base types
+like |String|, |Int|, |Bool|, etc.). \footnote{%
+  The operators |<$>| and |<*>| are used in Haskell to combine values obtained
+  from effectful computations (like calling to a random generator) and they are
+  not particularly relevant for the point being made in this work.}
+%$
+On the other hand, when it picks to generate either an |Join| constructor, it
+also generates two independent random subexpression recursively, decreasing the
+generation size by a unit on each recursive invocation (|smaller genHtml|).
 %
-On the other hand, when it randomly picks to generate either an |Add| or a |Mul|
-data constructor, it also generates independently two random subexpressions
-corresponding to the data constructor fields by calling itself recursively
-(|resize pred gen_Exp|), decreasing the generation size on each recursive
-invocation.
+The case of random generation of |Tag| constructors follows analogously.
 
 
-This procedure keeps calling itself recursively until the generation size
-reaches zero (case |gen 0|), where the generator is constrained to pick only
-among terminal data constructors, being |Val| the only possible choice in our
+This random process keeps calling itself recursively until the generation size
+reaches zero, where the generator is constrained to pick only among terminal
+data constructors, being |Text| and |Sing| the only possible choices in our
 particular case.
+
+% Strictly decreasing the the generation size by one on each recursive call
+% results in a useful property over the generated data: every generated value has
+% at most |n| levels, where |n| is the generation size set by the user.
 %
-Strictly decreasing the the generation size by one on each recursive call
-results in a useful property over the generated data: every generated value has
-at most |n| levels, where |n| is the generation size set by the user.
-%
-This property enables us to model the generation process using the theory of
-branching processes introduced by \tocite, and extended in this work as
-described in Section \ref{sec:synthesis}.
+% This property enables us to model the generation process using the theory of
+% branching processes introduced by \tocite, and extended in this work as
+% described in Section \ref{sec:synthesis}.
 
 
-Having discussed the previous random generator definition, it easy to understand
-how to extend this generation procedure to any data type defined in an algebraic
-fashion.
+The previous definition is rather mechanical, except perhaps for the chosen
+generation frequencies.
+%
+In this light, it easy to extend this procedure to any data type defined in an
+algebraic fashion.
 %
 Fortunately, there exists different meta-programming tools to avoid the user
 from having to mechanically write random generators over and over again for each
 user-defined ADT.
 %
-The simplest tool for such purpose is \megadeth.
+The simplest tool for such purpose is \megadeth \tocite.
 %
-Given the name of the target data type, it synthesizes a random generator for it
-that behaves pretty much like the previously defined one.
+Given a target data type, it synthesizes a random generator for it that behaves
+similarly to the one presented above, where the generation frequencies are
+defined to be uniform across constructors.
 %
-However, picking among different data constructors with uniform probability can
-lead to a generation process biased to generate (in average) very small values,
-regardless of the generation sized set by the user \tocite.
+However, picking among different data constructors with uniform frequency can
+lead to a generation process biased towards generating (in average) very small
+values, regardless of the generation sized set by the user \tocite.
+
 
 \dragen is meta-programming tool conceived to mitigate this problem.
 %
 Instead of setting a uniform generation probability of data constructors, this
-tool considers the scenario where each one can be generated following a
-different (although fixed over time) generation probability.
-%
-Then, this tool uses the theory of branching processes to analitically predict
-the average distribution of data constructors generated on each random value.
+tool this tool uses the theory of branching processes to modelize and predict
+analitically the average distribution of data constructors generated on each
+random value.
 %
 This prediction mechanism is used to feedback a simulation-based optimization
-process that adjusts the generation probability of each data constructor in
-order to obtain a particular distribution of values that can be specified by the
-user, offering a more flexible testing environment while still being mostly
+process that adjusts the generation frequency of each data constructor in order
+to obtain a particular distribution of values that can be specified by the user,
+providing this way a more flexible testing environment while still being mostly
 automated.
 
 
-Both \megadeth and \dragen synthesize random generators that are theoretically
-capable to generate the whole space of values of the target data type, provided
-that we set a generation size suficiently big.
-%
-However, the limitations arise quickly when we consider that the underlying
+Althogh both \megadeth and \dragen synthesize random generators that are
+theoretically capable to generate the whole space of values of the target data
+type. the limitations arise quickly when we consider that the underlying
 generation model is essentially the same: they pick a single data constructor
 and recusively generate each required subexpression independently.
 %
-In practice, this procedure is too generic to generate complex data that is
-useful enough to be used for random testing.
+In practice, this procedure is often too generic to generate random data with
+enough structural complexity to be used for testing purposes.
 
 
-In this work we identify two sources of additional structure information which
-are not considered by the aforementioned automatic derivation tools to obtain
-random data generators:
+% In this work we identify two sources of additional structure information which
+% are not considered by the aforementioned automatic derivation tools to obtain
+% better random data generators:
+
+In this work we identify two patological situations which are not properly
+handled by the aforementioned derivation tools:
 
 \begin{enumerate}
-\item The target code behaves differently over inputs matching very specific
-  patterns.
-\item The target code yields part of the responsability of preserving its
-  invariants to the functions of its abstract interface.
+\item The target code behaves differently over inputs matching specific patterns
+  of nested values.
+\item The target code encodes a significant portion of its structure on its
+  abstract interface.
 \end{enumerate}
 
-This information can be reified in compile time and used to synthesize richer
-random generators automatically. We proceed to exemplify the previous points in
-detail.
+In Section \ref{sec:hrep} we show how this structural information can be used to
+synthesize richer random generators automatically.
+%
+We proceed to exemplify the previous points in detail.
 
 \subsection*{\textbf{Presence of Complex Pattern Matchings}}
 
-To exemplify the firts problematic scenarion that may arise, suppose we want to
-use randomly generated |Exp|s to test a property comprising the following
-function:
-
+To exemplify the first problematic scenario, suppose we want to use randomly
+generated |Htmls|s to test a property comprising the following function:
+%
 \begin{code}
-foo :: Exp -> Exp
-foo (Add (Add x (Val 50)) (Add (Val 25) y))
-  = error "pattern #1"
-foo (Mul (Val 50) (Mul (Val x) y))
-  = error "pattern #2"
-foo x = x
+simpl :: Html -> Html
+simpl (Join (Text t1) (Text t2))
+  = Text (t1 ++ t2)
+simpl (Join (Join (Text t1) x) y)
+  = simpl (Join (Text t1) (simpl (Join x y)))
+simpl (Join x y) = Join (simpl x) (simpl y)
+simpl (Tag t x) = Tag t (simpl x)
+simpl x = x
 \end{code}
 
-This function behaves very much like an identity function, with the exception
-that it fails for two very specific patterns of input values defined using
-nested pattern matching.
+This function simplifies sequences of |Text| constructors into a single big
+|Text| constructor.
 %
-This is, |foo| does not only matches against the root data constructor, but also
-against the data constructors of its subexpressions and sub-subexpressions.
+To do so, it has to pattern match against sequences of |Text| constructors
+combined by a |Join| constructor using nested patterns (see |simpl| fist and
+second clauses).
+%
+The remaining clauses are only meant to propagate this simplification within
+nested expressions.
 
 
-\quickcheck's default implementation for random |Int|s pick a number in the
-interval $[-n, n]$ with uniform distribution.
+Ideally, we would like to test each clause of the function |simpl| approximately
+the same amount of time each.
 %
-Hence, in principle we need to recognize what is a suitable generation size,
-which should be big enough for our generator be able to generate the numbers we
-pattern match against to, otherwise we will not be able to generate any value to
-match against |foo| clauses, leaving fragments of code completely untested.
+However, each data constructor is generated independently when using either
+\megadeth or \dragen, thus the probability of generating a value satisfying a
+nested pattern decreases multiplicatively with the number of constructors we
+pattern against to simultaneously.
 %
-Suppose then that we pick the a generation size $50$, i.e. the minimum size that
-is big enough to produce an |Int| number equal to $50$.
+In our tests, we found that the first two clauses of |simpl| get exercised only
+approximately $1.5\%$ of the time when using \megadeth to derive a random
+generator for |HTML|.
 %
-Under this consideration, the probability of generating a value matching the
-first clause of |foo| (and hence triggering the first error) results as follows:
+On the other hand, the best result we could achieve with \dragen was only able
+to exercise the first and second clauses of |simpl| approximately $3\%$ and
+$6\%$ of the time, respectively.
 %
-\begin{align*}
-  &P(match(foo\#1))\\
-  &\quad = P(Add)       * P(Add) * 1 * (P(Val) * (1/100)) \\
-  &\phantom{xxxxxxxxxx} * P(Add) * (P(Val) * (1/100)) * 1
-\end{align*}
+With both derivation tools, the most of the time was spent testing the trivial
+clauses of our function, in view of they pattern match against simpler patterns
+of input values.
 
-If we use \megadeth to automatically derive a random generator for |Exp|, we
-obtain a uniform generation probability distribution over constructors, i.e.,
-$P(|Val|) = P(|Add|) = P(|Mul|) = 1/3$.
-%
-In this setting, $P(match(foo\#1))$ results $1/2430000$, meaning that, in
-average, we will need to generate over than two million test cases in order to
-be able to test the first clause of |foo| only once.
-%
-This situation can be somewhat improved if we use \dragen to obtain a random
-generator.
-%
-Using this tool, we can optimize the generation probabilities in order to
-benefit the generation of some data constructors over the rest.
-%
-Considering that the first pattern matching of |foo| involves the data
-constructor |Add| as the only recursive one, we can set an target generation
-proportion of |Add| data constructors of, for instance, $20:1$ with respect to
-the rest of the generated data constructors.
-%
-By doing so, the obtained distribution of values results such that
-$P(match(foo\#1)) \approx 1/300000$.
-%
-Although this certainly improves the probability of generating a matching value,
-this probability is not substantial enough to become practical.
+% In this light, we found that using a random generator obtained with \megadeth to
+% test this function will only exercise the first two clauses of |simpl| about
+% only $1.5\%$ of the time each, relegating the rest of the generated test cases
+% to the remaining and somewhat less interesting clauses, where, remarkably, half
+% of the time is spent exercising the last trivial clause.
+% %
+% Furthermore, using \dragen to ...
 
 
-Additionally, by favoring the generation probabilities towards the |Add|
-constructor, we found that the probability of generating a value matching the
-second clause of |foo| (which does not matches against it) also gets diminished
-into an impractival value.
+% This function behaves very much like an identity function, with the exception
+% that it fails for two very specific patterns of input values defined using
+% nested pattern matching.
+% %
+% This is, |foo| does not only matches against the root data constructor, but also
+% against the data constructors of its subexpressions and sub-subexpressions.
 
 
-Despite the fact that the previous example might look artificial, branching
-against specific patterns of the input data is a common task.
+% \quickcheck's default implementation for random |Int|s pick a number in the
+% interval $[-n, n]$ with uniform distribution.
+% %
+% Hence, in principle we need to recognize what is a suitable generation size,
+% which should be big enough for our generator be able to generate the numbers we
+% pattern match against to, otherwise we will not be able to generate any value to
+% match against |foo| clauses, leaving fragments of code completely untested.
+% %
+% Suppose then that we pick the a generation size $50$, i.e. the minimum size that
+% is big enough to produce an |Int| number equal to $50$.
+% %
+% Under this consideration, the probability of generating a value matching the
+% first clause of |foo| (and hence triggering the first error) results as follows:
+% %
+% \begin{align*}
+%   &P(match(foo\#1))\\
+%   &\quad = P(Add)       * P(Add) * 1 * (P(Val) * (1/100)) \\
+%   &\phantom{xxxxxxxxxx} * P(Add) * (P(Val) * (1/100)) * 1
+% \end{align*}
+
+% If we use \megadeth to automatically derive a random generator for |Exp|, we
+% obtain a uniform generation probability distribution over constructors, i.e.,
+% $P(|Val|) = P(|Add|) = P(|Mul|) = 1/3$.
+% %
+% In this setting, $P(match(foo\#1))$ results $1/2430000$, meaning that, in
+% average, we will need to generate over than two million test cases in order to
+% be able to test the first clause of |foo| only once.
+% %
+% This situation can be somewhat improved if we use \dragen to obtain a random
+% generator.
+% %
+% Using this tool, we can optimize the generation probabilities in order to
+% benefit the generation of some data constructors over the rest.
+% %
+% Considering that the first pattern matching of |foo| involves the data
+% constructor |Add| as the only recursive one, we can set an target generation
+% proportion of |Add| data constructors of, for instance, $20:1$ with respect to
+% the rest of the generated data constructors.
+% %
+% By doing so, the obtained distribution of values results such that
+% $P(match(foo\#1)) \approx 1/300000$.
+% %
+% Although this certainly improves the probability of generating a matching value,
+% this probability is not substantial enough to become practical.
+
+
+% Additionally, by favoring the generation probabilities towards the |Add|
+% constructor, we found that the probability of generating a value matching the
+% second clause of |foo| (which does not matches against it) also gets diminished
+% into an impractival value.
+
+
+Altough the previous example might seem rather simple, branching against
+specific patterns of the input data is a common task.
 %
-For instance, the balancing function of a Red-Black tree need to consider a
-quite specific combination of color, left and right subtrees and sub-subtrees
-in order to preserve the height invariant.
+For instance, balancing a Red-Black tree requires to consider specific
+combinations of color, left and right subtrees and sub-subtrees in order to
+preserve the height invariant \tocite.
 %
 Moreover, Common Subexpression Elimination (CSE) is a compiler optimization that
 needs to consider very specific sequences of instructions that may be regrouped
-in a computationally more efficient way, to cite a few.
+in a computationally more efficient way, to cite a few \tocite.
 
 
 
 \subsection*{\textbf{Data Invariants Encoded on Abstract Interfaces}}
 
 A common choice when implementing a data structure is to transfer the
-responsability of preserving its invariants to the functions that manipulates
+responsability of preserving its invariants to the functions which manipulates
 its values.
 %
-Consider for instance the following possible implementation of a basic |HTML|
-manipulation library:
-
+For this purspose, suppose we extend our |Html| data type with the following
+basic combinators:
+%
 \begin{code}
-data Html = Html String
+module M where
 
-head :: Html -> Html
-head (Html inner)
-  = Html ("<head>" ++ inner ++ "</head>")
+  div :: Html -> Html
+  div inner = Tag "div" inner
 
-body :: Html -> Html
-body (Html inner)
-  = Html ("<body>" ++ t ++ "</body>")
+  bold :: Html -> Html
+  bold inner = Tag "b" inner
 
-br :: Html
-br = Html "<br />"
-
-(<+>) :: Html -> Html -> Html
-(Html x) <+> (Html y) = Html (x ++ y)
+  hr :: Html
+  hr = Sing "hr"
 \end{code}
-
-In the previous definition, the |Html| data type is defined using a single data
-constructor that contains the textual representation of the Html code it
-represents in plain text.
 %
-Later, the combinator functions defined over |HTML| are the ones in charge of
-transforming this plain text representation with the invariant that, given valid
-|Html| parameters, they always return a valid |Html| value.
+% In the previous definition, the |Html| data type is defined using a single data
+% constructor that contains the textual representation of the Html code it
+% represents in plain text.
 %
-This is a very commmon programming pattern that can be found in a variety of
-Haskell libraries \tocite{}.
+These functions encode additional information about the structure of our |Html|
+data type in the form of specific Html tags.
 
 
-If we use a standard type-driven approach to derive a random generator for
-|Html|, the only ``structural'' information that we can use in the derivation
-process is that |Html| values are composed of strings.
+Instead of including a new data constructor for each possible Html tag in out
+type definition, we defined a mininal representation and then extended it with
+an set of high level combinators.
 %
-As a consequence, we essentially end up generating random strings, which rarely
-represents a valid (or at least well structured) Html value.
+% These combinators functions defined over |HTML| are the ones in charge of
+% transforming this plain text representation with the invariant that, given valid
+% |Html| parameters, they always return a valid |Html| value.
 %
-Additionally, if our test suite contains properties constrained by certain
-preconditions, this lack of domain knowleadge may lead in an impractically high
-discard ratio of randomly generated test.
-%
-For instance, suposse we write a property to verify that |head| preserves the
-invariant previously mentioned:
-
-\begin{code}
-prop_head_inv :: Html -> Bool
-prop_head_inv x = valid x ===> valid (head x)
-\end{code}
-
-In the previous definition we state that |head| always returns a valid |Html|
-value (|valid (head x)|), provided that we are given a valid |Html| as input
-(|valid x|).
-%
-Then, while testing this property we rarely satisfy its precondition, in which
-case \quickcheck discards the whole test, retrying with a diferent random input,
-degradating this way the testing performance.
+This programming pattern is often called a ``shallow embedding'', and can be
+found in a variety of Haskell libraries, being \emph{html} \tocite,
+\emph{svg-builder} \tocite some examples of this.
 
 
-We believe that, if certain patterns of values are relevant enough to appear in
-the codebase being tested, a practical random testing methodology should be able
-to produce values satisfying such patterns in a substantial proportion.
+As a consequence of this practice, type-driven derivation techniques often fail
+to synthesize useful random generators due to that most of the data type
+structure has been encoded into its abstract interface of combinators.
 %
+In our particular case, the chances of generating a |Tag| value representing a
+commonly used Html tag such as |div| are extremely low.
+
+
+% Additionally, if our test suite contains properties constrained by certain
+% preconditions, the lack of domain knowleadge may lead in an impractically high
+% discard ratio of randomly generated test cases.
+% %%
+% For instance, suposse we write a property to verify that |render| always outputs
+% a valid |Html| value:
+
+% \begin{code}
+% prop_render :: Html -> Bool
+% prop_render x = valid x ===> valid (parse (render x))
+% \end{code}
+
+% In the previous definition we state that |render| always returns a valid |Html|
+% value when it is parsed again (|parse (render x)|), provided that we are given a
+% valid |Html| as input (|valid x|).
+% %
+% In practice, not every string of characters constitutes a valid Html given that
+% some special characters need to be escaped (``<'', ``>'', ``&'', etc.).
+
+% %
+% While testing this property we rarely satisfy its precondition, in which case
+% \quickcheck discards the whole test, retrying with a diferent random input,
+% degradating this way the testing performance.
+
+
+% \begin{code}
+% text :: String -> Bool
+% text str = Text (addEscapes str)
+% \end{code}
+
+% We believe that, if certain patterns of values are relevant enough to appear in
+% the codebase being tested, a practical random testing methodology should be able
+% to produce values satisfying such patterns in a substantial proportion.
+
+So far we have introduced two testing scenarios where type-driven derivation
+approaches are unable to capture all the available structure information from
+the user codebase.
+%
+Fortunately, this information can be automatically exploited and used to
+generate interesting and more structured random values.
+
 The next section introduces a reprentation model that let us encode the
 structure information presented here into our automatically derived random
 generators in a modular and flexible way.

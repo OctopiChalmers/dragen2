@@ -32,6 +32,9 @@
     "relsize")
    (TeX-add-symbols
     '("evalrep" 2)
+    '("term" 1)
+    '("gen" 1)
+    '("hrep" 1)
     "tocite"
     "quickcheck"
     "megadeth"
