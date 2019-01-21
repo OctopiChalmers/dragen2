@@ -320,6 +320,7 @@
 \usepackage{caption}
 \usepackage{xspace}
 \usepackage{relsize}
+\usepackage{bm}
 \usetikzlibrary{fadings}
 
 
@@ -1624,17 +1625,24 @@ each individual \ensuremath{\Conid{HRep}} we combine:
 \ColumnHook
 \end{hscode}\resethooks
 
-% This previous definition can be interpreted graphically as it is shown in the
-% Figure \ref{fig:hrep}, where curly arrows represent the structural information
-% extracted using meta-programming.
+This previous definition can be interpreted graphically as it is shown in the
+Figure \ref{fig:hrep}, where curly arrows represent the structural information
+extracted using meta-programming.
+
+\begin{figure*}[t]
+  \centering
+  \input{tikz/hrep.tex}
+  \caption{Higher-level representation of the data type \ensuremath{\Conid{Html}}, defined using
+    structural information from the function \ensuremath{\Varid{simpl}} and the abstract interface
+    of the module \ensuremath{\Conid{M}}.}
+  \label{fig:hrep}
+\end{figure*}
 
 % \begin{figure}[t]
 %   \centering
-%   \input{tikz/hrep.tex}
-%   \caption{Higher level representation of the data type |Exp|, defined using
-%     structural information from the function |foo| and the abstract interface of
-%     the module |M|.}
-%   \label{fig:hrep}
+%   \input{tikz/val.tex}
+%   \caption{Some caption.}
+%   \label{fig:val}
 % \end{figure}
 
 
@@ -1667,7 +1675,7 @@ derivation of random generators:
   provided combinators.
 \end{itemize}
 
-\todo[inline]{Maybe we can show an example random value from the representation
+\todo[author=AM, inline]{Maybe we can show an example random value from the representation
   and its corresponding target value }
 
 
