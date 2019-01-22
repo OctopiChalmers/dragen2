@@ -1,13 +1,44 @@
 \section{Introduction}
 
-Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
-commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
-lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
-felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
-dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
-quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
-Nam euismod tellus id erat\cite{grieco2017}.
+% Scenario of random testing
+Random testing is a promising approach to finding bugs {\tocite}.
+%
+QuickCheck \cite{ClaessenH00} is a dominant tool of this sort used by the
+Haskell community.
+%
+It requires developers to specify testing properties which describe programs
+behavior and random data generator based on the \emph{type} of the expected
+inputs. %, e.g., an integer, an string, or an abstract data type (ADT).
+%
+QuickCheck then generates a large number of random \emph{test cases} and reports
+those violating testing properties.
+%
 
+% Situation with Quick Check, ADTs, tools
+While QuickCheck comes equipped with random generators for built-in types, there
+exists additional tools to automatically derive generators for user-defined
+abstract data types (ADT) (e.g.,
+\cite{mitchell2007,RuncimanNL08,DuregardJW12,grieco2017,DBLP:conf/haskell/MistaRH18}).
+%
+The main difference about these tools lies on the guarantees provided when it
+comes to ensuring a terminating generation process or distribution of the random
+values.
+%
+When generating ADT values, these tools guarantee that such values are
+\emph{well-typed}.
+%
+In that manner, generated values follow the structure described by the
+definition of the ADT, which proves useful when testing software with highly
+structured inputs like compilers \cite{Palka11,MidtgaardJKNN17}.
+%
+Generating values from ADTs also proves to be a fruitful approach when looking
+for vulnerabilities with fuzzers \cite{GriecoCB16,grieco2017}.
+%
+
+%% Problem
+
+
+%% Our proposal
 
 We remark that, altough this work focuses on Haskell data types, this technique
 is general enough to be applied to most programming languages with some level of
@@ -38,3 +69,8 @@ The main contribuitions of this paper are:
   structure information from the user source code.
   %
 \end{itemize}
+
+% Local Variables:
+% TeX-master: "main.lhs.tex"
+% TeX-command-default: "Make"
+% End:
