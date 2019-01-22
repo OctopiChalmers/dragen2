@@ -29,7 +29,8 @@
     "booktabs"
     "caption"
     "xspace"
-    "relsize")
+    "relsize"
+    "bm")
    (TeX-add-symbols
     '("evalrep" 2)
     '("term" 1)
