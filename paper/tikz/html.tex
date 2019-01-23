@@ -1,0 +1,63 @@
+\pgfplotsset{scaled y ticks=false}
+\begin{tikzpicture}
+  \begin{axis}[
+    xlabel={Corpus size},
+    ylabel={Different execution paths},
+    y tick label style={rotate=45,anchor=east},
+    % ymajorgrids=true,
+    legend pos=south east,
+    legend cell align={left},
+    % xmin=100, xmax=1000,
+    ymin=5000, %ymax=23000,
+    enlarge x limits=0.1,
+    enlarge y limits=0.1
+    ]
+    \addplot+[blue][semithick,dashed, mark=none,
+    error bars/.cd, y dir=both, y explicit]
+    coordinates {
+      (100,  14014.17) +- (0.0, 148.83523)
+      (200,  17058.10) +- (0.0, 135.06726)
+      (300,  18687.63) +- (0.0, 118.03936)
+      (400,  19802.27) +- (0.0, 152.92292)
+      (500,  20558.40) +- (0.0, 135.36179)
+      (600,  21534.90) +- (0.0, 100.85658)
+      (700,  21637.50) +- (0.0, 104.70160)
+      (800,  22328.33) +- (0.0, 111.68286)
+      (900,  22788.13) +- (0.0, 102.31978)
+      (1000, 23323.30) +- (0.0, 97.62431 )
+    };
+    \addlegendentry{\dragenp custom};
+    \addplot+[blue][semithick, mark=none,
+    error bars/.cd, y dir=both, y explicit]
+    coordinates {
+      (100,  12805.40) +- (0.0, 234.61546)
+      (200,  15382.40) +- (0.0, 172.25118)
+      (300,  16984.87) +- (0.0, 106.89291)
+      (400,  17695.77) +- (0.0, 157.54098)
+      (500,  18670.37) +- (0.0, 138.47555)
+      (600,  19197.10) +- (0.0, 137.48348)
+      (700,  19934.90) +- (0.0, 97.24403 )
+      (800,  20430.27) +- (0.0, 129.08726)
+      (900,  20775.97) +- (0.0, 136.66240)
+      (1000, 21264.20) +- (0.0, 102.07806)
+    };
+    \addlegendentry{\dragenp uniform};
+    \addplot+[red][semithick, dashdotted, mark=none,
+    error bars/.cd, y dir=both, y explicit,
+    error bar style={solid}
+    ]
+    coordinates {
+      (100,  9574.067 ) +- (0.0, 57.36926)
+      (200,  10451.433) +- (0.0, 43.99278)
+      (300,  11195.367) +- (0.0, 39.31592)
+      (400,  11556.767) +- (0.0, 40.36912)
+      (500,  11738.333) +- (0.0, 49.65803)
+      (600,  12028.333) +- (0.0, 42.50789)
+      (700,  12257.100) +- (0.0, 39.36573)
+      (800,  12334.567) +- (0.0, 40.82921)
+      (900,  12536.733) +- (0.0, 44.70660)
+      (1000, 12731.967) +- (0.0, 40.69840)
+    };
+    \addlegendentry{\dragen\ \ uniform};
+  \end{axis}
+\end{tikzpicture}

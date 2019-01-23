@@ -30,7 +30,9 @@
     "caption"
     "xspace"
     "relsize"
-    "bm")
+    "bm"
+    "microtype"
+    "pgfplots")
    (TeX-add-symbols
     '("evalrep" 2)
     '("term" 1)
@@ -39,7 +41,8 @@
     "tocite"
     "quickcheck"
     "megadeth"
-    "dragen")
+    "dragen"
+    "dragenp")
    (LaTeX-add-bibliographies
     "references.bib"))
  :latex)
