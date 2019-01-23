@@ -63,8 +63,10 @@ Furthermore, we show how to predict (at compile time) the distribution of the
 \emph{expected} numbers of ADT constructors, values fitting a certain pattern,
 and calls to interfaces.
 %
-\todo[inline,author=Ale]{Mention branching processes}
-
+For that, we extend some recent results on applying \emph{branching
+  processes}---a simple stochastic model conceived to study population
+growth---to predict the distribution of QuickCheck
+generators\cite{DBLP:conf/haskell/MistaRH18}.
 %
 We implement our ideas in a tool, called {\dragenp}, that is capable to
 automatically synthesize QuickCheck generators for ADT values, where the
