@@ -49,7 +49,9 @@
 %format genFix_f      = "genFix_{f}"
 %format genFix_HRep_Html = "genFix_{\hrep{Html}}"
 
-%format genHtml   = "gen_{Html}"
+%format genHtml     = "gen_{Html}"
+%format genString   = "gen_{String}"
+
 
 %format genText = "\gen{Text}"
 %format genSing = "\gen{Sing}"
