@@ -56,11 +56,12 @@ In general, we will say that a data constructor with no recursive fields is
 \emph{terminal}, and \emph{non-terminal} or \emph{recursive} if it has at least
 one field of such nature.
 %
-With this representation, the page ``|html_example|'' can be encoded as:
+With this representation, the page \texttt{<html>hello<hr>bye</html>} can be
+encoded as:
 %
 \begin{code}
 Tag "html" (Join (Join
-  (Text "hello") (Sing "hr")) (Text "bye"))
+  (Text "hello") (Single "hr")) (Text "bye"))
 \end{code}
 %
 % Additionally, we can define a function |render| to serialize |Html| values as

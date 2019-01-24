@@ -95,6 +95,10 @@
 
 %format ===> = "\Longrightarrow"
 
+%format t  = "t"
+%format t1
+%format t2
+
 % Local Variables:
 % TeX-mbigstarer: "main.lhs.tex"
 % TeX-command-default: "Make"

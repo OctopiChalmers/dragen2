@@ -1,70 +1,114 @@
-\section{Extracting structure}
+\section{Sources of structural information}
 
 % In this work we identify two sources of additional structure information which
 % are not considered by the aforementioned automatic derivation tools to obtain
 % better random data generators:
 
-In this work we identify two patological situations which are not properly
-handled by the aforementioned derivation tools:
-
-\begin{enumerate}
-\item The target code behaves differently over inputs matching specific patterns
-  of nested values.
-\item The target code encodes a significant portion of its structure on its
-  abstract interface.
-\end{enumerate}
-
-In Section \ref{sec:hrep} we show how this structural information can be used to
-synthesize richer random generators automatically.
+In this section, we describe the motivation for considering two additional
+sources of structure information which lead us to obtain better random data
+generators. %and how to represent them in our generation process.
 %
-We proceed to exemplify the previous points in detail.
+% In this work we identify two patological situations which are not properly
+% handled by the aforementioned derivation tools:
+%
+% \begin{enumerate}
+% \item The target code behaves differently over inputs matching specific patterns
+%   of nested values.
+% \item The target code encodes a significant portion of its structure on its
+%   abstract interface.
+% \end{enumerate}
+%
+% In Section \ref{sec:hrep} we show how this structural information can be used to
+% synthesize richer random generators automatically.
+% %
+We proceed to exemplify the need to consider such sources with examples.
 
-\subsection*{\textbf{Presence of Complex Pattern Matchings}}
+\subsection{Branching on input data}
 
-To exemplify the first problematic scenario, suppose we want to use randomly
-generated |Htmls|s to test a property comprising the following function:
+To exemplify the first source of structure information, we consider that we want
+to use randomly generated |Htmls|s to test the function |simpl :: Html ->
+Html|.
+%
+In Haskell, the notation |f :: T| means that program |f| has type |T|.
+%
+In our example, function |simpl| takes an |Html| as an input and produces an
+|Html| value as an output (|Html -> Html|).
+%
+Intuitively, the purpose of this function is to put sequences of |Text|
+constructors into a single big |Text| constructor.
+%
+More specifically, the code of |simpl| is as follows.
 %
 \begin{code}
 simpl :: Html -> Html
 simpl (Join (Text t1) (Text t2))
-  = Text (t1 ++ t2)
+  = Text (concat t1 t2)
 simpl (Join (Join (Text t1) x) y)
   = simpl (Join (Text t1) (simpl (Join x y)))
 simpl (Join x y) = Join (simpl x) (simpl y)
 simpl (Tag t x) = Tag t (simpl x)
 simpl x = x
 \end{code}
+%
+The body of |simpl| is described using \emph{pattern matching} over possible
+kind of |Html| values. (Function |concat| just concatenates two strings.)
+%
+Pattern matching allows to define functions idiomatically by given different
+function clauses for each input pattern we are interested on.
+%
+In other words, pattern matching is a mechanism that functions have to branch on
+input data arguments.
+%
+In the code above, we can see that |simpl| patterns match against sequences of
+|Text| constructors combined by a |Join| constructor---see |simpl| first and
+second clauses.
+%
+Generally speaking,
+patterns can be defined to match specific constructors, literal values or
+ variable subexpressions (like |x| in the last clause of |simpl|).
+%
+ They can also be nested in order to match very specific patterns of values.
 
-This function simplifies sequences of |Text| constructors into a single big
-|Text| constructor.
-%
-To do so, it has to pattern match against sequences of |Text| constructors
-combined by a |Join| constructor using nested patterns (see |simpl| fist and
-second clauses).
-%
-The remaining clauses are only meant to propagate this simplification within
-nested expressions.
+% Patterns can be defined to match specific constructors, literal values or
+% variable subexpressions (like |t|, |x| and |y| in the definition of |render|).
+% %
+% They can also be nested in order to match very specific patterns of values.
+% This function simplifies sequences of |Text| constructors into a single big
+% |Text| constructor.
+% %
+% To do so, it has to pattern match against sequences of |Text| constructors
+% combined by a |Join| constructor using nested patterns (see |simpl| fist and
+% second clauses).
+% %
+% The remaining clauses are only meant to propagate this simplification within
+% nested expressions.
 
 
-Ideally, we would like to test each clause of the function |simpl| approximately
-the same amount of time each.
+ Ideally, we would like to put approximately the same amount of effort into
+ testing each clause of the function |simpl|.
+ %approximately the same amount of
+ %time each.
 %
-However, each data constructor is generated independently when using either
-\megadeth or \dragen, thus the probability of generating a value satisfying a
-nested pattern decreases multiplicatively with the number of constructors we
-pattern against to simultaneously.
+ However, each data constructor is generated independently when using tools for
+ generating ADTs values (e.g., \tocite).
+ %
+ Observe that the probability of generating a value satisfying a nested pattern
+ (like |Join (Text t1) (Text t2)|) decreases multiplicatively with the number of
+ constructors we simultaneously pattern against to.
 %
-In our tests, we found that the first two clauses of |simpl| get exercised only
-approximately $1.5\%$ of the time when using \megadeth to derive a random
-generator for |HTML|.
+ In our tests, we found that the first two clauses of |simpl| get exercised only
+ approximately between $1.5\%$ and $6\%$ of the time when using state-of-the-art
+ tools for automatically deriving QuickCheck generators
+ \cite{GriecoCB16,DBLP:conf/haskell/MistaRH18}.
+ %
+ %The best result we could achieve was with \dragen, which was able to exercise
+ %the first and second clauses approximately $3\%$ and $6\%$ of the time,
+ %respectively.
 %
-On the other hand, the best result we could achieve with \dragen was only able
-to exercise the first and second clauses of |simpl| approximately $3\%$ and
-$6\%$ of the time, respectively.
-%
-With both derivation tools, the most of the time was spent testing the trivial
-clauses of our function, in view of they pattern match against simpler patterns
-of input values.
+ Most of the generated values were exercising the simplest clauses of our
+ function (i.e, |simpl (Join x y)|, |simpl (Tag t x)|, and |simpl x|).
+% )|, in view of they pattern match against
+% simpler patterns of input values.
 
 % In this light, we found that using a random generator obtained with \megadeth to
 % test this function will only exercise the first two clauses of |simpl| about
@@ -134,69 +178,90 @@ of input values.
 % second clause of |foo| (which does not matches against it) also gets diminished
 % into an impractival value.
 
-
 Altough the previous example might seem rather simple, branching against
-specific patterns of the input data is a common task.
+specific patterns of the input data is not an uncommon task.
 %
-For instance, balancing a Red-Black tree requires to consider specific
-combinations of color, left and right subtrees and sub-subtrees in order to
-preserve the height invariant \tocite.
+In that light, and in order to obtain interesting test cases, it is desirable to
+conceive generators able to produce random values capable to exercise patterns
+an expected number of times---in Section \ref{} we show how to do so.
+%a good source of information to improve.
+
+
+% For instance, balancing a
+% Red-Black tree requires to consider specific combinations of color, left and
+% right subtrees and sub-subtrees in order to preserve the height invariant
+% \tocite.
+% %
+% Moreover, Common Subexpression Elimination (CSE) is a compiler optimization that
+% needs to consider very specific sequences of instructions that may be regrouped
+% in a computationally more efficient way, to cite a few \tocite.
+
+\subsection{Abstract interfaces}
+
+A common choice when implementing ADTs is to transfer the responsibility of
+preserving structural invariants to the interfaces that manipulate values of
+such types.
 %
-Moreover, Common Subexpression Elimination (CSE) is a compiler optimization that
-needs to consider very specific sequences of instructions that may be regrouped
-in a computationally more efficient way, to cite a few \tocite.
-
-
-
-\subsection*{\textbf{Data Invariants Encoded on Abstract Interfaces}}
-
-A common choice when implementing a data structure is to transfer the
-responsability of preserving its invariants to the functions which manipulates
-its values.
-%
-For this purspose, suppose we extend our |Html| data type with the following
-basic combinators:
+To illustrate this point, let us consider three new primitives responsible to
+handle |Html| data.
 %
 \begin{code}
-module M where
+  hr :: Html
+  hr = Single "hr"
 
   div :: Html -> Html
   div inner = Tag "div" inner
 
   bold :: Html -> Html
   bold inner = Tag "b" inner
-
-  hr :: Html
-  hr = Sing "hr"
 \end{code}
 %
 % In the previous definition, the |Html| data type is defined using a single data
 % constructor that contains the textual representation of the Html code it
 % represents in plain text.
 %
-These functions encode additional information about the structure of our |Html|
-data type in the form of specific Html tags.
-
-
-Instead of including a new data constructor for each possible Html tag in out
-type definition, we defined a mininal representation and then extended it with
-an set of high level combinators.
+These functions encode additional information about the structure of |Html|
+values in the form of specific Html tags.
+%
+Primitive |hr| represents the tag \texttt{<hr>} used to separate content in an
+HTML page.
+%
+Function |div| and |bold| place an |Html| value within the tags \texttt{div} (to
+introduce divisions) and \texttt{b} (to make fonts bold), respectively.
+%
+For instance, \texttt{<html><b>hello</b><hr>bye</html>} can be
+encoded as:
+%
+\begin{code}
+Tag "html" (Join (Join
+  (bold (Text "hello")) hr) (Text "bye"))
+\end{code}
+%
+%
+Observe that, instead of including a new data constructor for each possible HTML
+tag in the |Html| definition (Section \ref{sec:randomtesting}), we defined a
+minimal, general, representation and then a set of high level primitives are
+provided to build valid |Html| tags.
 %
 % These combinators functions defined over |HTML| are the ones in charge of
 % transforming this plain text representation with the invariant that, given valid
 % |Html| parameters, they always return a valid |Html| value.
 %
-This programming pattern is often called a ``shallow embedding'', and can be
+This programming pattern is often
+%called a ``shallow embedding'', and can be
 found in a variety of Haskell libraries, being \emph{html} \tocite,
 \emph{svg-builder} \tocite some examples of this.
-
-
-As a consequence of this practice, type-driven derivation techniques often fail
-to synthesize useful random generators due to that most of the data type
-structure has been encoded into its abstract interface of combinators.
 %
-In our particular case, the chances of generating a |Tag| value representing a
-commonly used Html tag such as |div| are extremely low.
+As a consequence of this practice, generators derived with techniques that only
+look into ADT definitions \tocite often fail to synthesize useful random
+values.
+%
+After all, most of the \emph{valid structures} of values has been encoded into
+primitives of the ADT abstract interface.
+%
+When considering the generator described in Section \ref{sec:randomtesting}, the
+chances of generating a |Tag| value representing a commonly used Html tag such
+as |div| or |b| are extremely low.
 
 
 % Additionally, if our test suite contains properties constrained by certain
@@ -233,16 +298,16 @@ commonly used Html tag such as |div| are extremely low.
 % the codebase being tested, a practical random testing methodology should be able
 % to produce values satisfying such patterns in a substantial proportion.
 
-So far we have introduced two testing scenarios where type-driven derivation
-approaches are unable to capture all the available structure information from
-the user codebase.
+So far we have introduced two scenarios where derivation approaches based only
+on ADT definitions are unable to capture all the available structure information
+from the user codebase.
 %
 Fortunately, this information can be automatically exploited and used to
 generate interesting and more structured random values.
-
-The next section introduces a reprentation model that let us encode the
-structure information presented here into our automatically derived random
-generators in a modular and flexible way.
+%
+The next section introduces a model capable to encode the structure information
+presented here into our automatically derived random generators in a modular and
+flexible way.
 
 
 
@@ -822,3 +887,9 @@ derivation of random generators:
 %     the module |M|.}
 %   \label{fig:hrep}
 % \end{figure}
+
+
+% Local Variables:
+% TeX-master: "main.lhs.tex"
+% TeX-command-default: "Make"
+% End:
