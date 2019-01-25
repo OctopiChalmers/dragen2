@@ -8,13 +8,14 @@
   \label{fig:hrep}
 \end{figure*}
 
-In this section, we present how to provide the structural information express in
-ADTs definitions, patterns matchings, and abstract interfaces to our automatic
-process of deriving random data generators.
+In this section, we show how to augment the automatic process of deriving random
+data generators in {\dragen} with the structural information expressed by
+patterns matchings and abstract interfaces.
 %
 The key idea of this work is to represent the different sources in an
 homogeneous way.
 %
+%% I don't get this sentence
 Intuitively, the derived generators take the specification of the different
 structural sources and generate composite structured values on each random
 choice that it performs.
@@ -22,19 +23,16 @@ choice that it performs.
 
 Figure \ref{fig:hrep} shows the workflow of our approach for the |Html| ADT.
 %
-Based on the codebase, the user of our tool (\dragenp) indicates: (i) the ADT
+Based on the codebase, the user of our \dragenp indicates: (i) the ADT
 definition to consider (noted as $Html_{ADT}$), (ii) its patterns of interest
-(noted $Html_{Patterns}$), and (iii) primitives from abstract interfaces worth
-to involve in the generation process (noted as $Html_{Interface}$).
+(noted $Html_{Patterns}$), and (iii) the primitives from abstract interfaces
+worth to involve in the generation process (noted as $Html_{Interface}$).
 %
 % In this example, the user writes a type declaration as follows.
 % \begin{code}
 % type HtmlSpec  =         HtmlADT
 %                  oplus'  HtmlPatterns
 %                  oplus'  HtmlInterface
-
-
-
 % \end{code}
 %
 The tool then \emph{automatically derived generators} for each source of
@@ -45,28 +43,28 @@ easier to combine them in order to create structural richer ones.
 %
 For instance, the generator obtained from $Html_{ADT}$ only generate
 constructors of the ADT but leaving incomplete the generation at the recursive
-occurrences of |Html|, e.g., it generates values of the form (|Text "xA2sx"|),
-(|Single "xj32da"|), (|Tag "divx234jx" hole|) and (|Join hole hole|), where
-|hole| is a placeholder denoting an incomplete value.
+fields, e.g., it generates values of the form (|Text "xA2sx"|), (|Single
+"xj32da"|), (|Tag "divx234jx" hole|) and (|Join hole hole|), where |hole| is a
+placeholder denoting a ``yet-to-complete'' value.
 %
 %
 Similarly, the generator obtained from $Html_{Patterns}$ generates values
-satisfying the expected patterns where recursive calls are once more left
+satisfying the expected patterns where recursive fields are also left
 uncompleted, e.g., it generates values of the form (|Join (Text hole) (Text
 hole)|) and (|Join (Join (Text hole) hole) hole|).
 %
 Finally, the generator derived from $Html_{Interface}$ generates calls to the
-primitives in the indicated interface, where each argument of type |Html| is
-left uncompleted, e.g., (|div hole|) and (|bold hole|).
+interface's primitives, where each argument of type |Html| is left uncompleted,
+e.g., (|div hole|) and (|bold hole|).
 %
 
 Observe that \emph{partial ADT values} can be combined easily and the result is
 still a well-formed value of type |Html|.
 %
 For instance, if we want to combine the following random generated string
-|"bdfxwe"|, ADT constructor (|Text "xx34s"|), pattern (|Join (Join (Text hole)
-hole)|, and interface call (|div hole|), we can obtain the following well-formed
-|Html| test case:
+|"bdfxwe"|, ADT value (|Text "xx34s"|), pattern (|Join (Join (Text hole) hole)|,
+and interface call (|div hole|), we can obtain the following well-formed |Html|
+test case:
 %
 \begin{code}
  Join (Join (Text "bdfxwe") (div (Text "xx34s"))
@@ -77,11 +75,10 @@ Finally, our tool put all these three generators together into one that combines
 partial ADT values into fully formed ones.
 %
 Importantly, the user can specify the desire distribution of the expected number
-of constructors, patterns, and interface calls that the generator will
-produce (explained in next Section).
+of constructors, patterns, and interface calls that the generator will produce.
 %
-Overall, our approach offers significant advantages over usual
-derivation of random generators based only on ADT definitions:
+All in all, our approach offers the following advantages over usual derivation
+of random generators based only on ADT definitions:
 %
 \begin{CompactItemize}
 \item \textbf{Composability:} our tool can combine different partial ADT values
@@ -91,13 +88,13 @@ derivation of random generators based only on ADT definitions:
   %
 \item \textbf{Extensibility:} the developer can specify new sources of
   structural information and combine them with the existing ones simply by
-  adding them to the existing specification of the target data type.
+  adding them to the existing specification of the target ADT.
   %
 \item \textbf{Predictability:} the tool is capable to synthesize generators
   which distribution is adjusted to what developers might desire, e.g., an
-  uniform expected number of generated patterns, while some constructors should
-  be generated twice as much as others, etc. We will explain that in the next
-  Section.
+  uniform distribution of patterns, a distribution where some constructors are
+  generated twice as much as others, etc. We will explain the prediction of
+  distributions in the next section.
   %
   % This prediction is completely modular, and can be obtained for any composite
   % representation obtained using the automatically derived |HRep|s and the
@@ -105,7 +102,7 @@ derivation of random generators based only on ADT definitions:
 \end{CompactItemize}
 %
 We want to remark that, for space reasons, we were only able to introduce the
-representation of a rather simple target data type.
+specification of a rather simple target ADT like |Html|.
 %
 In practice, this reasoning can be extended to mutually recursive and parametric
 ADT definitions as well.
