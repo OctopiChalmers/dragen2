@@ -99,6 +99,19 @@
 %format t1
 %format t2
 
+%format hole = "\bullet"
+
+%format str = "str"
+%format str1
+%format str2
+%format str3
+%format strI
+
+%format HtmlADT = "Html_{ADT}"
+%format HtmlPatterns = "Html_{Patterns}"
+%format HtmlInterface = "Html_{Interface}"
+
+
 % Local Variables:
 % TeX-mbigstarer: "main.lhs.tex"
 % TeX-command-default: "Make"
