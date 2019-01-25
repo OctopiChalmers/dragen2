@@ -5,7 +5,7 @@
 % better random data generators:
 
 In this section, we describe the motivation for considering two additional
-sources of structure information which lead us to obtain better random data
+sources of structural information which lead us to obtain better random data
 generators. %and how to represent them in our generation process.
 %
 % In this work we identify two patological situations which are not properly
@@ -26,48 +26,48 @@ We proceed to exemplify the need to consider such sources with examples.
 \subsection{Branching on input data}
 
 To exemplify the first source of structure information, we consider that we want
-to use randomly generated |Htmls|s to test the function |simpl :: Html ->
-Html|.
+to use randomly generated |Html| values to test the function |simplify :: Html
+-> Html|.
 %
 In Haskell, the notation |f :: T| means that program |f| has type |T|.
 %
-In our example, function |simpl| takes an |Html| as an input and produces an
-|Html| value as an output (|Html -> Html|).
+In our example, function |simplify| takes an |Html| as an input and produces an
+|Html| value as an output---thus its type |Html -> Html|.
 %
-Intuitively, the purpose of this function is to put sequences of |Text|
-constructors into a single big |Text| constructor.
+Intuitively, the purpose of this function is to assemble sequences of |Text|
+constructors into a single big one.
 %
-More specifically, the code of |simpl| is as follows.
+More specifically, the code of |simplify| is as follows.
 %
 \begin{code}
-simpl :: Html -> Html
-simpl (Join (Text t1) (Text t2))
+simplify :: Html -> Html
+simplify (Join (Text t1) (Text t2))
   = Text (concat t1 t2)
-simpl (Join (Join (Text t1) x) y)
-  = simpl (Join (Text t1) (simpl (Join x y)))
-simpl (Join x y) = Join (simpl x) (simpl y)
-simpl (Tag t x) = Tag t (simpl x)
-simpl x = x
+simplify (Join (Join (Text t1) x) y)
+  = simplify (Join (Text t1) (simplify (Join x y)))
+simplify (Join x y) = Join (simplify x) (simplify y)
+simplify (Tag t x) = Tag t (simplify x)
+simplify x = x
 \end{code}
 %
-The body of |simpl| is described using \emph{pattern matching} over possible
+The body of |simplify| is described using \emph{pattern matching} over possible
 kind of |Html| values. (Function |concat| just concatenates two strings.)
 %
 Pattern matching allows to define functions idiomatically by given different
-function clauses for each input pattern we are interested on.
+function clauses for each input pattern we are interested in.
 %
 In other words, pattern matching is a mechanism that functions have to branch on
-input data arguments.
+input arguments.
 %
-In the code above, we can see that |simpl| patterns match against sequences of
-|Text| constructors combined by a |Join| constructor---see |simpl| first and
-second clauses.
+In the code above, we can see that |simplify| patterns match against sequences
+of |Text| constructors combined by a |Join| constructor---see first and second
+clauses.
 %
-Generally speaking,
-patterns can be defined to match specific constructors, literal values or
- variable subexpressions (like |x| in the last clause of |simpl|).
+Generally speaking, patterns can be defined to match specific constructors,
+literal values or variable subexpressions (like |x| in the last clause of
+|simplify|).
 %
- They can also be nested in order to match very specific patterns of values.
+Patterns can also be nested in order to match very specific values.
 
 % Patterns can be defined to match specific constructors, literal values or
 % variable subexpressions (like |t|, |x| and |y| in the definition of |render|).
@@ -84,29 +84,30 @@ patterns can be defined to match specific constructors, literal values or
 % nested expressions.
 
 
- Ideally, we would like to put approximately the same amount of effort into
- testing each clause of the function |simpl|.
+Ideally, we would like to put approximately the same amount of effort into
+testing each clause of the function |simplify|.
  %approximately the same amount of
  %time each.
 %
- However, each data constructor is generated independently when using tools for
- generating ADTs values (e.g., \tocite).
+However, each data constructor is generated independently by those generators
+automatically derived by just considering ADT definitions.
  %
- Observe that the probability of generating a value satisfying a nested pattern
- (like |Join (Text t1) (Text t2)|) decreases multiplicatively with the number of
- constructors we simultaneously pattern against to.
+Observe that the probability of generating a value satisfying a nested pattern
+(like |Join (Text t1) (Text t2)|) decreases multiplicatively with the number of
+constructors we simultaneously pattern against to.
 %
- In our tests, we found that the first two clauses of |simpl| get exercised only
- approximately between $1.5\%$ and $6\%$ of the time when using state-of-the-art
- tools for automatically deriving QuickCheck generators
- \cite{GriecoCB16,DBLP:conf/haskell/MistaRH18}.
+As an evidence of that, in our tests, we found that the first two clauses of
+|simplify| get exercised only approximately between $1.5\%$ and $6\%$ of the
+time when using the state-of-the-art tools for automatically deriving QuickCheck
+generators MegaDeTH \cite{GriecoCB16} and {\dragen}
+\cite{DBLP:conf/haskell/MistaRH18}.
  %
  %The best result we could achieve was with \dragen, which was able to exercise
  %the first and second clauses approximately $3\%$ and $6\%$ of the time,
  %respectively.
 %
- Most of the generated values were exercising the simplest clauses of our
- function (i.e, |simpl (Join x y)|, |simpl (Tag t x)|, and |simpl x|).
+Most of the generated values were exercising the simplest clauses of our
+function, i.e, |simplify (Join x y)|, |simplify (Tag t x)|, and |simplify x|.
 % )|, in view of they pattern match against
 % simpler patterns of input values.
 
@@ -183,7 +184,7 @@ specific patterns of the input data is not an uncommon task.
 %
 In that light, and in order to obtain interesting test cases, it is desirable to
 conceive generators able to produce random values capable to exercise patterns
-an expected number of times---in Section \ref{} we show how to do so.
+with certain frequency---Section \ref{sec:hrepcont} shows how to do so.
 %a good source of information to improve.
 
 
@@ -224,13 +225,14 @@ These functions encode additional information about the structure of |Html|
 values in the form of specific Html tags.
 %
 Primitive |hr| represents the tag \texttt{<hr>} used to separate content in an
-HTML page.
+HTML pages.
 %
-Function |div| and |bold| place an |Html| value within the tags \texttt{div} (to
-introduce divisions) and \texttt{b} (to make fonts bold), respectively.
+Function |div| and |bold| place an |Html| value within the tags \texttt{div} and
+\texttt{b} in order to introduce divisions and activate bold fonts,
+respectively.
 %
-For instance, \texttt{<html><b>hello</b><hr>bye</html>} can be
-encoded as:
+For instance, the page \texttt{<html><b>hello</b><hr>bye</html>} can be encoded
+as:
 %
 \begin{code}
 Tag "html" (Join (Join
@@ -239,9 +241,9 @@ Tag "html" (Join (Join
 %
 %
 Observe that, instead of including a new data constructor for each possible HTML
-tag in the |Html| definition (Section \ref{sec:randomtesting}), we defined a
-minimal, general, representation and then a set of high level primitives are
-provided to build valid |Html| tags.
+tag in the |Html| definition (recall Section \ref{sec:randomtesting}), we
+defined a minimal general representation with a set of high-level primitives to
+build valid |Html| tags.
 %
 % These combinators functions defined over |HTML| are the ones in charge of
 % transforming this plain text representation with the invariant that, given valid
@@ -252,15 +254,15 @@ This programming pattern is often
 found in a variety of Haskell libraries, being \emph{html} \tocite,
 \emph{svg-builder} \tocite some examples of this.
 %
-As a consequence of this practice, generators derived with techniques that only
-look into ADT definitions \tocite often fail to synthesize useful random
-values.
+As a consequence of this practice, generators derived by only looking into ADT
+definitions often fail to synthesize useful random values, e.g., random HTML
+pages with valid tags.
 %
 After all, most of the \emph{valid structures} of values has been encoded into
-primitives of the ADT abstract interface.
+the primitives of the ADT abstract interface.
 %
 When considering the generator described in Section \ref{sec:randomtesting}, the
-chances of generating a |Tag| value representing a commonly used Html tag such
+chances of generating a |Tag| value representing a commonly used HTML tag such
 as |div| or |b| are extremely low.
 
 
@@ -298,16 +300,16 @@ as |div| or |b| are extremely low.
 % the codebase being tested, a practical random testing methodology should be able
 % to produce values satisfying such patterns in a substantial proportion.
 
-So far we have introduced two scenarios where derivation approaches based only
-on ADT definitions are unable to capture all the available structure information
-from the user codebase.
+So far, we have introduced two scenarios where derivation approaches based only
+on ADT definitions are unable to capture all the available structural
+information from the user codebase.
 %
 Fortunately, this information can be automatically exploited and used to
 generate interesting and more structured random values.
 %
-The next section introduces a model capable to encode the structure information
-presented here into our automatically derived random generators in a modular and
-flexible way.
+The next section introduces a model capable to encode structural information
+presented in this section into our automatically derived random generators in a
+modular and flexible way.
 
 
 
