@@ -19,7 +19,7 @@ found at the type-level.
 % \textbf{products} (or tuples) of other data types.
 % %
 To exemplify this, and for illustrative purposes, let us consider the following
-ADT definition to encoding simple |Html| pages:
+ADT definition to encode simple |Html| pages:
 %
 \begin{code}
 data Html  =   Text    String
@@ -116,16 +116,16 @@ elements, respecitvely, e.g., |[(1,2),(3,4)]| is a list of pairs of numbers.
 %
 The random generator |genHtml| is defined using \quickcheck's function |sized|
 to paremetrize the generation process up to an external natural number known as
-the \emph{generation size}.
+the \emph{generation size}---capture in the code with variable |size|.
 %
 This parameter is chosen by the user, and it is used to limit the maximum amount
 of recursive calls that this random generator can perform and thus ensuring
 the termination of the generation process.
 %
 When called with a positive generation size, this generator can pick to generate
-among any |Html| data constructor of with an explicitly given frequency that can
-be chosen by the user---in this example, 2, 1, 4 and 3 for |Text|, |Single|,
-|Tag|, and |Join|, respectively.
+among any |Html| data constructor of with an explicitly given \emph{generation
+  frequency} that can be chosen by the user---in this example, 2, 1, 4 and 3 for
+|Text|, |Single|, |Tag|, and |Join|, respectively.
 %
 When it picks to generate a |Text| or a |Single| data constructor, it also
 generates a random |String| value using the standard QuickCheck generator
@@ -133,8 +133,8 @@ generates a random |String| value using the standard QuickCheck generator
 % like |String|, |Int|, |Bool|, etc.)
 \footnote{%
   The operators |<$>| and |<*>| are used in Haskell to combine values obtained
-  from calling to a random generator and they are not particularly relevant for
-  the point being made in this work.}
+  from calling random generators and they are not particularly relevant for the
+  point being made in this work.}
 %$
 On the other hand, when it picks to generate a |Join| constructor, it also
 generates two independent random subexpression recursively, thus decreasing the
@@ -176,12 +176,11 @@ generation frequencies.
 % lead to a generation process biased towards generating (in average) very small
 % values, regardless of the generation sized set by the user \tocite.
 %
-Fortunately, there exists a tool called \dragen
-\cite{DBLP:conf/haskell/MistaRH18} conceived to mitigate this problem.
+\dragen \cite{DBLP:conf/haskell/MistaRH18} is a tool conceived to mitigate the
+problem of finding the appropriated generation frequencies.
 %
-Instead of setting a uniform frequency (or probability) of data constructors,
-{\dragen} uses the theory of branching processes \cite{gw1875} to modelize and
-predict analytically the expected number of generated data constructors.
+It uses the theory of branching processes \cite{gw1875} to modelize and predict
+analytically the expected number of generated data constructors.
 %
 This prediction mechanism is used to feedback a simulation-based optimization
 process that adjusts the generation frequency of each data constructor in order
@@ -189,10 +188,11 @@ to obtain a particular distribution of values that can be specified by the
 user---thus providing a flexible testing environment while still being mostly
 automated.
 
-As many other tools \tocite, {\dragen} synthesizes random generators similar to
-the one shown before, where the generation process is limited to pick \emph{a
-  single data constructor at the time and then recursively generate each
-  required subexpression independently}.
+As many other tools for automatic derivation of generators
+(e.g.,\cite{GriecoCB16,RuncimanNL08,mitchell2007,DuregardJW12}), {\dragen}
+synthesizes random generators similar to the one shown before, where the
+generation process is limited to pick \emph{a single data constructor at the
+  time and then recursively generate each required subexpression independently}.
 %
 % type. the limitations arise quickly when we consider that the underlying
 % generation model is essentially the same:
