@@ -9,7 +9,7 @@ Haskell community.
 %
 It requires developers to specify (i) \emph{testing properties} which describe
 programs behavior and (ii) \emph{random data generator} based on the
-\underline{\emph{types}} of the expected inputs (e.g., an integer, an string,
+{\emph{types}} of the expected inputs (e.g., an integer, an string,
 etc.). %, e.g., an integer, an string, or an abstract data type (ADT).
 %
 QuickCheck then generates random test cases and reports those violating testing
@@ -18,8 +18,7 @@ properties.
 
 % Situation with Quick Check, ADTs, tools
 QuickCheck comes equipped with random generators for built-in types, while it
-requires to manually write generators for user-defined abstract data types
-(ADTs).
+requires to manually write generators for user-defined ADTs.
 %
 Recently, there have been a proliferation of tools to automatically derive
 QuickCheck generators for ADTs
@@ -48,29 +47,30 @@ fuzzers \cite{GriecoCB16,grieco2017}.
 Despite these success stories, ADT type-definitions do not often capture all the
 invariants expected from the data that they are intended to model.
 %
-As a result, even if random values are well-typed, they might not present enough
-structure to penetrate into deep layers of software.
+As a result, even if random values are well-typed, they might not be built with
+enough structure to penetrate into deep layers of software.
 
 %% Our proposal
 In this work, we propose a novel improvement in the generation process of ADT
 values by exploiting some static information found in the codebase.
 %
 More specifically, to refine the structure of generated values, we propose a
-generation process that is capable to consider how programs pattern-matched on
-ADTs values as well as how they get manipulated via interfaces.
+generation process that is capable to consider how programs branch based on ADTs
+values' patterns as well as how they get manipulated by abstract interfaces.
 %
-Furthermore, we show how to predict (at compile time) the distribution of the
-\emph{expected} numbers of ADT constructors, values fitting a certain pattern,
-and calls to interfaces.
+Furthermore, we show how to predict the distribution of the \emph{expected}
+numbers of ADT constructors, values fitting certain branching patterns, and
+calls to interfaces.
 %
 For that, we extend some recent results on applying \emph{branching
-  processes}---a simple stochastic model conceived to study population
-growth---to predict the distribution of QuickCheck
-generators\cite{DBLP:conf/haskell/MistaRH18}.
+  processes}\cite{gw1875}---a simple stochastic model conceived to study
+population growth.
+%---to predict the distribution of QuickCheck
+%generators\cite{DBLP:conf/haskell/MistaRH18}.
 %
 We implement our ideas in a tool, called {\dragenp}, that is capable to
-automatically synthesize QuickCheck generators for ADT values, where the
-distributions of random values can be adjusted at compile-time to what
+automatically synthesize QuickCheck generators for \emph{rich ADT values}, where
+the distributions of random values can be adjusted at compile-time to what
 developers might want based on our predictions.
 %
 \todo[inline,author=Ale]{Add here later about test cases when we know what they
