@@ -1,7 +1,7 @@
 \pgfplotsset{scaled y ticks=false}
 \begin{tikzpicture}
   \begin{axis}[
-    title={HTML Tidy 5.7.20},
+    title={(b) HTML Tidy 5.7.20},
     height=0.25\textwidth,
     width=0.5\textwidth,
     xlabel={Corpus size},
@@ -29,6 +29,7 @@
       (900,  22.78813) +- (0.0, 0.10231978)
       (1000, 23.32330) +- (0.0, 0.09762431)
     };
+    \label{exp:dragenp}
     % \addlegendentry{\dragenp};
     % \addplot+[blue][semithick, mark=none,
     % error bars/.cd, y dir=both, y explicit]
@@ -61,6 +62,7 @@
       (900,  12.536733) +- (0.0, 0.04470660)
       (1000, 12.731967) +- (0.0, 0.04069840)
     };
+    \label{exp:dragen}
     % \addlegendentry{\dragen};
   \end{axis}
 \end{tikzpicture}
