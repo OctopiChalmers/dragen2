@@ -48,15 +48,15 @@ fields, e.g., it generates values of the form (|Text "xA2sx"|), (|Single
 placeholder denoting a ``yet-to-complete'' value.
 %
 %
-\todo[inline]{I think we should be consistent on where to put the holes, because
-  we are using them in places where we expect recursive values and strings as
-  well. I guess the original idea is to use them to represent only the recursive
-  holes.}
+% \todo[inline]{I think we should be consistent on where to put the holes, because
+%   we are using them in places where we expect recursive values and strings as
+%   well. I guess the original idea is to use them to represent only the recursive
+%   holes.}
 %
 Similarly, the generator obtained from $Html_{Patterns}$ generates values
 satisfying the expected patterns where recursive fields are also left
-uncompleted, e.g., it generates values of the form (|Join (Text hole) (Text
-hole)|) and (|Join (Join (Text hole) hole) hole|).
+uncompleted, e.g., it generates values of the form (|Join (Text "xxa34") (Text
+"yxa123")|) and (|Join (Join (Text "xd32sa") hole) hole|).
 %
 Finally, the generator derived from $Html_{Interface}$ generates calls to the
 interface's primitives, where each argument of type |Html| is left uncompleted,
@@ -66,13 +66,12 @@ e.g., (|div hole|) and (|bold hole|).
 Observe that \emph{partial ADT values} can be combined easily and the result is
 still a well-formed value of type |Html|.
 %
-For instance, if we want to combine the following random generated string
-|"bdfxwe"|, ADT value (|Text "xx34s"|), pattern (|Join (Join (Text hole) hole)|,
-and interface call (|div hole|), we can obtain the following well-formed |Html|
-test case:
+For instance, if we want to combine the following random generated ADT value
+(|Text "xx34s"|), pattern (|Join (Join (Text "xd32sa") hole)|, and interface
+call (|div hole|), we can obtain the following type-checked |Html| value:
 %
 \begin{code}
- Join (Join (Text "bdfxwe") (div (Text "xx34s"))
+ Join (Join (Text "xd32sa") (div (Text "xx34s"))
 \end{code}
 
 
