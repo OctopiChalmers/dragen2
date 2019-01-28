@@ -48,6 +48,11 @@ fields, e.g., it generates values of the form (|Text "xA2sx"|), (|Single
 placeholder denoting a ``yet-to-complete'' value.
 %
 %
+\todo[inline]{I think we should be consistent on where to put the holes, because
+  we are using them in places where we expect recursive values and strings as
+  well. I guess the original idea is to use them to represent only the recursive
+  holes.}
+%
 Similarly, the generator obtained from $Html_{Patterns}$ generates values
 satisfying the expected patterns where recursive fields are also left
 uncompleted, e.g., it generates values of the form (|Join (Text hole) (Text
