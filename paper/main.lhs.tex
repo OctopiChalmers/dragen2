@@ -41,13 +41,21 @@
 \newcommand{\tocite}{\textbf{CITE}}
 \newcommand{\quickcheck}{\emph{QuickCheck}\xspace}
 \newcommand{\megadeth}{\emph{MegaDeTH}\xspace}
-\newcommand{\dragen}{\textbf{DRAGEN}\xspace}
-\newcommand{\dragenp}{\textbf{DRAGEN\!*}\xspace}
+% \newcommand{\dragen}{\textbf{DRAGEN}\xspace}
+\newcommand{\dragen}{\dragenlogo\xspace}
+% \newcommand{\dragenp}{\textbf{DRAGEN\!*}\xspace}
+\newcommand{\dragenp}{\dragenplogo\xspace}
 
 \newcommand{\hrep}[1]{\ensuremath{H\!Rep_{#1}}}
 \newcommand{\gen}[1]{\ensuremath{gen_{#1}}}
 \newcommand{\term}[1]{\ensuremath{#1^\bigstar}}
 \newcommand{\evalrep}[2]{ \ensuremath{\llbracket #1 \rrbracket_{#2}}}
+
+\newlength\htG\newlength\dpg
+\protected\def\dragenlogo{\settoheight{\htG}{G}\settodepth{\dpg}{g}%
+  \raisebox{-0.0\dpg}{\includegraphics[height=0.6\htG+\dpg]{dragenlogo}}}
+\protected\def\dragenplogo{\settoheight{\htG}{G}\settodepth{\dpg}{g}%
+  \raisebox{-0.0\dpg}{\includegraphics[height=0.6\htG+\dpg]{dragenplogo}}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Some parameters
