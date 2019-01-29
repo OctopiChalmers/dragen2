@@ -1,63 +1,260 @@
 \section{Random Generators Prediction and Synthesis} \label{sec:synthesis}
 
+Characterizing the distribution of values of an arbitrary random generator is a
+hard task.
+%
+It requires to model every random choice that it could possibly make to generate
+a value.
+%
+In a recent work \tocite, we have shown that it is possible to
+\emph{analitically} predict the average distribution of data constructors
+produced by a random generators automatically derived considering only ADT
+definitions---like the one presented on Section \ref{sec:randomtesting}.
+%
+For this purpose, we found that random generation of ADT values can be
+characterized using the theory of \emph{branching processes} \tocite.
+%
+This probabilistic theory was originally conceived to predict the growth and
+extinction of royal family trees the Victorian Era, being later applied to a
+wide variety of research areas.
+%
+In this work we extend this model to predict the average distribution of values
+of random generators derived considering structural information coming from
+pattern matchings and abstract interfaces.
 
-Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
-commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
-lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
-felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
-dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
-quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
-Nam euismod tellus id erat.
+
+Essentially, a branching process is a special kind of Markov process that models
+the evolution of a population of \emph{individuals} of different kinds across
+discrete time steps known as \emph{generations}.
+%
+Each kind of individual is expected to produce an average number of offspring of
+(possibly) different kinds from one generation to the next one.
+%
+In our original setting, we shown that each different data constructor can be
+considered as an individual on its own.
+%
+On the other hand, any ADT value can be seen as a tree where each node
+represents a root data constructor and has its sub-expressions as
+sub-trees---hence note the similarity with family trees.
+%
+In this light, each tree level of a generated value can be seen as a generation
+of our generation model.
+
+
+We note $G_n$ to the vector of real numbers that represents the average
+distribution of constructors that a random generator produces in the $n$-th
+generation, where each element of this vector represents each different data
+constructor involved in the generation process.
+%
+Then, it is possible to predict expected number of constructors a the generation
+$n$ by the means of the next formula:
+%
+\begin{align*}
+  E[G_n]^T = E[G_0]^T \cdot M^n
+\end{align*}
+
 
 \begin{align*}
-  % M_{|Html|} =
-  \begin{tikzpicture}[baseline=-0.65ex]
+  E \left[ P_n \right]
+  =
+  \beta_{Html}^T \cdot \left( \frac{I - (M_{Html})^{n+1}}{I - M_{Html}}\right)
+\end{align*}
+
+
+\begin{align*}
+  E[G_n]^T = \beta^T \cdot (\beta \cdot \mathcal{P})^{n+1}
+\end{align*}
+
+\newcommand{\ph}{\phantom{\square}}
+\newcommand{\el}{\square}
+\begin{equation*}
+  M_{T} = \ \
+  \begin{tikzpicture}
+    [ baseline=-0.65ex
+    , every left delimiter/.style={xshift=.5em}
+    , every right delimiter/.style={xshift=-.5em}
+    ]
     \matrix
     [ matrix of math nodes
+    , column sep=-1pt
+    , row sep=-1pt
     , ampersand replacement=\&
     , left delimiter={[}
     , right delimiter={]}
     ] (m)
     {
-      M_{ADT\!\rightarrow\!ADT} \&
-      M_{ADT\!\rightarrow\!Patterns} \&
-      M_{ADT\!\rightarrow\!Interface} \\
-      M_{Patterns\!\rightarrow\!ADT} \&
-      M_{Patterns\!\rightarrow\!Patterns} \&
-      M_{Patterns\!\rightarrow\!Interface} \\
-      M_{Interface\!\rightarrow\!ADT} \&
-      M_{Interface\!\rightarrow\!Patterns} \&
-      M_{Interface\!\rightarrow\!Interface} \\
+      \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % Text
+      \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % Sing
+      \ph \& \ph \& \el \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % Tag
+      \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % Join
+      \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % simplify#1
+      \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \el \& \ph \& \ph \\ % simplify#1
+      \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % simplify#1
+      \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % simplify#1
+      \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % simplify#1
     };
+    % Color squares
+    \fill[red, opacity=0.075]
+    (m-1-1.north west)
+    -|| ([xshift=-1pt]m-1-3.north east)
+    -|| ([xshift=-1pt, yshift=1pt]m-3-3.south east)
+    -|| ([xshift=1pt, yshift=1pt]m-3-1.south west)
+    -|| cycle;
+    \fill[blue, opacity=0.075]
+    ([yshift=-1pt]m-4-1.north west)
+    -|| ([xshift=1pt]m-1-3.north east)
+    -|| ([xshift=0pt, yshift=-1pt]m-1-9.south east)
+    -|| ([xshift=0pt, yshift=0pt]m-9-9.south east)
+    -|| ([xshift=-1pt, yshift=0pt]m-9-1.south east)
+    -|| cycle;
+    % Upper labels
+    \node[above,text depth=1pt] at (m-1-1.north) {$\scriptstyle C_1$};
+    \node[above,text depth=1pt] at (m-1-2.north) {$\scriptstyle \cdots$};
+    \node[above,text depth=1pt] at (m-1-3.north) {$\scriptstyle C_i$};
+    \node[above,text depth=1pt] at (m-1-4.north) {$\scriptstyle P_1$};
+    \node[above,text depth=1pt] at (m-1-5.north) {$\scriptstyle \cdots$};
+    \node[above,text depth=1pt] at (m-1-6.north) {$\scriptstyle P_j$};
+    \node[above,text depth=1pt] at (m-1-7.north) {$\scriptstyle F_1$};
+    \node[above,text depth=1pt] at (m-1-8.north) {$\scriptstyle \cdots$};
+    \node[above,text depth=1pt] at (m-1-9.north) {$\scriptstyle F_k$};
+    % Left labels
+    \node[left,overlay] at (m-1-1.west) {$\scriptstyle C_1$};
+    \node[left,overlay] at ([xshift=-4pt, yshift=2pt]m-2-1.west) {$\scriptstyle \vdots$};
+    \node[left,overlay] at (m-3-1.west) {$\scriptstyle C_i$};
+    \node[left,overlay] at (m-4-1.west) {$\scriptstyle P_1$};
+    \node[left,overlay] at ([xshift=-4pt, yshift=2pt]m-5-1.west) {$\scriptstyle \vdots$};
+    \node[left,overlay] at (m-6-1.west) {$\scriptstyle P_j$};
+    \node[left,overlay] at (m-7-1.west) {$\scriptstyle F_1$};
+    \node[left,overlay] at ([xshift=-4pt, yshift=2pt]m-8-1.west) {$\scriptstyle \vdots$};
+    \node[left,overlay] at (m-9-1.west) {$\scriptstyle F_k$};
+    % Dashed lines
+    \draw[densely dashed] ([xshift=-2pt]m-3-1.south west) -- ([xshift=2pt]m-3-9.south east);
+    \draw[densely dashed] ([xshift=-2pt]m-6-1.south west) -- ([xshift=2pt]m-6-9.south east);
+    \draw[densely dashed] ([yshift=2pt]m-1-3.north east) -- ([yshift=-2pt]m-9-3.south east);
+    \draw[densely dashed] ([yshift=2pt]m-1-6.north east) -- ([yshift=-2pt]m-9-6.south east);
+    \draw[dotted, semithick] (m-3-1.west) -- ([xshift=3pt]m-3-3.west);
+    \draw[dotted, semithick] (m-1-3.north) -- ([yshift=-3pt]m-3-3.north);
+    \draw[dotted, semithick] (m-6-1.west) -- ([xshift=4pt]m-6-7.west);
+    \draw[dotted, semithick] (m-1-7.north) -- ([yshift=-3pt]m-6-7.north);
   \end{tikzpicture}
-\end{align*}
+\end{equation*}
 
-% \begin{align*}
-%   M_C
-% %   % =
-% %   % \begin{bmatrix}
-% %   %   m_{ij}  \\
-% %   % \end{bmatrix}_{i, j \in \{|Leaf|, |NodeA|, |NodeB|\}}
-% %   = \qquad\quad
+\begin{equation*}
+  \beta_{Html} = \qquad \qquad
+  \begin{tikzpicture}
+    [ baseline=-0.65ex
+    , every left delimiter/.style={xshift=.5em}
+    , every right delimiter/.style={xshift=-.5em}
+    ]
+    \matrix
+    [ matrix of math nodes
+    , column sep=0ex
+    , row sep=-1pt
+    , ampersand replacement=\&
+    , left delimiter={[}
+    , right delimiter={]}
+    ] (v)
+    {
+      0 \\ % Text
+      0 \\ % Sing
+      1 \\ % Tag
+      2 \\ % Join
+      0 \\ % simplify#1
+      2 \\ % simplify#1
+      0 \\ % hr
+      1 \\ % div
+      1 \\ % bold
+    };
+    \draw[densely dashed] ([xshift=-3pt]v-4-1.south west) -- ([xshift=3pt]v-4-1.south east);
+    \draw[densely dashed] ([xshift=-3pt]v-6-1.south west) -- ([xshift=3pt]v-6-1.south east);
+    \node[left,overlay] at ([xshift=-2pt]v-1-1.west) {$\scriptstyle Text$};
+    \node[left,overlay] at ([xshift=-2pt]v-2-1.west) {$\scriptstyle Single$};
+    \node[left,overlay] at ([xshift=-2pt]v-3-1.west) {$\scriptstyle Tag$};
+    \node[left,overlay] at ([xshift=-2pt]v-4-1.west) {$\scriptstyle Join$};
+    \node[left,overlay] at ([xshift=-2pt]v-5-1.west) {$\scriptstyle simplify\#1$};
+    \node[left,overlay] at ([xshift=-2pt]v-6-1.west) {$\scriptstyle simplify\#2$};
+    \node[left,overlay] at ([xshift=-2pt]v-7-1.west) {$\scriptstyle hr$};
+    \node[left,overlay] at ([xshift=-2pt]v-8-1.west) {$\scriptstyle div$};
+    \node[left,overlay] at ([xshift=-2pt]v-9-1.west) {$\scriptstyle bold$};
+  \end{tikzpicture}
+  \hspace{20pt}
+  \mathcal{P}_{Html} =
+  \begin{tikzpicture}
+    [ baseline=-0.65ex
+    , every left delimiter/.style={xshift=.5em}
+    , every right delimiter/.style={xshift=-.5em}
+    ]
+    \matrix
+    [ matrix of math nodes
+    , column sep=0ex
+    , row sep=-1pt
+    , ampersand replacement=\&
+    , left delimiter={[}
+    , right delimiter={]}
+    ] (v)
+    {
+      p_{Text} \\
+      p_{Single} \\
+      p_{Tag}  \\
+      p_{Join} \\
+      p_{simplify\#1} \\
+      p_{simplify\#2} \\
+      p_{hr} \\
+      p_{div} \\
+      p_{bold} \\
+    };
+    \draw[densely dashed] ([xshift=-15pt]v-4-1.south west) -- ([xshift=15pt]v-4-1.south east);
+    \draw[densely dashed] ([xshift=-3pt]v-6-1.south west) -- ([xshift=3pt]v-6-1.south east);
+  \end{tikzpicture}
+\end{equation*}
 
-% %   % \begin{tikzpicture}[baseline=-0.65ex]
-% %   %   \matrix[
-% %   %   matrix of math nodes,
-% %   %   column sep=0ex,
-% %   %   left delimiter={[},
-% %   %   right delimiter={]}
-% %   %   ] (m)
-% %   %   {
-% %   %     0               & 0                & 0\\
-% %   %     2 \cdot p_{|Leaf|} & 2 \cdot p_{|NodeA|} &2 \cdot p_{|NodeB|}\\
-% %   %      p_{|Leaf|}  &  p_{|NodeA|} &  p_{|NodeB|}\\
-% %   %   };
-% %   %   % \node[above,text depth=1pt] at (m-1-1.north) {$\scriptstyle |Leaf|$};
-% %   %   % \node[above,text depth=1pt] at (m-1-2.north) {$\scriptstyle |NodeA|$};
-% %   %   % \node[above,text depth=1pt] at (m-1-3.north) {$\scriptstyle |NodeB|$};
-% %   %   % \node[left,overlay] at ([xshift=-4.5ex]m-1-1.west) {$\scriptstyle |Leaf|$};
-% %   %   % \node[left,overlay] at ([xshift=-1.5ex]m-2-1.west) {$\scriptstyle |NodeA|$};
-% %   %   % \node[left,overlay] at ([xshift=-3.0ex]m-3-1.west) {$\scriptstyle |NodeB|$};
-% %   % \end{tikzpicture}
-% %   \label{eq:treepmatrix}
-% \end{align*}
+
+
+\paragraph{End-to-End Prediction}
+%
+% So far we have shown that our prection model is able to predict the distribution
+% of data constructors, composite pattern values and interface function calls that
+% our automatically derived random generators will produce on average.
+
+It is possible to provide further ``end-to-end'' guarantees on the generated
+values if we restrict the generation process to only bare data constructors and
+pattern matching values.
+%
+In particular, we can stop considering pattern matching values as atomic
+constructions and start seeing them as compositions of data constructors.
+%
+This way is possible to obtain the average ``total'' number of data constructors
+that our generators will produce, regardless of if they are generated on their
+own, or as part of a pattern matching value.
+%
+We note this number as $E^\downarrow\![\_]$.
+
+
+The prediction only needs to consider the prediction of each data constructor
+and add the average number of constructors that we will additionally generate
+within pattern matching values.
+%
+For instance, we can calculate the total number of constructors |Text| and
+|Join| that we will generate by expanding the average number of pattern values
+$simplify\#1$ and $simplify\#2$ that we generate on average as follows:
+%
+{\small
+  \begin{align*}
+    E^\downarrow\!\left[ Text \right]
+    = E\left[ Text \right]
+    + 2\! \cdot\! E\left[ simplify\#1 \right]
+    + E\left[ simplify\#2 \right] \\
+    E^\downarrow\!\left[ Join \right]
+    = E\left[ Join \right]
+    + E\left[ simplify\#1 \right]
+    + 2\! \cdot\! E\left[ simplify\#2 \right]
+  \end{align*}
+}
+%
+Where $simplify\#1$ carries two |Text| and one |Join| data constructors---and
+viceversa for $simplify\#2$.
+
+
+Note that this expansion cannot be applied if we also generate random values
+containing abstract interface function calls, as we cannot predict the output of
+an arbitrary function without solving the halting problem in the process.

@@ -1,65 +1,69 @@
 \section{Case Studies}
 
-Intuitively, adding structure information to a random generator should provide
-better results when verifying a system using random testing.
+% Intuitively, adding structure information to a random generator should provide
+% better results when verifying a system using random testing.
 %
 % For instance, by generating values that are no only syntactically but also
 % semantically meaningful we would expect to reach deeper stages of our program
 % pipeline other than merely input parsing/validation.
 %
-This section describes two case studies showing that considering structure
-information when deriving generators consistenly produces better testing
-results.
-
-
-Instead of restricting our scope to Haskell, in this work we followed a broader
-evaluation approach taken previously to compare the performance of other
-state-of-the-art derivation techniques
+This section describes two case studies showing that considering additional
+structural information when deriving generators can consistently produce better
+testing results in terms of code coverage.
+%
+Instead of restricting our scope to Haskell, in this work we follow a broader
+evaluation approach taken previously to compare state-of-the-art techniques to
+derive random data generators based on ADT definitions
 \cite{grieco2017,DBLP:conf/haskell/MistaRH18}.
 %
-Concretely, we evaluate how including additional structure information when
-generating a set of random test cases (often referred as a \emph{corpus})
-affects the code coverage obtained when using them to test a given target
-program.
+
+We evaluate how including additional structural information when generating a
+set of random test cases (often referred as a \emph{corpus}) affects the code
+coverage obtained when testing a given target program.
 %
-For this purpose, we targeted two external programs which expect highly
-structured inputs, namely \emph{GNU CLISP}---the GNU Common Lisp compiler, and
-\emph{HTML Tidy}---a well known HTML refactoring and correction utility.
+For that, we considered two external programs which expect highly structured
+inputs, namely \emph{GNU CLISP}---the GNU Common Lisp
+compiler\footnote{\href{https://www.gnu.org/software/gcl/}{https://www.gnu.org/software/gcl/}},
+and \emph{HTML Tidy}
+\footnote{\href{http://www.html-tidy.org}{http://www.html-tidy.org}}---a well
+known HTML refactoring and correction utility.
 %
 We remark that these applications are not written in Haskell.
 %
 However, there exist Haskell libraries defining ADTs encoding their input
 structure, i.e., Lisp and HTML values respectively. These libraries are:
-\emph{hs-zuramaru}, implementing an embedded Lisp intepreter for a small subset
-of this programming language, and \emph{html}, defining a combinator library for
-constructing HTML values.
+\emph{hs-zuramaru}\footnote{\href{http://hackage.haskell.org/package/zuramaru}{http://hackage.haskell.org/package/zuramaru}},
+implementing an embedded Lisp intepreter for a small subset of this programming
+language, and
+\emph{html}\footnote{\href{http://hackage.haskell.org/package/html}{http://hackage.haskell.org/package/html}},
+defining a combinator library for constructing HTML values.
 %
 These libraries also come with serialization functions to map Haskell values
 into corresponding test case files.
 
 
-
-We started by compiling instrumented versions of the target programs in a way
-that they also return the execution path followed in the source code every time
-we run them with a given input test case.
+We firstly compiled instrumented versions of the target programs in a way that
+they also return the execution path followed in the source code every time we
+run them with a given input test case.
 %
 This let us distinguish the amount of different execution paths that a randomly
 generated corpus can trigger.
 %
-On the other side, we used the ADTs defined on the chosen libraries to derive
-random generators using \dragen and \dragenp, including structure information
+We then used the ADTs defined on the chosen libraries to derive random
+generators using \dragen and \dragenp, including structural information
 extracted from the library's codebase in the case of the latter.
 %
-Then, we evaluated the code coverage triggered by independent, randomly
-generated corpora of different sizes varying from 100 to 1000 test cases each.
+Then, we proceeded to evaluate the code coverage triggered by independent,
+randomly generated corpora of different sizes varying from 100 to 1000 test
+cases each.
 %
-In order to remove any external bias, we derived random generators optimized to
-follow a uniform distribution of constructors (and pattern matchings or function
-calls in the case \dragenp), and carefully adjusted their generation sizes to
-match the average test case size in bytes.
+In order to remove any external bias, we derived generators optimized to follow
+\emph{a uniform distribution of constructors (and pattern matchings or function
+  calls in the case \dragenp), and carefully adjusted their generation sizes to
+  match the average test case size in bytes}.
 %
 This way, any noticeable difference in the code coverage can be attributed to
-the present (or lack thereof) structure information when generating the test
+the present (or lack thereof) structural information when generating the test
 cases.
 %
 Additionally, to achieve statistical significance we repeated each experiment 30
@@ -74,18 +78,17 @@ times with independently generated sets of random test cases.
     \dragenp (\ref{exp:dragenp}). }
   \label{fig:coverage}
 \end{figure*}
-
+%
 Fig. \ref{fig:coverage} illustrates the mean number of different execution paths
-triggered for each permutation of corpus size and derivation tool, including
+triggered for different sizes of the corpus size and derivation tool, including
 error bars indicating the standard error of the mean on each case.
 %
-We proceed to describe each case study in detail.
+We proceed to describe each case study and our findings in detail as follows.
 
-
-\paragraph{Generating Lisp code using pattern matching information}
+\subsection{Branching on input data}
 
 In this first case study we wanted to evaluate the observed code coverage
-differences when considering structure information present on functions pattern
+differences when considering structural information present on functions pattern
 matchings.
 
 
@@ -99,21 +102,25 @@ let-bindings, if-then-else expressions and arithmetic operators among others.
 In particular, each one of these patterns match a against special symbol of the
 Lisp syntax like |"let"|, |"if"| or |"+"|; and their corresponding
 sub-expressions.
-
-
-In this case study we extracted the structure information from the pattern
-matchings present on this library and included it into the generation
-specification of our random Lisp values, which were generated by randomly
+%
+We extracted this structural information and included it into the generation
+specification of our random Lisp values---which were generated by randomly
 picking from a total of 6 data constructors and 8 different pattern matchings.
 %
-By doing this we obtained a consistent code coverage improvement of
-approximately $4\%$ using \dragenp with respect to the one obtained with
-\dragen (see Figure \ref{fig:coverage} (a)).
+By doing this, we obtained a code coverage improvement of approximately $4\%$
+using \dragenp with respect to the one obtained with \dragen (see Figure
+\ref{fig:coverage} (a)).
 %
-\todo[inline, author=AM]{Shall we say anything justifing this little
-  improvement?}
+While it seems a little improvement, it is worth noticing that we are generating
+highly structured input, i.e., Lisp programs.
+%
+When testing interpreters, we argue that an improvement of $4\%$ is not
+negligible considering the little effort that took us to specify the pattern
+matchings.
+%\todo[inline, author=AM]{Shall we say anything justifing this little
+%  improvement?}
 
-\paragraph{Generating HTML pages using abstract interface information}
+\subsection{Abstract interfaces}
 
 
 For our second case study, we wanted to evaluate how including structural
@@ -123,12 +130,12 @@ might improve the testing performance.
 
 The library we used for this purpose represents HTML values very much in the
 same way as we exemplify in Section \ref{sec:randomtesting}, i.e., defining a
-small set of general constructions representing plain text and tags---altough
+small set of general constructions representing plain text and tags---although
 this library also supports HTML tag attributes as well.
 %
 Then, this representation is extended with a large abstract interface consisting
 of combinators representing common HTML tags and tag attributes---equivalent to
-the combinators |div|, |bold| and |hr| illustrated before.
+the combinators |div|, |bold| and |hr| illustrated in Section \ref{sec:sources}.
 
 
 In this case study we included the structure information present on the abstract
@@ -136,11 +143,10 @@ interface of this library into the generation specification of random HTML
 values, resulting in a generation process that randomly picked among 4 data
 constructors and 163 abstract combinators.
 %
-With this large amount of additional structure information, we observed an
+With this large amount of additional structural information, we observed an
 increase of up to $83\%$ in the code coverage obtained with \dragenp with
 respect to the one observed with \dragen (see Figure \ref{fig:coverage} (b)).
-
-
+%
 A manual inspection of the corpora generated with each tool revealed us that, in
 general terms, the test cases generated with \dragen rarely represent
 syntactically correct HTML values, consisting to a large extent of random
@@ -158,5 +164,5 @@ present on the user codebase improves the testing performance.
 %
 We consider that our approach is particularly useful when the data types
 encoding the shape of our data are vague or not sufficiently structured to be
-used to derive powerful random generators with the common type-driven
-derivation techniques.
+used to derive powerful random generators with the common derivation techniques
+based only on ADT definitions.
