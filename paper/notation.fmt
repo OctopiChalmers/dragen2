@@ -112,6 +112,18 @@
 %format HtmlInterface = "Html_{Interface}"
 
 
+%format Textp = "p_{C_1}"
+%format Singlep = "p_{C_2}"
+%format Tagp = "p_{C_3}"
+%format Joinp = "p_{C_4}"
+%format Pat1 = "p_{Pat_1}"
+%format Pat2 = "p_{Pat_2}"
+%format hrp = "p_{F_1}"
+%format divp = "p_{F_2}"
+%format boldp = "p_{F_3}"
+
+
+
 % Local Variables:
 % TeX-mbigstarer: "main.lhs.tex"
 % TeX-command-default: "Make"

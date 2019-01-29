@@ -1,22 +1,25 @@
-\section{Prediction of Distributions} \label{sec:synthesis}
+\section{Predicting Distributions} \label{sec:synthesis}
 
 Characterizing the distribution of values of an arbitrary random generator is a
 hard task.
 %
-It requires to model every random choice that it could possibly make to generate
-a value.
+It requires to model every random choice that a generator could possibly make to
+generate a value.
 %
-In a recent work \tocite, we have shown that it is possible to
-\emph{analitically} predict the average distribution of data constructors
-produced by a random generators automatically derived considering only ADT
-definitions---like the one presented on Section \ref{sec:randomtesting}.
+In a recent work \cite{DBLP:conf/haskell/MistaRH18}, we have shown that it is
+possible to \emph{analitically} predict the average distribution of data
+constructors produced by a random generators automatically derived considering
+only ADT definitions---like the one presented on Section
+\ref{sec:randomtesting}.
 %
 For this purpose, we found that random generation of ADT values can be
-characterized using the theory of \emph{branching processes} \tocite.
+characterized using the theory of \emph{branching processes} \cite{gw1875}.
+%
+\footnote{
 %
 This probabilistic theory was originally conceived to predict the growth and
 extinction of royal family trees the Victorian Era, being later applied to a
-wide variety of research areas.
+wide variety of research areas.}
 %
 In this work we extend this model to predict the average distribution of values
 of random generators derived considering structural information coming from
@@ -358,3 +361,9 @@ The case of the second pattern matching of |simplify| follows analogously.
 Note that this expansion cannot be applied if we also generate random values
 containing abstract interface function calls, as we cannot predict the output of
 an arbitrary function without solving the halting problem in the process.
+
+
+% Local Variables:
+% TeX-master: "main.lhs.tex"
+% TeX-command-default: "Make"
+% End:
