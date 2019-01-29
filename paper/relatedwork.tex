@@ -7,14 +7,39 @@ practical and in theoretical terms.
 % Boltzmann models
 %
 Boltzmann models \tocite are a general approach to randomly generating
-combinatorial structures such as trees and graphs, and recently, closed
-simply-typed lambda terms \tocite.
+combinatorial structures such as trees and graphs, closed simply-typed lambda
+terms, etc.
 %
 A random generator built around such models uniformly generates values of a
 target size with a certain size tolerance.
 %
 However, it has been argued that this approach has theoretical and practical
 limitations in the context of software testing \tocite.
+%
+In a recent work, AUTHOR provides a framework called \emph{boltzmann-brain} to
+specify and synthesize standalone Haskell random generators based on Boltzmann
+models.
+%
+This framework mixes parameter tunning and rejection of unwanted samples to
+approximate the desired distribution of values according to user demands.
+%
+In this approach, the overall discard ratio depends on how constrained is this
+desired distribution.
+%
+On the other hand, our work is focused on approximating the desired distribution
+as much as possible via parameter optimization, without discarding any generated
+value at runtime.
+%
+Altough promising, we found several difficulties to compare both approaches in
+practice due that boltzmann-brain is considered a standalone utility that
+produces self-contained samplers.
+%
+In this light, data specifications have to be manually written using a special
+syntax, and cannot include Haskell ground types like |String| or |Int|,
+difficulting the task of integrating this tool to existing Haskel codebases like
+the ones we evaluate on this work.
+
+
 
 %
 % GodelTest
@@ -35,6 +60,6 @@ mechanism that is used only used at compile time to optimize the generation
 parameters, thus avoiding to perform any kind of runtime reinforcement.
 
 %
-% OO
+% DART
 %
-In the context of object oriented programming, ...
+Directed Automated Software Testing ...
