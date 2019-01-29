@@ -15,16 +15,13 @@ only ADT definitions---like the one presented on Section
 For this purpose, we found that random generation of ADT values can be
 characterized using the theory of \emph{branching processes} \cite{gw1875}.
 %
-\footnote{
-%
 This probabilistic theory was originally conceived to predict the growth and
 extinction of royal family trees the Victorian Era, being later applied to a
-wide variety of research areas.}
+wide variety of research areas.
 %
-In this work we extend this model to predict the average distribution of values
-of random generators derived considering structural information coming from
-functions pattern matchings and abstract interfaces.
-
+In this work, we adapt this model to also predict the average distribution of
+values of random generators derived considering structural information coming
+from functions pattern matchings and abstract interfaces.
 
 Essentially, a branching process is a special kind of Markov process that models
 the evolution of a population of \emph{individuals of different kinds} across
@@ -33,32 +30,34 @@ discrete time steps known as \emph{generations}.
 Each kind of individual is expected to produce an average number of offspring of
 (possibly) different kinds from one generation to the next one.
 %
-In our original setting, we shown that each different data constructor can be
-considered as an individual on its own.
+Mista el at. \cite{DBLP:conf/haskell/MistaRH18} show that branching processes
+can be adapted to predict the generation of ADT values by simply considering
+each data constructor as an individual on its own.
 %
-On the other hand, any ADT value can be seen as a tree where each node
-represents a root data constructor and has its sub-expressions as
-sub-trees---hence note the similarity with family trees.
+In fact, any ADT value can be seen as a tree where each node represents a root
+data constructor and has its sub-expressions as sub-trees---hence note the
+similarity with family trees.
 %
 In this light, each tree level of a random value can be seen as a generation of
 individuals in this model.
 
 
-Then, we can characterize the distribution of constructors that a random
-generator produces in the $n$-th generaton as a vector $G_n$ that groups the
-number of constructors of each kind produced in that generation.
-We note $G_n$ to the vector of real numbers that represents the distribution of
+We characterize the numbers of constructors that a random generator produces in
+the $n$-th generaton as a vector $G_n$, a vector that groups the number of
+constructors of each kind produced in that generation---in our |Html| example,
+this vector has four components, i.e., one for each constructor.
 %
-Then, the we can predict the expected distribution of constructors at the
-generation $n$ (noted as $E[G_n]$) using the following characteristic equation
-from branching processes theory:
+%We note $G_n$ to the vector of real numbers that represents the distribution of
+%
+From branching processes theory, the following equation captures the expected
+distribution of constructors at the generation $n$, noted $E[G_n]$, as follows:
 %
 \begin{align}
   E[G_n]^T = E[G_0]^T \cdot M^n
   \label{eqn:prediction}
 \end{align}
 
-Where $E[G_0]$ represents the initial distribuition of constructors that our
+Vector $E[G_0]$ represents the initial distribuition of constructors that our
 generator produces, which simply consists of the generation probability of each
 one.
 %
@@ -72,36 +71,40 @@ Each element $M_{i,j}$ of this matrix encodes the average number of data
 constructors of kind $j$ that gets generated in a given level, provided that we
 generated a constructor of kind $i$ at the previous level.
 %
-Is in this sense that this matrix encodes the ``branching'' behavior of our
-random generation from one generation to the next one.
+In this sense, this matrix encodes the ``branching'' behavior of our random
+generation from one generation to the next one.
 %
-In our previous work, we show how each element of this matrix can be calculated
-by exploiting type information from data type definitions.
+Each element of the matrix can be automatically calculated by exploiting ADT
+definitions \cite{DBLP:conf/haskell/MistaRH18}---specially the recursive
+fields---as well as the individual probability of generating each constructor.
 %
 For instance, the average number of |Text| data constructors that we will
 generate provided that we generated a |Join| data constructor on the previous
-level (corresponding to the element $M_{Join, Text}$) results $2\cdot p_{Text}$,
-where $2$ is the number of the recursive fields of type |Html| present on the
-constructor |Join| and $p_{Text}$ is the probability of generating the
-constructor |Text|.
+level is calculated as follows:
+%
+$$ M_{Join, Text} = 2\cdot p_{Text} $$
+%
+where $2$ is the number of holes present when generating a partial ADT value
+|Join| (i.e., |Join hole hole|) and $p_{Text}$ is the probability of
+individually generating the constructor |Text|.
 %
 This pattern can be used to build the rest of the mean matrix as well.
 
-\todo[inline]{Complete this!}
+%\todo[inline]{Complete this!}
 
 % \begin{align*}
 %   E \left[ P_n \right]
 %   = \beta_{Html}^T \cdot \left( \frac{I - (M_{Html})^{n+1}}{I - M_{Html}}\right)
 % \end{align*}
 
-
-Our realization in this work is that we can also consider that each different
-pattern matching value and abstract interface function call can be considered as
-another kind of individual belonging to the random generation process.
+In this work, we show how to naturally fit structural information beyond ADT
+definitions into the prediction mechanism of branching processes.
 %
-In this light, we can extend our mean matrix with this information, adding a row
-and a column for each different pattern matching value and function call that we
-add to the generation process, as we illustrate as follows:
+It is our realization that it suffices to simply consider \emph{each different
+  pattern matching and functional call as a kind of individual on its own}.
+%
+In that manner, we can extend our mean matrix $M$ by adding a row and a column
+for each different pattern matching and function call as follows:
 
 \newcommand{\ph}{\phantom{\square}}
 \newcommand{\el}{\square}
