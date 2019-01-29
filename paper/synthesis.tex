@@ -97,6 +97,8 @@ This pattern can be used to build the rest of the mean matrix as well.
 %   = \beta_{Html}^T \cdot \left( \frac{I - (M_{Html})^{n+1}}{I - M_{Html}}\right)
 % \end{align*}
 
+\subsection{Extending predictions for structural information}
+
 In this work, we show how to naturally fit structural information beyond ADT
 definitions into the prediction mechanism of branching processes.
 %
@@ -181,33 +183,49 @@ for each different pattern matching and function call as follows:
   \end{tikzpicture}
 \end{equation*}
 
-To extend $M$ to consider the new possible constructions, we need to calculate
-$M_{i,j}$ for every new combination of ``father'' and ``son'' constructions $i$
-and $j$, respectively.
+Symbol $C_1 \cdots C_i$ denotes constructors, $P_1 \cdots P_j$ pattern
+matchings, and $F_1 \cdots F_k$ function calls.
 %
-Fortunately, it is possible to follow the same pattern as we did on our original
-work, this time considering the amount of recursive pattern variables if it the
-case of a pattern matching value being a father individual, and the amount of
-recursive arguments if we deal with a abstract interface function call as a
-father individual.
+The red-light colored matrix is what we had before where the light-blue colored
+cells are new---we recommend readers to get a colored copy of the paper.
 %
-For instance, the average amount of function calls to |div| that we will produce
-provided that we generated a value matching the second pattern of |simplify| as a
-father results $2\cdot p_{div}$.
+% To extend $M$ to consider the new possible constructions, we need to calculate
+% $M_{i,j}$ for every new combination of ``father'' and ``son'' constructions $i$
+% and $j$, respectively.
+% %
+
+The new cells are filled as before: we need to consider the amount of holes when
+generating partial pattern matching and function calls as well as their
+individual probabilities.
 %
-Similarly, the average amount of values satisfying the first pattern matching of
-|simplify| provided that we generated a |Tag| constructor as a father results
-$1 \cdot p_{simplify\# 1}$.
+% Fortunately, it is possible to follow the same pattern as we did on our original
+% work, this time considering the amount of recursive pattern variables if it the
+% case of a pattern matching value being a father individual, and the amount of
+% recursive arguments if we deal with a abstract interface function call as a
+% father individual.
+%
+For instance, if we consider $P_j$ as the second pattern of simplify and $F_1$
+as function |div|, then the marked cell above has the value $2\cdot p_{div}$,
+i.e., the amount of holes in a partially generated pattern |(Join (Join (Text s)
+hole) hole)|, where |s| is some random string, times the probability to generate
+a call to function |div|.
+%
+The rest follows analogously.
 
+% the average amount of function calls to |div| that we will produce
+% provided that we generated a value matching the second pattern of |simplify| as a
+% father results $2\cdot p_{div}$.
+%
+% Similarly, the average amount of values satisfying the first pattern matching of
+% |simplify| provided that we generated a |Tag| constructor as a father results
+% $1 \cdot p_{simplify\# 1}$.
 
-
-
-Furthermore, we found that the prediction process can be factored in terms of
-two vectors $\beta$ and $\mathcal{P}$, such that $\beta$ represents the number
-of recursive sub-terms of each construction that we generate, whereas
-$\mathcal{P}$ simply represents the probability of generating that construction
-(this probability can be easily calculated based on the generation frequencies
-used in the random generator).
+As another contribution, we found that the whole prediction process can be
+factored in terms of two vectors $\beta$ and $\mathcal{P}$, such that $\beta$
+represents the number of recursive sub-terms of each construction that we
+generate, whereas $\mathcal{P}$ simply represents the probability of generating
+that partial ADT value.%  (this probability can be easily calculated based on the
+% generation frequencies used in the random generator).
 %
 Then, the equation \ref{eqn:prediction} can be rewriten as:
 %
@@ -215,8 +233,8 @@ Then, the equation \ref{eqn:prediction} can be rewriten as:
   E[G_n]^T = \beta^T \cdot (\beta \cdot \mathcal{P})^{n}
 \end{align*}
 %
-The vector $\beta$ can be obtained by analyzing the shape of each source of
-structural information that we consider, and joining them together.
+The vector $\beta$ can be obtained by analyzing the shape (namely holes) of each
+source of structural information that we consider, and joining them together.
 %
 For instance, $\beta$ and $\mathcal{P}$ for our generation specification of HTML
 values are as follows (where dashed lines indicate the composition of the
@@ -293,51 +311,47 @@ diffent sub-vectors that can be calculated separately):
 \end{equation*}
 
 Note that by varying the shape of the vector $\mathcal{P}$ we can tune the
-distribution of our random genrator in a way that can be always characterized.
+distribution of our random genrator in a way that can be always characterized
+and predicted.
 %
-In this light, \dragenp follows the same approach as \dragen, using our adapted
-prediction mechanism to tune the generation probabilities of each each source of
-structural information.
+\dragenp follows a similar approach as \dragen and uses an heuristic to tune the
+generation probabilities of each source of structural information.
 %
 This is done by runing a simulation-based optimization process at compile-time.
 %
 This process is parametrized by the desired distribution of values set by the
 user.
 %
-This way she can specify, for instance, a uniform distribution of data
-constructors, pattern matching values and function calls or, alternative, a
+In this manner, developers can specify, for instance, a uniform distribution of
+data constructors, pattern matching values and function calls or, alternative, a
 distribution of values with some constructions appearing in a different
 proportion as others, e.g., two times more functions calls to |div| than |Join|
 constructors.
 
-
-\paragraph{End-to-End Prediction}
+\subsection{Overall prediction}
+%\paragraph{End-to-End Prediction}
 %
 % So far we have shown that our prection model is able to predict the distribution
 % of data constructors, composite pattern values and interface function calls that
 % our automatically derived random generators will produce on average.
 
-It is possible to provide further ``end-to-end'' guarantees on the generated
-values if we restrict the generation process to only bare data constructors and
-pattern matching values.
+It is possible to provide an overall prediction of the expected number of
+constructors when restricting the generation process to only bare data
+constructors and pattern matching values.
 %
-In particular, we can stop considering pattern matching values as atomic
-constructions and start seeing them as compositions of several data
-constructors.
+To achieve that, we should stop considering pattern matching values as atomic
+values and start seeing them as compositions of several data constructors.
 %
-Then, is possible to obtain the average ``total'' number of data constructors
-that our generators will produce, regardless of if they are generated on their
-own, or as part of a pattern matching value.
+In that manner, it is possible to obtain the expected \emph{total} number of
+generated data constructors that our generators will produce---regardless if they
+are generated on their own, or as part of a pattern matching value.
 %
-We note this number as $E^\downarrow\![\_]$.
-
-
-The prediction only needs to add the expected number of constructors that we
-will additionally generate within pattern matching values to the prediction of
-bare data constructors.
+We note this number as $E^\downarrow\![\_]$ and, to calculate it, we only need
+to add the expected number of bare constructors that are included within each
+pattern matching.
 %
-For instance, we can calculate the total average number of constructors |Text|
-and |Join| that we will generate simply by expanding the average number of
+For instance, we can calculate the total expected number of constructors |Text|
+and |Join| that we will generate by simply expanding the expected number of
 generated pattern matching values $simplify\#1$ and $simplify\#2$ into their
 corresponding data constructors:
 %
@@ -354,16 +368,15 @@ corresponding data constructors:
   \end{align*}
 }
 %
-Given that each time we generate a value satisfying the first pattern matching
-of the function |simplify| we add two |Text| and one |Join| data constructors to
-our random value.
+Observe that each time we generate a value satisfying the first pattern matching
+of the function |simplify|, we add two |Text| and one |Join| data constructors
+to our random value.
 %
 The case of the second pattern matching of |simplify| follows analogously.
-
-
-Note that this expansion cannot be applied if we also generate random values
-containing abstract interface function calls, as we cannot predict the output of
-an arbitrary function without solving the halting problem in the process.
+%
+Note that the overall prediction cannot be applied if we also generate random
+values containing function calls, as we cannot predict the output of an abstract
+function without solving the halting problem in the process.
 
 
 % Local Variables:
