@@ -1,3 +1,14 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Syntax Highlighting
+
+\renewcommand{\Conid}[1]{{\color{darkred} {#1}}}
+\renewcommand{\Varid}[1]{{\color{darkblue} {#1}}}
+\newcommand{\constructor}[1]{{\color{darkred} #1}}
+\newcommand{\variable}[1]{{\color{darkblue} #1}}
+
+%subst varsym a  	= "{\color{darkblue} \mathbin{" a "}}"
+%subst numeral a 	= "{\color{darkgreen} \mathrm{" a "}}"
+%subst string a  	= "{\color{darkgreen} \text{\ttfamily \char34 " a "\char34}}"
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,8 +60,8 @@
 %format genFix_f      = "genFix_{f}"
 %format genFix_HRep_Html = "genFix_{\hrep{Html}}"
 
-%format genHtml     = "gen_{Html}"
-%format genString   = "gen_{String}"
+%format genHtml     = "\variable{gen_{Html}}"
+%format genString   = "\variable{gen_{String}}"
 
 
 %format genText = "\gen{Text}"
@@ -95,9 +106,9 @@
 
 %format ===> = "\Longrightarrow"
 
-%format t  = "t"
-%format t1
-%format t2
+% %format t  = "t"
+%format t1 = "\variable{t_1}"
+%format t2 = "\variable{t_2}"
 
 %format hole = "\bullet"
 
