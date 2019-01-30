@@ -18,7 +18,7 @@ homogeneous way.
 %% I don't get this sentence
 Intuitively, the derived generators take the specification of the different
 structural sources and generate composite structured values on each random
-choice that it performs.
+choice they perform.
 %
 
 Figure \ref{fig:hrep} shows the workflow of our approach for the |Html| ADT.
@@ -35,7 +35,7 @@ worth to involve in the generation process (noted as $Html_{Interface}$).
 %                  oplus'  HtmlInterface
 % \end{code}
 %
-The tool then \emph{automatically derived generators} for each source of
+Our tool then \emph{automatically derives generators} for each source of
 structural information.
 %
 These generators produce random \emph{partial ADT values} in a way that it is
@@ -68,7 +68,7 @@ still a well-formed value of type |Html|.
 %
 For instance, if we want to combine the following random generated ADT value
 (|Text "xx34s"|), pattern (|Join (Join (Text "xd32sa") hole)|, and interface
-call (|div hole|), we can obtain the following type-checked |Html| value:
+call (|div hole|), we can obtain the following well-typed |Html| value:
 %
 \begin{code}
  Join (Join (Text "xd32sa") (div (Text "xx34s"))
@@ -105,7 +105,7 @@ of random generators based only on ADT definitions:
   % provided combinators.
 \end{CompactItemize}
 %
-We want to remark that, for space reasons, we were only able to introduce the
+We remark that, for space reasons, we were only able to introduce the
 specification of a rather simple target ADT like |Html|.
 %
 In practice, this reasoning can be extended to mutually recursive and parametric

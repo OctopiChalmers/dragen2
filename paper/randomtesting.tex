@@ -3,6 +3,7 @@
 In this section, we briefly introduce the common approach for automatically
 deriving random data generators for ADTs in QuickCheck by using the information
 found at the type-level.
+%
 %type-driven approach, along
 %with its main drawbacks.
 %
@@ -18,6 +19,7 @@ found at the type-level.
 % terms of \textbf{sums} (also known as \emph{variant types}) and
 % \textbf{products} (or tuples) of other data types.
 % %
+%
 To exemplify this, and for illustrative purposes, let us consider the following
 ADT definition to encode simple |Html| pages:
 %
@@ -56,8 +58,8 @@ In general, we will say that a data constructor with no recursive fields is
 \emph{terminal}, and \emph{non-terminal} or \emph{recursive} if it has at least
 one field of such nature.
 %
-With this representation, the page \texttt{<html>hello<hr>bye</html>} can be
-encoded as:
+With this representation, the example page \texttt{<html>hello<hr>bye</html>}
+can be encoded as:
 %
 \begin{code}
 Tag "html" (Join (Join
@@ -93,22 +95,23 @@ Tag "html" (Join (Join
 In order to generate random value of types involving ADTs, most approaches
 require users to provide a random data generator for each one of them.
 %
-This is a cumbersome and error prone task and usually \emph{follows closely the ADT
-structure}.
+This is a cumbersome and error prone task that usually \emph{follows closely the
+  ADT structure}.
 %
 For instance, consider the following definition of a \quickcheck random
 generator for the type |Html|:
 %
 \begin{code}
 genHtml = sized (\size ->
-   if size == 0  then  frequency
-                       [ (2,  Text    <$> genString)
-                       , (1,  Single  <$> genString) ]
-   else frequency
-     [  (2,  Text    <$> genString)
-     ,  (1,  Single  <$> genString)
-     ,  (4,  Tag     <$> genString <*> smaller genHtml)
-     ,  (3,  Join    <$> smaller genHtml <*> smaller genHtml) ])
+  if size == 0
+  then frequency
+  [  (2,  Text    <$> genString)
+  ,  (1,  Single  <$> genString) ]
+  else frequency
+  [  (2,  Text    <$> genString)
+  ,  (1,  Single  <$> genString)
+  ,  (4,  Tag     <$> genString <*> smaller genHtml)
+  ,  (3,  Join    <$> smaller genHtml <*> smaller genHtml) ])
 \end{code} %$
 %
 We use the Haskell syntax |[]| and |(,)| for denoting lists and pairs of
@@ -116,7 +119,7 @@ elements, respecitvely, e.g., |[(1,2),(3,4)]| is a list of pairs of numbers.
 %
 The random generator |genHtml| is defined using \quickcheck's function |sized|
 to paremetrize the generation process up to an external natural number known as
-the \emph{generation size}---capture in the code with variable |size|.
+the \emph{generation size}---captured in the code with variable |size|.
 %
 This parameter is chosen by the user, and it is used to limit the maximum amount
 of recursive calls that this random generator can perform and thus ensuring
@@ -137,7 +140,7 @@ generates a random |String| value using the standard QuickCheck generator
   point being made in this work.}
 %$
 On the other hand, when it picks to generate a |Join| constructor, it also
-generates two independent random subexpression recursively, thus decreasing the
+generates two independent random sub-expression recursively, decreasing the
 generation size by a unit on each recursive invocation (|smaller genHtml|).
 %
 The case of random generation of |Tag| constructors follows analogously.
@@ -192,7 +195,8 @@ As many other tools for automatic derivation of generators
 (e.g.,\cite{GriecoCB16,RuncimanNL08,mitchell2007,DuregardJW12}), {\dragen}
 synthesizes random generators similar to the one shown before, where the
 generation process is limited to pick \emph{a single data constructor at the
-  time and then recursively generate each required subexpression independently}.
+  time and then recursively generate each required sub-expression
+  independently}.
 %
 % type. the limitations arise quickly when we consider that the underlying
 % generation model is essentially the same:

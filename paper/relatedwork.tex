@@ -31,28 +31,28 @@ as much as possible via parameter optimization, without discarding any generated
 value at runtime.
 %
 Altough promising, we found several difficulties to compare both approaches in
-practice due that boltzmann-brain is considered a standalone utility that
+practice due that \emph{boltzmann-brain} is considered a standalone utility that
 produces self-contained samplers.
 %
 In this light, data specifications have to be manually written using a special
 syntax, and cannot include Haskell ground types like |String| or |Int|,
-difficulting the task of integrating this tool to existing Haskel codebases like
-the ones we evaluate on this work.
+difficulting the integration of this tool to existing Haskell codebases like the
+ones we consider in this work.
 
 
 
 %
 % GodelTest
 %
-From the practical point of view, Feldt and Poulding propose G\"odelTest
+From the practical point of view, Feldt and Poulding propose \emph{G\"odelTest}
 \cite{feldt2013}, a search-based framework for generating biased data.
 %
-G\"odelTest uses non-determinism to generate a wide range of data structures.
+% \emph{G\"odelTest} uses non-determinism to generate a wide range of data structures.
 %
-Similar to our approach, it works optimizing the parameters governing the
-desired biases on the generated data.
+Similar to our approach, \emph{G\"odelTest} works by optimizing the parameters
+governing the desired biases on the generated data.
 %
-However, the optimization mechanism uses metaheuristic search for the best
+However, the optimization mechanism uses metaheuristic search to find the best
 parameters at runtime.
 %
 \dragenp on the other hand implements a analytic and composable prediction
@@ -66,9 +66,9 @@ parameters, thus avoiding to perform any kind of runtime reinforcement.
 Directed Automated Software Testing (DART) is a technique that combines random
 testing with symbolic execution for C programs \cite{godefroid2005dart}.
 %
-I requires to instrument the target programs in order to introduce testing
-assertions and obtain feedback from previous testing executions that is used to
-explore new paths in the source code.
+It requires to instrument the target programs in order to introduce testing
+assertions and obtain feedback from previous testing executions, which is used
+to explore new paths in the source code.
 %
 This technique has been shown to be remarkably useful, altough it forces a
 strong coupling between the testing suite and the target code.

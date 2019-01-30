@@ -52,7 +52,7 @@ simplify x = x
 \end{code}
 %
 The body of |simplify| is described using \emph{pattern matching} over possible
-kind of |Html| values. (Function |concat| just concatenates two strings.)
+kinds of |Html| values. (Function |concat| just concatenates two strings.)
 %
 Pattern matching allows to define functions idiomatically by given different
 function clauses for each input pattern we are interested in.
@@ -99,8 +99,8 @@ constructors we simultaneously pattern against to.
 %
 As an evidence of that, in our tests, we found that the first two clauses of
 |simplify| get exercised only approximately between $1.5\%$ and $6\%$ of the
-time when using the state-of-the-art tools for automatically deriving QuickCheck
-generators MegaDeTH \cite{GriecoCB16} and {\dragen}
+time when using the state-of-the-art tools for automatically deriving
+\quickcheck generators \megadeth \cite{GriecoCB16} and {\dragen}
 \cite{DBLP:conf/haskell/MistaRH18}.
  %
  %The best result we could achieve was with \dragen, which was able to exercise
@@ -250,10 +250,9 @@ build valid |Html| tags.
 % transforming this plain text representation with the invariant that, given valid
 % |Html| parameters, they always return a valid |Html| value.
 %
-This programming pattern is often
-%called a ``shallow embedding'', and can be
-found in a variety of Haskell libraries, being \emph{html} \tocite,
-\emph{svg-builder} \tocite some examples of this.
+This programming pattern is often found in a variety of Haskell libraries.
+%
+%being \emph{html} \tocite, \emph{svg-builder} \tocite some examples of this.
 %
 As a consequence of this practice, generators derived by only looking into ADT
 definitions often fail to synthesize useful random values, e.g., random HTML
