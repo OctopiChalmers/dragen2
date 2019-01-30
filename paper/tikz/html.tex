@@ -2,7 +2,7 @@
 \begin{tikzpicture}
   \begin{axis}[
     title={(b) HTML Tidy 5.7.20},
-    height=0.25\textwidth,
+    height=0.22\textwidth,
     width=0.5\textwidth,
     xlabel={Corpus size},
     % ylabel={Different execution paths (thousands)},
@@ -11,9 +11,9 @@
     legend pos=south east,
     legend cell align={left},
     % xmin=100, xmax=1000,
-    ymin=7.5, %ymax=23000,
-    enlarge x limits=0.1,
-    enlarge y limits=0.1
+    ymin=5, ymax=25,
+    enlarge x limits=0.1
+    % enlarge y limits=0.1
     ]
     \addplot+[blue][semithick, mark=none,
     error bars/.cd, y dir=both, y explicit]
