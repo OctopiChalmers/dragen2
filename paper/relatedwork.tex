@@ -6,7 +6,7 @@ practical and in theoretical terms.
 %
 % Boltzmann models
 %
-Boltzmann models \tocite are a general approach to randomly generating
+Boltzmann models \cite{Duchon2004} are a general approach to randomly generating
 combinatorial structures such as trees and graphs, closed simply-typed lambda
 terms, etc.
 %
@@ -14,11 +14,11 @@ A random generator built around such models uniformly generates values of a
 target size with a certain size tolerance.
 %
 However, it has been argued that this approach has theoretical and practical
-limitations in the context of software testing \tocite.
+limitations in the context of software testing \cite{feldt2013}.
 %
-In a recent work, AUTHOR provides a framework called \emph{boltzmann-brain} to
-specify and synthesize standalone Haskell random generators based on Boltzmann
-models.
+In a recent work, Bendkowski provides a framework called \emph{boltzmann-brain}
+to specify and synthesize standalone Haskell random generators based on
+Boltzmann models \cite{bendkowski2018}.
 %
 This framework mixes parameter tunning and rejection of unwanted samples to
 approximate the desired distribution of values according to user demands.
@@ -45,7 +45,7 @@ the ones we evaluate on this work.
 % GodelTest
 %
 From the practical point of view, Feldt and Poulding propose G\"odelTest
-\tocite, a search-based framework for generating biased data.
+\cite{feldt2013}, a search-based framework for generating biased data.
 %
 G\"odelTest uses non-determinism to generate a wide range of data structures.
 %
@@ -59,7 +59,20 @@ parameters at runtime.
 mechanism that is used only used at compile time to optimize the generation
 parameters, thus avoiding to perform any kind of runtime reinforcement.
 
+
 %
 % DART
 %
-Directed Automated Software Testing ...
+Directed Automated Software Testing (DART) is a technique that combines random
+testing with symbolic execution for C programs \cite{godefroid2005dart}.
+%
+I requires to instrument the target programs in order to introduce testing
+assertions and obtain feedback from previous testing executions that is used to
+explore new paths in the source code.
+%
+This technique has been shown to be remarkably useful, altough it forces a
+strong coupling between the testing suite and the target code.
+%
+Our tool intends to provide better random generation of values following an
+undirected fashion, without having to instrument the target code, but still
+extracting useful structural information from it.
