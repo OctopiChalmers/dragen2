@@ -95,9 +95,9 @@ automatically derived by just considering ADT definitions.
  %
 Observe that the probability of generating a value satisfying a nested pattern
 (like |Join (Text t1) (Text t2)|) decreases multiplicatively with the number of
-constructors we simultaneously pattern against to.
+constructors we simultaneously pattern against.
 %
-As an evidence of that, in our tests, we found that the first two clauses of
+As an evidence of that, in our tests, we found at the first two clauses of
 |simplify| get exercised only approximately between $1.5\%$ and $6\%$ of the
 time when using the state-of-the-art tools for automatically deriving
 \quickcheck generators \megadeth \cite{GriecoCB16} and {\dragen}
@@ -184,7 +184,7 @@ Altough the previous example might seem rather simple, branching against
 specific patterns of the input data is not an uncommon task.
 %
 In that light, and in order to obtain interesting test cases, it is desirable to
-conceive generators able to produce random values capable to exercise patterns
+conceive generators able to produce random values capable of exercising patterns
 with certain frequency---Section \ref{sec:hrepcont} shows how to do so.
 %a good source of information to improve.
 
@@ -314,7 +314,7 @@ information from the user codebase.
 Fortunately, this information can be automatically exploited and used to
 generate interesting and more structured random values.
 %
-The next section introduces a model capable to encode structural information
+The next section introduces a model capable of encoding structural information
 presented in this section into our automatically derived random generators in a
 modular and flexible way.
 

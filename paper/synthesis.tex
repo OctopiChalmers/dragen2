@@ -3,12 +3,12 @@
 Characterizing the distribution of values of an arbitrary random generator is a
 hard task.
 %
-It requires to model every random choice that a generator could possibly make to
+It requires modeling every random choice that a generator could possibly make to
 generate a value.
 %
 In a recent work \cite{DBLP:conf/haskell/MistaRH18}, we have shown that it is
-possible to \emph{analitically} predict the average distribution of data
-constructors produced by a random generators automatically derived considering
+possible to \emph{analytically} predict the average distribution of data
+constructors produced by random generators automatically derived considering
 only ADT definitions---like the one presented on Section
 \ref{sec:randomtesting}.
 %
@@ -16,12 +16,12 @@ For this purpose, we found that random generation of ADT values can be
 characterized using the theory of \emph{branching processes} \cite{gw1875}.
 %
 This probabilistic theory was originally conceived to predict the growth and
-extinction of royal family trees the Victorian Era, being later applied to a
+extinction of royal family trees the Victorian Era, later being applied to a
 wide variety of research areas.
 %
-In this work, we adapt this model to also predict the average distribution of
-values of random generators derived considering structural information coming
-from functions pattern matchings and abstract interfaces.
+In this work, we adapt this model to predict the average distribution of values
+of random generators derived considering structural information coming from
+functions' pattern matchings and abstract interfaces.
 
 Essentially, a branching process is a special kind of Markov process that models
 the evolution of a population of \emph{individuals of different kinds} across
@@ -197,8 +197,9 @@ each different pattern matching and function call as shown in Fig.
 Symbol $C_1\! \cdots C_i$ denotes constructors, $P_1\! \cdots P_j$ pattern
 matchings, and $F_1\! \cdots F_k$ function calls.
 %
-The red-light colored matrix is what we had before where the light-blue colored
-cells are new---we encourage readers to obtain a colored copy of this work.
+The light-red colored matrix is what we had before, whereas the light-blue
+colored cells are new---we encourage readers to obtain a colored copy of this
+work.
 %
 % To extend $M$ to consider the new possible constructions, we need to calculate
 % $M_{i,j}$ for every new combination of ``father'' and ``son'' constructions $i$
@@ -242,7 +243,7 @@ partial ADT value.% (this probability can be easily calculated based on the
 Then, the equation \ref{eqn:prediction} can be rewriten as:
 %
 \begin{align*}
-  E[G_n]^T = \beta^T \cdot (\beta \cdot \mathcal{P})^{n}
+  E[G_n]^T = \beta^T \cdot (\beta \cdot \mathcal{P}^T)^{n}
 \end{align*}
 %
 The vector $\beta$ can be obtained by analyzing the shape (namely holes) of each
@@ -360,7 +361,8 @@ constructors when restricting the generation process to only bare data
 constructors and pattern matching values.
 %
 To achieve that, we should stop considering pattern matching values as atomic
-values and start seeing them as compositions of several data constructors.
+constructions and start seeing them as compositions of several data
+constructors.
 %
 In that manner, it is possible to obtain the expected \emph{total} number of
 generated data constructors that our generators will produce---regardless if they
@@ -395,8 +397,8 @@ to our random value.
 The case of the second pattern matching of |simplify| follows analogously.
 %
 Note that the overall prediction cannot be applied if we also generate random
-values containing function calls, as we cannot predict the output of an abstract
-function without solving the halting problem in the process.
+values containing function calls, as we cannot predict the output of an
+arbitrary function.
 
 
 % Local Variables:
