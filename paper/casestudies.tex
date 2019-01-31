@@ -113,12 +113,13 @@ By doing this, we obtained a code coverage improvement of approximately $4\%$
 using \dragenp with respect to the one obtained with \dragen (see Figure
 \ref{fig:coverage} (a)).
 %
-While it seems a little improvement, it is worth noticing that we are generating
-highly structured inputs, i.e., Lisp programs.
+While it seems an small improvement, we argue that an improvement of $4\%$ is
+not negligible considering (a) the little effort that took us to specify the pattern
+matchings and (b) that we are testing a compiler.
+%it is worth noticing that we are generating
+%highly structured inputs, i.e., Lisp programs.
 %
-When testing interpreters, we argue that an improvement of $4\%$ is not
-negligible considering the little effort that took us to specify the pattern
-matchings.
+%When testing interpreters,
 %\todo[inline, author=AM]{Shall we say anything justifing this little
 %  improvement?}
 
@@ -140,10 +141,10 @@ of combinators representing common HTML tags and tag attributes---equivalent to
 the combinators |div|, |bold| and |hr| illustrated in Section \ref{sec:sources}.
 
 
-In this case study we included the structure information present on the abstract
+In this case study we included the structural information present on the abstract
 interface of this library into the generation specification of random HTML
 values, resulting in a generation process that randomly picked among 4 data
-constructors and 163 abstract combinators.
+constructors and 163 abstract functions.
 %
 With this large amount of additional structural information, we observed an
 increase of up to $83\%$ in the code coverage obtained with \dragenp with
@@ -164,7 +165,8 @@ parsed, analysed and reported as valid HTML values by the target application.
 With these results we are confident that including the structural information
 present on the user codebase improves the testing performance.
 %
-We consider that our approach is particularly useful when the data types
-encoding the shape of our data are vague or not sufficiently structured to be
-used to derive powerful random generators with the common derivation techniques
-based only on ADT definitions.
+%% Space reasons
+%We consider that our approach is particularly useful when the data types
+%encoding the shape of our data are vague or not sufficiently structured to be
+%used to derive powerful random generators with the common derivation techniques
+%based only on ADT definitions.

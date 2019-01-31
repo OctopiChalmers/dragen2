@@ -18,17 +18,17 @@ The key idea of this work is to represent the different sources in an
 homogeneous way.
 %
 %% I don't get this sentence
-Intuitively, the derived generators take the specification of the different
-structural sources and generate composite structured values on each random
-choice they perform.
+%Intuitively, the derived generators take the specification of the different
+%structural sources and generate composite structured values on each random
+%choice they perform.\todoale{remove this sentence?}
 %
 
 Figure \ref{fig:hrep} shows the workflow of our approach for the |Html| ADT.
 %
-Based on the codebase, the user of our \dragenp indicates: (i) the ADT
-definition to consider (noted as $Html_{ADT}$), (ii) its patterns of interest
-(noted $Html_{Patterns}$), and (iii) the primitives from abstract interfaces
-worth to involve in the generation process (noted as $Html_{Interface}$).
+Based on the codebase, the user of \dragenp indicates: (i) the ADT definition to
+consider (noted as $Html_{ADT}$), (ii) its patterns of interest (noted
+$Html_{Patterns}$), and (iii) the primitives from abstract interfaces to involve
+in the generation process (noted as $Html_{Interface}$).
 %
 % In this example, the user writes a type declaration as follows.
 % \begin{code}
@@ -89,7 +89,7 @@ of random generators based only on ADT definitions:
 \begin{CompactItemize}
 \item \textbf{Composability:} our tool can combine different partial ADT values
   arising from different structural information sources depending on what
-  property or sub-system becomes necessary to verify using randomly generated
+  property or sub-system becomes necessary to test using randomly generated
   values.
   %
 \item \textbf{Extensibility:} the developer can specify new sources of

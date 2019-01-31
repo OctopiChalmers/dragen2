@@ -40,6 +40,7 @@ constructors into a single big one.
 %
 More specifically, the code of |simplify| is as follows.
 %
+\todoale{Don't like the rendering of simplify!}
 \begin{code}
 simplify :: Html -> Html
 simplify (Join (Text t1) (Text t2))
@@ -51,8 +52,10 @@ simplify (Tag t x) = Tag t (simplify x)
 simplify x = x
 \end{code}
 %
+Function |concat| just concatenates two strings.
+%
 The body of |simplify| is described using \emph{pattern matching} over possible
-kinds of |Html| values. (Function |concat| just concatenates two strings.)
+kinds of |Html| values.
 %
 Pattern matching allows to define functions idiomatically by given different
 function clauses for each input pattern we are interested in.

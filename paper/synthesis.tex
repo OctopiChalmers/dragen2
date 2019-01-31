@@ -32,7 +32,7 @@ Each kind of individual is expected to produce an average number of offspring of
 %
 Mista el at. \cite{DBLP:conf/haskell/MistaRH18} show that branching processes
 can be adapted to predict the generation of ADT values by simply considering
-each data constructor as an individual on its own.
+each data constructor as a kind of its own.
 %
 In fact, any ADT value can be seen as a tree where each node represents a root
 data constructor and has its sub-expressions as sub-trees---hence note the
@@ -68,14 +68,14 @@ $M$ is a squared matrix with as rows and columns as different data constructors
 involved in the generation process.
 %
 Each element $M_{i,j}$ of this matrix encodes the average number of data
-constructors of kind $j$ that gets generated in a given level, provided that we
-generated a constructor of kind $i$ at the previous level.
+constructors of kind $j$ that gets generated in a given generation, provided that we
+generated a constructor of kind $i$ at the previous one.
 %
 In this sense, this matrix encodes the ``branching'' behavior of our random
 generation from one generation to the next one.
 %
 Each element of the matrix can be automatically calculated by exploiting ADT
-definitions \cite{DBLP:conf/haskell/MistaRH18}
+definitions. % \cite{DBLP:conf/haskell/MistaRH18}
 %
 % ---specially the recursive fields---
 %
@@ -216,11 +216,11 @@ individual probabilities.
 % recursive arguments if we deal with a abstract interface function call as a
 % father individual.
 %
-For instance, if we consider $P_j$ as the second pattern of simplify and $F_1$
-as function |div|, then the marked cell above has the value $2\cdot p_{div}$,
-i.e., the amount of holes in a partially generated pattern |(Join (Join (Text s)
-hole) hole)|, where |s| is some random string, times the probability to generate
-a call to function |div|.
+For instance, if we consider $P_j$ as the second pattern of function |simplify|
+and $F_1$ as function |div|, then the marked cell above has the value
+$2\cdot p_{div}$, i.e., the amount of holes in the partially generated pattern
+|(Join (Join (Text s) hole) hole)|, where |s| is some random string, times the
+probability to generate a call to function |div|.
 %
 The rest of this matrix can be computed analogously.
 
@@ -234,8 +234,7 @@ The rest of this matrix can be computed analogously.
 
 As another contribution, we found that the whole prediction process can be
 factored in terms of two vectors $\beta$ and $\mathcal{P}$, such that $\beta$
-represents the number of recursive sub-terms of each construction that we
-generate (i.e., data constructors, pattern matching values or function calls),
+represents the number of holes in each partial ADT value that we generate,
 whereas $\mathcal{P}$ simply represents the probability of generating that
 partial ADT value.% (this probability can be easily calculated based on the
 % generation frequencies used in the random generator).
@@ -246,12 +245,16 @@ Then, the equation \ref{eqn:prediction} can be rewriten as:
   E[G_n]^T = \beta^T \cdot (\beta \cdot \mathcal{P}^T)^{n}
 \end{align*}
 %
-The vector $\beta$ can be obtained by analyzing the shape (namely holes) of each
-source of structural information that we consider, and joining them together.
+% The vector $\beta$ can be obtained by analyzing the shape (namely holes) of each
+% source of structural information that we consider, and joining them together.
 %
 For instance, $\beta$ and $\mathcal{P}$ for our generation specification of HTML
-values are as shown in Fig. \ref{fig:vectors} (where dashed lines indicate the
-composition of the diffent sub-vectors that are calculated separately).
+values are as shown in Fig. \ref{fig:vectors}.
+%
+We note |simplify#1| and |simplify#2| to the patterns occurring in the first and
+second clauses of |simplify|, respectively.
+%(Dashed lines indicate the composition of the diffent sub-vectors
+%that are calculated separately).
 
 \begin{figure}[t]
   \resizebox{!}{2cm}{
