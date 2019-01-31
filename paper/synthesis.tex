@@ -85,10 +85,10 @@ For instance, the average number of |Text| data constructors that we will
 generate provided that we generated a |Join| data constructor on the previous
 level is calculated as follows:
 %
-$$ M_{Join, Text} = 2\cdot p_{Text} $$
+$$ M_{\mathrm{Join, Text}} = 2\cdot p_{\mathrm{Text}} $$
 %
 where $2$ is the number of holes present when generating a partial ADT value
-|Join| (i.e., |Join hole hole|) and $p_{Text}$ is the probability of
+|Join| (i.e., |Join hole hole|) and $p_{\mathrm{Text}}$ is the probability of
 individually generating the constructor |Text|.
 %
 This pattern can be used to build the rest of the mean matrix as well.
@@ -251,7 +251,7 @@ Then, the equation \ref{eqn:prediction} can be rewriten as:
 For instance, $\beta$ and $\mathcal{P}$ for our generation specification of HTML
 values are as shown in Fig. \ref{fig:vectors}.
 %
-We note |simplify#1| and |simplify#2| to the patterns occurring in the first and
+We note |simplify1| and |simplify2| to the patterns occurring in the first and
 second clauses of |simplify|, respectively.
 %(Dashed lines indicate the composition of the diffent sub-vectors
 %that are calculated separately).
@@ -287,15 +287,15 @@ second clauses of |simplify|, respectively.
     };
     \draw[densely dashed] ([xshift=-3pt]v-4-1.south west) -- ([xshift=3pt]v-4-1.south east);
     \draw[densely dashed] ([xshift=-3pt]v-6-1.south west) -- ([xshift=3pt]v-6-1.south east);
-    \node[left,overlay] at ([xshift=-2pt]v-1-1.west) {$\scriptstyle Text$};
-    \node[left,overlay] at ([xshift=-2pt]v-2-1.west) {$\scriptstyle Single$};
-    \node[left,overlay] at ([xshift=-2pt]v-3-1.west) {$\scriptstyle Tag$};
-    \node[left,overlay] at ([xshift=-2pt]v-4-1.west) {$\scriptstyle Join$};
-    \node[left,overlay] at ([xshift=-2pt]v-5-1.west) {$\scriptstyle simplify\#1$};
-    \node[left,overlay] at ([xshift=-2pt]v-6-1.west) {$\scriptstyle simplify\#2$};
-    \node[left,overlay] at ([xshift=-2pt]v-7-1.west) {$\scriptstyle hr$};
-    \node[left,overlay] at ([xshift=-2pt]v-8-1.west) {$\scriptstyle div$};
-    \node[left,overlay] at ([xshift=-2pt]v-9-1.west) {$\scriptstyle bold$};
+    \node[left,overlay] at ([xshift=-2pt]v-1-1.west) {$\scriptstyle \mathrm{Text}$};
+    \node[left,overlay] at ([xshift=-2pt]v-2-1.west) {$\scriptstyle \mathrm{Single}$};
+    \node[left,overlay] at ([xshift=-2pt]v-3-1.west) {$\scriptstyle \mathrm{Tag}$};
+    \node[left,overlay] at ([xshift=-2pt]v-4-1.west) {$\scriptstyle \mathrm{Join}$};
+    \node[left,overlay] at ([xshift=-2pt]v-5-1.west) {$\scriptstyle \mathrm{simplify}\#1$};
+    \node[left,overlay] at ([xshift=-2pt]v-6-1.west) {$\scriptstyle \mathrm{simplify}\#2$};
+    \node[left,overlay] at ([xshift=-2pt]v-7-1.west) {$\scriptstyle \mathrm{hr}$};
+    \node[left,overlay] at ([xshift=-2pt]v-8-1.west) {$\scriptstyle \mathrm{div}$};
+    \node[left,overlay] at ([xshift=-2pt]v-9-1.west) {$\scriptstyle \mathrm{bold}$};
   \end{tikzpicture}
   \hspace{30pt}
   \mathcal{P} =
@@ -313,15 +313,15 @@ second clauses of |simplify|, respectively.
     , right delimiter={]}
     ] (v)
     {
-      p_{Text} \\
-      p_{Single} \\
-      p_{Tag}  \\
-      p_{Join} \\
-      p_{simplify\#1} \\
-      p_{simplify\#2} \\
-      p_{hr} \\
-      p_{div} \\
-      p_{bold} \\
+      p_{\mathrm{Text}} \\
+      p_{\mathrm{Single}} \\
+      p_{\mathrm{Tag}}  \\
+      p_{\mathrm{Join}} \\
+      p_{\mathrm{simplify\#1}} \\
+      p_{\mathrm{simplify\#2}} \\
+      p_{\mathrm{hr}} \\
+      p_{\mathrm{div}} \\
+      p_{\mathrm{bold}} \\
     };
     \draw[densely dashed] ([xshift=-15pt]v-4-1.south west) -- ([xshift=15pt]v-4-1.south east);
     \draw[densely dashed] ([xshift=-3pt]v-6-1.south west) -- ([xshift=3pt]v-6-1.south east);
@@ -381,16 +381,16 @@ generated pattern matching values $simplify\#1$ and $simplify\#2$ into their
 corresponding data constructors:
 %
 {\small
-  \begin{align*}
-    E^\downarrow\!\!\left[ Text \right]
-    = E\left[ Text \right]
-    + 2\! \cdot\!\! E\!\left[ simplify\#1 \right]
-    + 1\!\! \cdot\!\! E\!\left[ simplify\#2 \right] \\
-    E^\downarrow\!\!\left[ Join \right]
-    = E\left[ Join \right]
-    + 1\!\! \cdot\!\! E\!\left[ simplify\#1 \right]
-    + 2\! \cdot\!\! E\!\left[ simplify\#2 \right]
-  \end{align*}
+  \begin{alignat*}{4}
+    &E^\downarrow\!\left[ |Text| \right]
+    &= E\left[ |Text| \right]
+      &+ 2 \cdot E\!\left[ |simplify1| \right]\
+      &+\ 1 \cdot E\!\left[ |simplify2| \right] \\
+    &E^\downarrow\!\left[ |Join| \right]
+    &= E\left[ |Join| \right]
+      &+ 1 \cdot E\!\left[ |simplify1| \right]\
+      &+\ 2 \cdot E\!\left[ |simplify2| \right]
+  \end{alignat*}
 }
 %
 Observe that each time we generate a value satisfying the first pattern matching

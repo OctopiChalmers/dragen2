@@ -26,9 +26,9 @@ homogeneous way.
 Figure \ref{fig:hrep} shows the workflow of our approach for the |Html| ADT.
 %
 Based on the codebase, the user of \dragenp indicates: (i) the ADT definition to
-consider (noted as $Html_{ADT}$), (ii) its patterns of interest (noted
-$Html_{Patterns}$), and (iii) the primitives from abstract interfaces to involve
-in the generation process (noted as $Html_{Interface}$).
+consider (noted as $\mathrm{Html_{ADT}}$), (ii) its patterns of interest (noted
+$\mathrm{Html_{Patterns}}$), and (iii) the primitives from abstract interfaces
+to involve in the generation process (noted as $\mathrm{Html_{Interface}}$).
 %
 % In this example, the user writes a type declaration as follows.
 % \begin{code}
@@ -43,7 +43,7 @@ structural information.
 These generators produce random \emph{partial ADT values} in a way that it is
 easier to combine them in order to create structural richer ones.
 %
-For instance, the generator obtained from $Html_{ADT}$ only generates
+For instance, the generator obtained from $\mathrm{Html_{ADT}}$ only generates
 constructors of the ADT but leaves the generation at the recursive fields
 incomplete, e.g., it generates values of the form (|Text "xA2sx"|), (|Single
 "xj32da"|), (|Tag "divx234jx" hole|) and (|Join hole hole|), where |hole| is a
@@ -55,12 +55,12 @@ placeholder denoting a ``yet-to-complete'' value.
 %   well. I guess the original idea is to use them to represent only the recursive
 %   holes.}
 %
-Similarly, the generator obtained from $Html_{Patterns}$ generates values
+Similarly, the generator obtained from $\mathrm{Html_{Patterns}}$ generates values
 satisfying the expected patterns where recursive fields are also left
 uncompleted, e.g., it generates values of the form (|Join (Text "xxa34") (Text
 "yxa123")|) and (|Join (Join (Text "xd32sa") hole) hole|).
 %
-Finally, the generator derived from $Html_{Interface}$ generates calls to the
+Finally, the generator derived from $\mathrm{Html_{Interface}}$ generates calls to the
 interface's primitives, where each argument of type |Html| is left uncompleted,
 e.g., (|div hole|) and (|bold hole|).
 %
