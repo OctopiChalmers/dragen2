@@ -1,7 +1,7 @@
 \section{Introduction}
 
 % Scenario of random testing
-Random testing is a promising approach to finding bugs
+Random testing is a promising approach to finding\todoale{find?} bugs
 \cite{HughesNSA16,HughesPAN16,ArtsHNS15}.
 %
 \quickcheck \cite{ClaessenH00} is the dominant tool of this sort used by the
@@ -12,7 +12,7 @@ programs expected behavior and (ii) \emph{random data generators} based on the
 \emph{types} of the expected inputs (e.g., an integer, an string,
 etc.). %, e.g., an integer, an string, or an abstract data type (ADT).
 %
-\quickcheck then generates random test cases and reports those violating testing
+\quickcheck then generates random test cases and reports violating testing
 properties.
 
 
@@ -31,13 +31,13 @@ The main difference about these tools lies on the guarantees provided to ensure
 Despite their differences, these tools guarantee that generated values are
 \emph{well-typed}.
 %
-In other words, generated values follow the structure described by the
-definition of the ADT.
+In other words, generated values follow the structure described by ADT
+definitions.
 
 
 %% How to use random generated ADTs
 Well-typed ADT values are specially useful when testing programs which expect
-highly structured inputs, e.g., compilers \cite{Palka11,MidtgaardJKNN17}.
+highly structured inputs like compilers \cite{Palka11,MidtgaardJKNN17}.
 %
 Generating ADT values also proves fruitful when looking for vulnerabilities in
 combination with fuzzers \cite{GriecoCB16,grieco2017}.
@@ -48,7 +48,7 @@ Despite these success stories, ADT type-definitions do not often capture all the
 invariants expected from the data that they are intended to model.
 %
 As a result, even if random values are well-typed, they might not be built with
-enough structure to penetrate into deep layers of software.
+enough structure to penetrate into deep software layers.
 
 
 %% Our proposal
@@ -59,12 +59,12 @@ can be statically exploited to improve the generation process of ADT values
 % In this work, we propose a novel improvement in the generation process of ADT
 % values by exploiting some static information found in the codebase.
 %
-Then, we provide a compositional approach to capture this information into our
-automatically derived random generators.
+Then, we show how to capture this information into our (automatically) derived
+random generators.
 %
 More specifically, we propose a generation process that is capable to consider
-how programs branch based on ADTs values' patterns as well as how they get
-manipulated by abstract interfaces (Section \ref{sec:hrepcont}).
+how programs branch on input ADTs values as well as how they get manipulated by
+abstract interfaces (Section \ref{sec:hrepcont}).
 %
 Furthermore, we show how to predict the distribution of the \emph{expected}
 numbers of ADT constructors, values fitting certain branching patterns, and
@@ -79,9 +79,9 @@ population growth (Section \ref{sec:synthesis}).
 %
 We implement our ideas in a tool called \dragenp\footnote{\dragenp is available
   at \url{http://github.com/OctopiChalmers/dragen-struct}}, that is capable to
-automatically synthesize \quickcheck generators for \emph{rich ADT values},
+automatically synthesize \quickcheck generators capable to produce \emph{rich ADT values},
 where the distributions of random values can be adjusted at compile-time to what
-developers might want based on our predictions.
+developers might want. %based on our predictions.
 %
 Finally, we provide empirical evaluations showing that including static
 information from the user codebase improves the code coverage of two external
