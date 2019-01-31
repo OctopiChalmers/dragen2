@@ -2,9 +2,10 @@
 %% Syntax Highlighting
 
 \renewcommand{\Conid}[1]{{\color{darkred} {#1}}}
-\renewcommand{\Varid}[1]{{\color{darkblue} {#1}}}
-\newcommand{\constructor}[1]{{\color{darkred} #1}}
-\newcommand{\variable}[1]{{\color{darkblue} #1}}
+\renewcommand{\Varid}[1]{{\color{darkblue} \mathrm{#1}}}
+\renewcommand{\Conid}[1]{{\color{darkred} \mathrm{#1}}}
+
+\newcommand{\variable}[1]{{\color{darkblue} \mathrm{  #1  } }}
 
 %subst varsym a  	= "{\color{darkblue} \mathbin{" a "}}"
 %subst numeral a 	= "{\color{darkgreen} \mathrm{" a "}}"
@@ -79,6 +80,8 @@
 
 %format html_example = "<\!\!html\!\!>\!\!hello\!\!<\!\!hr\!\!>\!\!bye\!\!<\!\!/html\!\!>"
 
+%format == = "=="
+
 %format term = "\term{\_}"
 %format f_term = "\term{f}"
 
@@ -98,8 +101,8 @@
 %format at_g = "\textit{@}\!g"
 
 %format <+> = "\mathop{\langle\! +\! \rangle}"
-%format <$> = "\mathop{\mathsmaller{\langle \$ \rangle}}"
-%format <*> = "\mathop{\mathsmaller{\langle \ast \rangle}}"
+%format <$> = "\mathop{ \langle \$ \rangle }"
+%format <*> = "\mathop{ \langle \ast \rangle }"
 
 %format pred = "(n{-}1)"
 %format pp = "\,\ \vert"
