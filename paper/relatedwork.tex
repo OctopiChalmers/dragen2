@@ -20,11 +20,11 @@ In a recent work, Bendkowski provides a framework called \emph{boltzmann-brain}
 to specify and synthesize standalone Haskell random generators based on
 Boltzmann models \cite{bendkowski2018}.
 %
-This framework mixes parameter tunning and rejection of unwanted samples to
+This framework mixes parameter tuning and rejection of unwanted samples to
 approximate the desired distribution of values according to user demands.
 %
-In this approach, the overall discard ratio depends on how constrained is this
-desired distribution.
+In this approach, the overall discard ratio depends on how constrained the
+desired distribution is.
 %
 On the other hand, our work is focused on approximating the desired distribution
 as much as possible via parameter optimization, without discarding any generated
@@ -55,18 +55,18 @@ governing the desired biases on the generated data.
 However, the optimization mechanism uses metaheuristic search to find the best
 parameters at runtime.
 %
-\dragenp on the other hand implements a analytic and composable prediction
+\dragenp on the other hand implements an analytic and composable prediction
 mechanism that is used only used at compile time to optimize the generation
-parameters, thus avoiding to perform any kind of runtime reinforcement.
+parameters, thus avoiding perfomring any kind of runtime reinforcement.
 
 
 %
 % DART
 %
-Directed Automated Software Testing (DART) is a technique that combines random
+Directed Automated Random Testing (DART) is a technique that combines random
 testing with symbolic execution for C programs \cite{godefroid2005dart}.
 %
-It requires to instrument the target programs in order to introduce testing
+It requires instrumenting the target programs in order to introduce testing
 assertions and obtain feedback from previous testing executions, which is used
 to explore new paths in the source code.
 %
