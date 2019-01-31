@@ -205,18 +205,25 @@ preserving structural invariants to the interfaces that manipulate values of
 such types.
 %
 To illustrate this point, let us consider three new primitives responsible to
-handle |Html| data.
+handle |Html| data as shown in Fig \ref{fig:htmlint}.
 %
+\begin{wrapfigure}{r}{0.225\textwidth}
+\vspace{-10pt}
+\hspace{-10pt}
 \begin{code}
-  hr :: Html
-  hr = Single "hr"
+hr :: Html
+hr = Single "hr"
 
-  div :: Html -> Html
-  div inner = Tag "div" inner
+div :: Html -> Html
+div x = Tag "div" x
 
-  bold :: Html -> Html
-  bold inner = Tag "b" inner
+bold :: Html -> Html
+bold x = Tag "b" x
 \end{code}
+\caption{Abtract interface of the type |Html|.}
+\label{fig:htmlint}
+\vspace{-10pt}
+\end{wrapfigure}
 %
 % In the previous definition, the |Html| data type is defined using a single data
 % constructor that contains the textual representation of the Html code it
@@ -234,12 +241,12 @@ respectively.
 %
 For instance, the page \texttt{<html><b>hello</b><hr>bye</html>} can be encoded
 as:
-%
+
 \begin{code}
 Tag "html" (Join (Join
   (bold (Text "hello")) hr) (Text "bye"))
 \end{code}
-%
+
 %
 Observe that, instead of including a new data constructor for each possible HTML
 tag in the |Html| definition (recall Section \ref{sec:randomtesting}), we

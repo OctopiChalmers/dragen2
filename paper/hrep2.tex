@@ -5,7 +5,9 @@
   \input{tikz/hrep.tex}
   \caption{Deriving a generator for the ADT |Html| with the structural
     information found in module |M|.}
+  \vspace{-5pt}
   \label{fig:hrep}
+  \vspace{-5pt}
 \end{figure*}
 
 In this section, we show how to augment the automatic process of deriving random
@@ -97,14 +99,15 @@ of random generators based only on ADT definitions:
 \item \textbf{Predictability:} the tool is capable to synthesize generators
   which distribution is adjusted to what developers might desire, e.g., an
   uniform distribution of patterns, a distribution where some constructors are
-  generated twice as much as others, etc. We will explain the prediction of
+  generated twice as much as others, etc. We explain the prediction of
   distributions in the next section.
   %
   % This prediction is completely modular, and can be obtained for any composite
   % representation obtained using the automatically derived |HRep|s and the
   % provided combinators.
 \end{CompactItemize}
-%
+
+
 We remark that, for space reasons, we were only able to introduce the
 specification of a rather simple target ADT like |Html|.
 %
