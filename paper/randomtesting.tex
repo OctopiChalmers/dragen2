@@ -1,8 +1,9 @@
 \section{Background} \label{sec:randomtesting}
 
 In this section, we briefly introduce the common approach for automatically
-deriving random data generators for ADTs in QuickCheck by using the information
-found at the type-level.
+deriving random data generators for ADTs in QuickCheck.
+%by using the information
+%found at the type-level.
 %
 %type-driven approach, along
 %with its main drawbacks.
@@ -51,8 +52,8 @@ variant of the ADT we are constructing.
 Each data constructor is defined as a product of zero or more types known as
 \emph{fields}.
 %
-For instance, |Text| has a field of type |String|, whereas |Join| two recusive
-fields of type |Html|.
+For instance, |Text| has a field of type |String|, whereas |Join| has two
+recursive fields of type |Html|.
 %
 In general, we will say that a data constructor with no recursive fields is
 \emph{terminal}, and \emph{non-terminal} or \emph{recursive} if it has at least
@@ -92,11 +93,11 @@ Tag "html" (Join (Join
 
 \subsection{Type-driven generation of random values}
 
-In order to generate random value of types involving ADTs, most approaches
-require users to provide a random data generator for each one of them.
+In order to generate random ADTs values, most approaches require users to provide
+a random data generator for each ADT definition.
 %
-This is a cumbersome and error prone task that usually \emph{follows closely the
-  ADT structure}.
+This is a cumbersome and error prone task that usually \emph{follows closely
+  ADTs structures}.
 %
 For instance, consider the following definition of a \quickcheck random
 generator for the type |Html|:
@@ -115,7 +116,7 @@ genHtml = sized (\size ->
 \end{code} %$
 %
 We use the Haskell syntax |[]| and |(,)| for denoting lists and pairs of
-elements, respecitvely, e.g., |[(1,2),(3,4)]| is a list of pairs of numbers.
+elements, respecitvely (e.g., |[(1,2),(3,4)]| is a list of pairs of numbers.).
 %
 The random generator |genHtml| is defined using \quickcheck's function |sized|
 to paremetrize the generation process up to an external natural number known as
@@ -126,9 +127,9 @@ of recursive calls that this random generator can perform and thus ensuring
 the termination of the generation process.
 %
 When called with a positive generation size, this generator can pick to generate
-among any |Html| data constructor of with an explicitly given \emph{generation
-  frequency} that can be chosen by the user---in this example, 2, 1, 4 and 3 for
-|Text|, |Single|, |Tag|, and |Join|, respectively.
+among any |Html| data constructor with an explicitly \emph{generation frequency}
+that can be chosen by the user---in this example, 2, 1, 4 and 3 for |Text|,
+|Single|, |Tag|, and |Join|, respectively.
 %
 When it picks to generate a |Text| or a |Single| data constructor, it also
 generates a random |String| value using the standard QuickCheck generator
@@ -146,8 +147,8 @@ generation size by a unit on each recursive invocation (|smaller genHtml|).
 The case of random generation of |Tag| constructors follows analogously.
 %
 This random process keeps calling itself recursively until the generation size
-reaches zero, where the generator is constrained to pick only among terminal
-data constructors, being |Text| and |Single| the only possible choices in our
+reaches zero, where the generator is constrained to pick among terminal data
+constructors, being |Text| and |Single| the only possible choices in our
 particular case.
 
 % Strictly decreasing the the generation size by one on each recursive call
