@@ -43,7 +43,7 @@ individuals in this model.
 
 
 We characterize the numbers of constructors that a random generator produces in
-the $n$-th generaton as a vector $G_n$, a vector that groups the number of
+the $n$-th generation as a vector $G_n$, a vector that groups the number of
 constructors of each kind produced in that generation---in our |Html| example,
 this vector has four components, i.e., one for each constructor.
 %
@@ -57,7 +57,7 @@ distribution of constructors at the generation $n$, noted $E[G_n]$, as follows:
   \label{eqn:prediction}
 \end{align}
 
-Vector $E[G_0]$ represents the initial distribuition of constructors that our
+Vector $E[G_0]$ represents the initial distribution of constructors that our
 generator produces, which simply consists of the generation probability of each
 one.
 %
@@ -239,7 +239,7 @@ whereas $\mathcal{P}$ simply represents the probability of generating that
 partial ADT value.% (this probability can be easily calculated based on the
 % generation frequencies used in the random generator).
 %
-Then, the equation \ref{eqn:prediction} can be rewriten as:
+Then, the equation \ref{eqn:prediction} can be rewritten as:
 %
 \begin{align*}
   E[G_n]^T = \beta^T \cdot (\beta \cdot \mathcal{P}^T)^{n}
@@ -335,15 +335,15 @@ second clauses of |simplify|, respectively.
 \end{figure}
 
 Note that by varying the shape of the vector $\mathcal{P}$ we can tune the
-distribution of our random genrator in a way that can be always characterized
+distribution of our random generator in a way that can be always characterized
 and predicted.
 %
 \dragenp follows a similar approach as \dragen and uses an heuristic to tune the
 generation probabilities of each source of structural information.
 %
-This is done by runing a simulation-based optimization process at compile-time.
+This is done by running a simulation-based optimization process at compile-time.
 %
-This process is parametrized by the desired distribution of values set by the
+This process is parameterized by the desired distribution of values set by the
 user.
 %
 In this manner, developers can specify, for instance, a uniform distribution of

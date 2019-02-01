@@ -30,7 +30,7 @@ On the other hand, our work is focused on approximating the desired distribution
 as much as possible via parameter optimization, without discarding any generated
 value at runtime.
 %
-Altough promising, we found several difficulties to compare both approaches in
+Although promising, we found several difficulties to compare both approaches in
 practice due that \emph{boltzmann-brain} is considered a standalone utility that
 produces self-contained samplers.
 %
@@ -52,12 +52,12 @@ From the practical point of view, Feldt and Poulding propose \emph{G\"odelTest}
 Similar to our approach, \emph{G\"odelTest} works by optimizing the parameters
 governing the desired biases on the generated data.
 %
-However, the optimization mechanism uses metaheuristic search to find the best
+However, the optimization mechanism uses meta-heuristic search to find the best
 parameters at runtime.
 %
 \dragenp on the other hand implements an analytic and composable prediction
 mechanism that is used only used at compile time to optimize the generation
-parameters, thus avoiding perfomring any kind of runtime reinforcement.
+parameters, thus avoiding performing any kind of runtime reinforcement.
 
 
 %
@@ -70,7 +70,7 @@ It requires instrumenting the target programs in order to introduce testing
 assertions and obtain feedback from previous testing executions, which is used
 to explore new paths in the source code.
 %
-This technique has been shown to be remarkably useful, altough it forces a
+This technique has been shown to be remarkably useful, Although it forces a
 strong coupling between the testing suite and the target code.
 %
 Our tool intends to provide better random generation of values following an

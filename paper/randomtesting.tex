@@ -34,8 +34,8 @@ data Html  =   Text    String
 %
 The type |Html| allows to build pages via four possible constructions:
 |Text|---which represents plain text values---, |Single| and |Tag|---which
-represent singular and paired Html tags, respectively---, and |Join|---which
-concats two Htmls pages one after another.
+represent singular and paired HTML tags, respectively---, and |Join|---which
+concatenates two HTMLs pages one after another.
 %
 % In the previous definition, we declare |Html| as the sum of four possible
 % constructions: |Text| represents plain text values. |Sing| and |Tag| represent
@@ -46,7 +46,7 @@ concats two Htmls pages one after another.
 % illustrative reasons.
 % %
 In Haskell, |Text|, |Single|, |Tag|, and |Join| are known as \emph{data
-  constructors} (or constructors for short) and are used to distiguish which
+  constructors} (or constructors for short) and are used to distinguish which
 variant of the ADT we are constructing.
 %
 Each data constructor is defined as a product of zero or more types known as
@@ -96,8 +96,8 @@ Tag "html" (Join (Join
 In order to generate random ADTs values, most approaches require users to provide
 a random data generator for each ADT definition.
 %
-This is a cumbersome and error prone task that usually \emph{follows closely
-  ADTs structures}.
+This is a cumbersome and error prone task that usually \emph{follows closely the
+  structure of the ADTs}.
 %
 For instance, consider the following definition of a \quickcheck random
 generator for the type |Html|:
@@ -116,10 +116,10 @@ genHtml = sized (\size ->
 \end{code} %$
 %
 We use the Haskell syntax |[]| and |(,)| for denoting lists and pairs of
-elements, respecitvely (e.g., |[(1,2),(3,4)]| is a list of pairs of numbers.)
+elements, respectively (e.g., |[(1,2),(3,4)]| is a list of pairs of numbers.)
 %
 The random generator |genHtml| is defined using \quickcheck's function |sized|
-to paremetrize the generation process up to an external natural number known as
+to parameterize the generation process up to an external natural number known as
 the \emph{generation size}---captured in the code with variable |size|.
 %
 This parameter is chosen by the user, and it is used to limit the maximum amount

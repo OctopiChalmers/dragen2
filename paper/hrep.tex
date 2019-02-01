@@ -67,7 +67,7 @@ of |Text| constructors combined by a |Join| constructor---see first and second
 clauses.
 %
 Generally speaking, patterns can be defined to match specific constructors,
-literal values or variable subexpressions (like |x| in the last clause of
+literal values or variable sub-expressions (like |x| in the last clause of
 |simplify|).
 %
 Patterns can also be nested in order to match very specific values.
@@ -182,7 +182,7 @@ function, i.e, |simplify (Join x y)|, |simplify (Tag t x)|, and |simplify x|.
 % second clause of |foo| (which does not matches against it) also gets diminished
 % into an impractival value.
 
-Altough the previous example might seem rather simple, branching against
+Although the previous example might seem rather simple, branching against
 specific patterns of the input data is not an uncommon task.
 %
 In that light, and in order to obtain interesting test cases, it is desirable to
@@ -222,7 +222,7 @@ div x = Tag "div" x
 bold :: Html -> Html
 bold x = Tag "b" x
 \end{code}
-\caption{Abtract interface of the type |Html|.}
+\caption{Abstract interface of the type |Html|.}
 \label{fig:htmlint}
 \vspace{-10pt}
 \end{wrapfigure}

@@ -33,7 +33,7 @@ We remark that these applications are not written in Haskell.
 However, there exist Haskell libraries defining ADTs encoding their input
 structure, i.e., Lisp and HTML values respectively. These libraries are:
 \emph{hs-zuramaru}\footnote{\href{http://hackage.haskell.org/package/zuramaru}{http://hackage.haskell.org/package/zuramaru}},
-implementing an embedded Lisp intepreter for a small subset of this programming
+implementing an embedded Lisp interpreter for a small subset of this programming
 language, and
 \emph{html}\footnote{\href{http://hackage.haskell.org/package/html}{http://hackage.haskell.org/package/html}},
 defining a combinator library for constructing HTML values.
@@ -153,13 +153,13 @@ respect to the one observed with \dragen (see Figure \ref{fig:coverage} (b)).
 A manual inspection of the corpora generated with each tool revealed us that, in
 general terms, the test cases generated with \dragen rarely represent
 syntactically correct HTML values, consisting to a large extent of random
-strings within and between HTML tag delimeters (|"<"|, |">"| and |"/>"|).
+strings within and between HTML tag delimiters (|"<"|, |">"| and |"/>"|).
 %
 On the other hand, test cases generated with \dragenp encode much more
 interesting structural information, being mostly syntactically correct.
 %
 We found that, in many cases, the test cases generated with \dragenp were
-parsed, analysed and reported as valid HTML values by the target application.
+parsed, analyzed and reported as valid HTML values by the target application.
 
 
 With these results we are confident that including the structural information
