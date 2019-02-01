@@ -75,7 +75,7 @@ In this sense, this matrix encodes the ``branching'' behavior of our random
 generation from one generation to the next one.
 %
 Each element of the matrix can be automatically calculated by exploiting ADT
-definitions. % \cite{DBLP:conf/haskell/MistaRH18}
+definitions, % \cite{DBLP:conf/haskell/MistaRH18}
 %
 % ---specially the recursive fields---
 %
@@ -91,7 +91,7 @@ where $2$ is the number of holes present when generating a partial ADT value
 |Join| (i.e., |Join hole hole|) and $p_{\mathrm{Text}}$ is the probability of
 individually generating the constructor |Text|.
 %
-This pattern can be used to build the rest of the mean matrix as well.
+This reasoning can be used to build the rest of the mean matrix analogously.
 
 %\todo[inline]{Complete this!}
 
@@ -109,7 +109,7 @@ Our realization is that it suffices to consider \emph{each different pattern
   matching and function call as a kind of individual on its own}.
 %
 In that manner, we can extend our mean matrix $M$ adding a row and a column for
-each different pattern matching and function call as shown in Fig.
+each different pattern matching and function call as shown in Figure
 \ref{fig:meanmatrix}.
 %
 \begin{wrapfigure}{r}{0.26\textwidth}
@@ -207,7 +207,7 @@ work.
 % %
 
 The new cells are filled as before: we need to consider the amount of holes when
-generating partial pattern matching and function calls as well as their
+generating partial pattern matching values and function calls as well as their
 individual probabilities.
 %
 % Fortunately, it is possible to follow the same pattern as we did on our original
@@ -236,10 +236,11 @@ As another contribution, we found that the whole prediction process can be
 factored in terms of two vectors $\beta$ and $\mathcal{P}$, such that $\beta$
 represents the number of holes in each partial ADT value that we generate,
 whereas $\mathcal{P}$ simply represents the probability of generating that
-partial ADT value.% (this probability can be easily calculated based on the
+partial ADT value.
+% (this probability can be easily calculated based on the
 % generation frequencies used in the random generator).
 %
-Then, the equation \ref{eqn:prediction} can be rewritten as:
+Then, the equation (\ref{eqn:prediction}) can be rewritten as:
 %
 \begin{align*}
   E[G_n]^T = \beta^T \cdot (\beta \cdot \mathcal{P}^T)^{n}
@@ -249,7 +250,7 @@ Then, the equation \ref{eqn:prediction} can be rewritten as:
 % source of structural information that we consider, and joining them together.
 %
 For instance, $\beta$ and $\mathcal{P}$ for our generation specification of HTML
-values are as shown in Fig. \ref{fig:vectors}.
+values are as shown in Figure \ref{fig:vectors}.
 %
 We note |simplify1| and |simplify2| to the patterns occurring in the first and
 second clauses of |simplify|, respectively.
@@ -377,7 +378,7 @@ pattern matching.
 %
 For instance, we can calculate the total expected number of constructors |Text|
 and |Join| that we will generate by simply expanding the expected number of
-generated pattern matching values $simplify\#1$ and $simplify\#2$ into their
+generated pattern matching values |simplify1| and |simplify2| into their
 corresponding data constructors:
 %
 {\small

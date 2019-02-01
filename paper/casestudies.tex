@@ -22,9 +22,9 @@ set of random test cases (often referred as a \emph{corpus}) affects the code
 coverage obtained when testing a given target program.
 %
 For that, we considered two external programs which expect highly structured
-inputs, namely \emph{GNU CLISP}---the GNU Common Lisp
-compiler\footnote{\href{https://www.gnu.org/software/gcl/}{https://www.gnu.org/software/gcl/}},
-and \emph{HTML Tidy}
+inputs, namely \emph{GNU
+  CLISP} \footnote{\href{https://www.gnu.org/software/gcl/}{https://www.gnu.org/software/gcl/}}---the
+GNU Common Lisp compiler, and \emph{HTML Tidy}
 \footnote{\href{http://www.html-tidy.org}{http://www.html-tidy.org}}---a well
 known HTML refactoring and correction utility.
 %
@@ -63,7 +63,7 @@ In order to remove any external bias, we derived generators optimized to follow
   match the average test case size in bytes}.
 %
 This way, any noticeable difference in the code coverage can be attributed to
-the present (or lack thereof) structural information when generating the test
+the presence (or lack thereof) structural information when generating the test
 cases.
 %
 Additionally, to achieve statistical significance we repeated each experiment 30
@@ -81,8 +81,8 @@ times with independently generated sets of random test cases.
   \vspace{-10pt}%
 \end{figure*}
 %
-Fig. \ref{fig:coverage} illustrates the mean number of different execution paths
-triggered for different combinations of corpus size and derivation tool,
+Figure \ref{fig:coverage} illustrates the mean number of different execution
+paths triggered for different combinations of corpus size and derivation tool,
 including error bars indicating the standard error of the mean on each case.
 %
 We proceed to describe each case study and our findings in detail as follows.
@@ -114,8 +114,8 @@ using \dragenp with respect to the one obtained with \dragen (see Figure
 \ref{fig:coverage} (a)).
 %
 While it seems an small improvement, we argue that an improvement of $4\%$ is
-not negligible considering (a) the little effort that took us to specify the pattern
-matchings and (b) that we are testing a compiler.
+not negligible considering (a) the little effort that took us to specify the
+pattern matchings and (b) that we are testing a full-fledged compiler.
 %it is worth noticing that we are generating
 %highly structured inputs, i.e., Lisp programs.
 %
@@ -163,7 +163,7 @@ parsed, analyzed and reported as valid HTML values by the target application.
 
 
 With these results we are confident that including the structural information
-present on the user codebase improves the testing performance.
+present on the user codebase improves the overall testing performance.
 %
 %% Space reasons
 %We consider that our approach is particularly useful when the data types

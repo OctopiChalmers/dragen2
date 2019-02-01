@@ -25,7 +25,7 @@ homogeneous way.
 
 Figure \ref{fig:hrep} shows the workflow of our approach for the |Html| ADT.
 %
-Based on the codebase, the user of \dragenp indicates: (i) the ADT definition to
+Based on the codebase, the user of \dragenp specifies: (i) the ADT definition to
 consider (noted as $\mathrm{Html_{ADT}}$), (ii) its patterns of interest (noted
 $\mathrm{Html_{Patterns}}$), and (iii) the primitives from abstract interfaces
 to involve in the generation process (noted as $\mathrm{Html_{Interface}}$).
@@ -41,7 +41,7 @@ Our tool then \emph{automatically derives generators} for each source of
 structural information.
 %
 These generators produce random \emph{partial ADT values} in a way that it is
-easier to combine them in order to create structural richer ones.
+easier to combine them in order to create structurally richer ones.
 %
 For instance, the generator obtained from $\mathrm{Html_{ADT}}$ only generates
 constructors of the ADT but leaves the generation at the recursive fields
@@ -77,11 +77,12 @@ call (|div hole|), we can obtain the following well-typed |Html| value:
 \end{code}
 
 
-Finally, our tool put all these three generators together into one that combines
-partial ADT values into fully formed ones.
+Finally, our tool puts all these three generators together into one that
+combines partial ADT values into fully formed ones.
 %
 Importantly, the user can specify the desire distribution of the expected number
-of constructors, patterns, and interface calls that the generator will produce.
+of constructors, pattern matching values, and interface calls that the generator
+will produce.
 %
 All in all, our approach offers the following advantages over usual derivation
 of random generators based only on ADT definitions:
@@ -96,11 +97,13 @@ of random generators based only on ADT definitions:
   structural information and combine them with the existing ones simply by
   adding them to the existing specification of the target ADT.
   %
-\item \textbf{Predictability:} the tool is capable to synthesize generators
-  which distribution is adjusted to what developers might desire, e.g., an
-  uniform distribution of patterns, a distribution where some constructors are
-  generated twice as much as others, etc. We explain the prediction of
-  distributions in the next section.
+\item \textbf{Predictability:} the tool is capable of synthesizing generators
+  with adjustable distributions based on developers' demands.
+  %
+  For instance, a uniform distribution of pattern matching values, or a
+  distribution where some constructors are generated twice as often as others.
+  %
+  We explain the prediction of distributions in the next section.
   %
   % This prediction is completely modular, and can be obtained for any composite
   % representation obtained using the automatically derived |HRep|s and the

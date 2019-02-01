@@ -56,7 +56,7 @@ However, the optimization mechanism uses meta-heuristic search to find the best
 parameters at runtime.
 %
 \dragenp on the other hand implements an analytic and composable prediction
-mechanism that is used only used at compile time to optimize the generation
+mechanism that is only used at compile time to optimize the generation
 parameters, thus avoiding performing any kind of runtime reinforcement.
 
 
@@ -70,7 +70,7 @@ It requires instrumenting the target programs in order to introduce testing
 assertions and obtain feedback from previous testing executions, which is used
 to explore new paths in the source code.
 %
-This technique has been shown to be remarkably useful, Although it forces a
+This technique has been shown to be remarkably useful, although it forces a
 strong coupling between the testing suite and the target code.
 %
 Our tool intends to provide better random generation of values following an
