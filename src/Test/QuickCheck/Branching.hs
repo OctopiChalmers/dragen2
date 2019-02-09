@@ -372,6 +372,7 @@ type Spec = [(Symbol, Type -> Type)]
 type HasSpec (spec :: Spec) (root :: Symbol)
   = ( Branching (Values spec)
     , KnownNat (Length (Values spec))
+    , KnownNatss (SpecFreqs (MkSpec spec))
     , KnownNat (Ix spec root))
 
 predictRep :: forall spec root fam ix.
@@ -468,54 +469,55 @@ weighted weights (Proxy :: Proxy spec) (Proxy :: Proxy root) mode size freqs
     expected = multWeight <$> cnames
     multWeight cn = fromIntegral (fromJust (lookup cn weights) * size)
 
-takeEvery :: Int -> [a] -> [a]
-takeEvery n xs
-  | length xs >= n = xs !! (n-1) : takeEvery n (drop n xs)
-  | otherwise      = []
-
 epsilon = 0.001
 
-dot :: a -> a
-dot x = unsafePerformIO (putStr "*" >> hFlush stdout >> return x)
+dot :: Double -> Int ->  a -> a
+dot delta heat x = unsafePerformIO $ do
+  putStrLn ("* delta:" ++ show delta ++ "\t heat:" ++ show heat)
+  hFlush stdout
+  return x
+
+optimize :: forall spec root. HasSpec spec root
+  => QCSize -> DistFun -> [[Integer]]
+optimize size dist
+  = optimizeFreqs @spec @root Rep size dist (natValss (Proxy @(SpecFreqs (MkSpec spec))))
+
 
 optimizeFreqs :: forall spec root. HasSpec spec root
   => Mode -> QCSize -> DistFun -> [[Integer]] -> [[Integer]]
 optimizeFreqs mode size dist freqs
-  = localSearch @spec @root mode size (fromIntegral size) dist freqs []
+  = localSearch @spec @root mode size (fromIntegral size ^ 2) dist freqs []
 
 localSearch :: forall spec root. HasSpec spec root
             => Mode -> QCSize -> Int -> DistFun
             -> [[Integer]] -> [[[Integer]]] -> [[Integer]]
 localSearch mode size heat dist focus visited
   | null newNeighbors
-  = focus
-  | delta <= epsilon && heat == 1
+    || delta <= epsilon
   = focus
   | delta <= epsilon
-  = dot $ localSearch @spec @root mode size 1 dist bestNeighbor newFrontier
+  = dot delta heat $ localSearch @spec @root mode size heat dist bestNeighbor newFrontier
   | otherwise
-  = dot $ localSearch @spec @root mode size newHeat dist bestNeighbor newFrontier
+  = dot delta heat $ localSearch @spec @root mode size newHeat dist bestNeighbor newFrontier
   where
-    delta = focusDist - bestNeighborDist
+    delta = abs (focusDist - bestNeighborDist)
     focusDist = dist (Proxy @spec) (Proxy @root) mode size focus
     (bestNeighbor, bestNeighborDist) = minimumBy (comparing snd) neighborsDists
     neighborsDists = zip newNeighbors (dist (Proxy @spec) (Proxy @root) mode size <$> newNeighbors)
     newNeighbors = mutate (fromIntegral heat) focus \\ (focus:visited)
-    newHeat = floor (max 1 ((fromIntegral heat / (1 + 0.001 * (gainRatio / fromIntegral size)))))
+    newHeat = floor $ fromIntegral heat / 1.05
     gainRatio = bestNeighborDist / focusDist
-    newFrontier = newNeighbors ++ (take (sum (length <$> focus) ^ 2)) visited
+    newFrontier = newNeighbors ++ take ((sum (length <$> focus)) ^ 2) visited
 
 
 type family
   MkSpec (spec :: Spec) :: Spec where
   MkSpec spec = Flatten spec
 
-
 type family
   ApplySpec (a :: Type) (ts :: Spec) :: Spec where
   ApplySpec _ '[] = '[]
   ApplySpec a ('(k, t) ': ts) = '(k, Apply a t) ': ApplySpec a ts
-
 
 type family
   Flatten (spec :: Spec) :: Spec where
@@ -531,7 +533,6 @@ type family
   List2Rep (xs :: [Type -> Type]) :: Type -> Type where
   List2Rep '[t] = t
   List2Rep (x ': xs) = Sum x (List2Rep xs)
-
 
 -- | Extract the frequencies from a spec
 type family

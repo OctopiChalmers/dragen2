@@ -20,14 +20,16 @@ import Test.QuickCheck.HRep.TH.Common
 -- | Derive the complete representation of every combinator of a module that
 -- returns the desired type, plus the module interface representation as a sum
 -- of each combinator.
-deriveModIntRep :: Name -> String -> [Name] -> Q [Dec]
-deriveModIntRep tyName modAlias tyFam = do
+deriveModIntRep :: Name -> String -> [Name] -> [Name] -> Q [Dec]
+deriveModIntRep tyName modAlias tyFam blacklist = do
 
   -- | Convert the module alias to a safe identifier
   let modAliasId = toIdentStr modAlias
+      shortBlacklist = nameBase <$> blacklist
 
   -- | Extract the combinator names from the current module
-  combNames <- filterM (returnsType tyName) =<< reifyModNames
+  intNames <- filterM (returnsType tyName) =<< reifyModNames
+  let combNames = filter (not . (flip elem shortBlacklist) . nameBase) intNames
 
   -- | Create the representation for each combinator
   combsRep <- concatMapM (deriveCombRep tyName modAliasId tyFam) combNames
@@ -132,7 +134,13 @@ deriveCombRep tyName modAlias tyFam funName = do
         , DAppE (DVarE 'error) (DLitE (StringL "unsuported operation!"))
         ]
 
-      beta tn = length (filter ((tn ==) . tyHead) funArgTys)
+      beta tn = sum (bf tn <$> funArgTys)
+
+      bf target (DAppT (DConT f) t)
+        | f == ''[] = listBF * (bf target t)
+      bf target ty
+        | tyHead ty == target = 1
+        | otherwise = 0
 
   return [repDataDec, repAlgIns, repArbIns, repFunTyIns, repBrIns]
 
@@ -142,9 +150,32 @@ deriveCombRep tyName modAlias tyFam funName = do
 reifyModNames :: Q [Name]
 reifyModNames = currentFile >>= extractModNames
 
+defaultExts :: [Ext.Extension]
+defaultExts = Ext.parseExtension <$>
+  [ "AllowAmbiguousTypes"
+  , "DataKinds"
+  , "DeriveFunctor"
+  , "DeriveGeneric"
+  , "ExistentialQuantification"
+  , "FlexibleContexts"
+  , "FlexibleContexts"
+  , "FlexibleInstances"
+  , "GADTs"
+  , "MultiParamTypeClasses"
+  , "PolyKinds"
+  , "Rank2Types"
+  , "ScopedTypeVariables"
+  , "StandaloneDeriving"
+  , "TemplateHaskell"
+  , "TypeApplications"
+  , "TypeFamilies"
+  , "TypeOperators"
+  , "UndecidableInstances"
+  ]
+
 extractModNames :: FilePath -> Q [Name]
 extractModNames path = do
-  parsed <- liftIO (Ext.parseFile path)
+  parsed <- liftIO (Ext.parseFileWithExts defaultExts path)
   case parsed of
     Ext.ParseOk (Ext.Module _ _ _ _ decs) -> do
       let srcNames = concat (foldr extractVarNames [] decs)

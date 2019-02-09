@@ -118,13 +118,18 @@ deriveConRep tyFam (DCon conTyVars conCxt conName conFields conTy) = do
         , DConE 'True
         , intLit 1
         , intLit 1
-        , vectorTH  (      intLit . beta <$> tyFam)
+        , vectorTH  (intLit . beta <$> tyFam)
         , vector2TH (fmap (intLit . eta) <$> tyFamCons)
         ]
 
-      beta tn = length (filter ((tn ==) . tyHead) (dConFieldsTypes conFields))
+      beta tn = sum (bf tn <$> dConFieldsTypes conFields)
       eta  cn = if cn == conName then 1 else 0
 
+      bf target (DAppT (DConT f) t)
+        | f == ''[] = listBF * (bf target t)
+      bf target ty
+        | tyHead ty == target = 1
+        | otherwise = 0
 
   -- | Representation Con type family instance
   let repConTyIns = DTySynInstD ''HRep.Con repConInsEqn

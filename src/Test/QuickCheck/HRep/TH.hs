@@ -42,7 +42,10 @@ data Target
   | ModuleInterface
     { ty :: Name
     , alias :: String
-    , fam :: [Name] }
+    , fam :: [Name]
+    , blacklist :: [Name]
+    } deriving Show
+
 
 type_ :: Name -> Target
 type_ tyName = TypeDefinition tyName [tyName]
@@ -51,20 +54,22 @@ patterns_ :: Name -> Target
 patterns_ funName = FunctionPatterns funName 1 []
 
 module_ :: Name -> Target
-module_ tyName = ModuleInterface tyName ("<" ++ nameBase tyName ++ ">") []
+module_ tyName = ModuleInterface tyName ("<" ++ nameBase tyName ++ ">") [] []
+
 
 derive :: Target -> Q [Dec]
 derive (TypeDefinition tyName tyFam)
   = deriveTypeRep tyName tyFam
 derive (FunctionPatterns funName funArgNr tyFam)
   = deriveFunPatsRep funName funArgNr tyFam
-derive (ModuleInterface tyName modAlias tyFam)
-  = deriveModIntRep tyName modAlias tyFam
+derive (ModuleInterface tyName modAlias tyFam blacklist)
+  = deriveModIntRep tyName modAlias tyFam blacklist
+
 
 deriveHRep :: [Name] -> [Target] -> Q [Dec]
-deriveHRep fam' targets = concatMapM derive
-  (setFam <$> ((type_ <$> fam') ++ targets))
-  where setFam target = target { fam = fam' }
+deriveHRep fam_ targets = concatMapM derive
+  (setFam <$> ((type_ <$> fam_) ++ targets))
+  where setFam target = target { fam = fam_ }
 
 
 ----------------------------------------
@@ -95,6 +100,7 @@ deriveArbitrary tyName spec = do
 
 ----------------------------------------
 -- | Derive all the stuff
+
 deriveAll :: [Name] -> [Target] -> Name -> Q [Dec]
 deriveAll tyFam targets specName = do
   typeReps <- concatMapM (\tn -> derive (TypeDefinition tn tyFam)) tyFam
@@ -105,18 +111,18 @@ deriveAll tyFam targets specName = do
 ----------------------------------------
 -- | Optimize the frequencies of a specification
 
-optimize :: forall spec root. HasSpec spec root
-         => Name -> String -> DistFun -> QCSize -> Q [Dec]
-optimize specName alias dist size = do
-  let !newFreqs = optimizeFreqs @spec @root Rep size dist ogFreqs
-      ogFreqs   = natValss (Proxy @(MapRepFreqs (Values spec)))
+-- optimize :: forall spec root. HasSpec spec root
+--          => Name -> String -> DistFun -> QCSize -> Q [Dec]
+-- optimize specName alias dist size = do
+--   let !newFreqs = optimizeFreqs @spec @root Rep size dist ogFreqs
+--       ogFreqs   = natValss (Proxy @(MapRepFreqs (Values spec)))
 
-      promoteList = foldr (\n -> appT (appT promotedConsT (litT (numTyLit n)))) promotedNilT
-      promoteSpec = foldr (\t -> appT (appT promotedConsT (promoteList t))) promotedNilT
+--       promoteList = foldr (\n -> appT (appT promotedConsT (litT (numTyLit n)))) promotedNilT
+--       promoteSpec = foldr (\t -> appT (appT promotedConsT (promoteList t))) promotedNilT
 
-  [d| type instance Optimized $(litT (strTyLit alias))
-        = SetSpecFreqs (MkSpec $(conT specName)) $(promoteSpec newFreqs)
-   |]
+--   [d| type instance Optimized $(litT (strTyLit alias))
+--         = SetSpecFreqs (MkSpec $(conT specName)) $(promoteSpec newFreqs)
+--    |]
 
 ----------------------------------------
 -- | Optimize the frequencies of a specification

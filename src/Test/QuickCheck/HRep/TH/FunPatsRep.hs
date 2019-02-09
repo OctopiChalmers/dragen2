@@ -148,7 +148,14 @@ derivePatRep funName tyFam funArgTy funArgDefTVs
         , vector2TH (fmap (intLit . eta) <$> tyFamCons)
         ]
 
-      beta tn = length (filter ((tn ==) . tyHead) patVarsTys)
+      beta tn = sum (bf tn <$> patVarsTys)
+
+      bf target (DAppT (DConT f) t)
+        | f == ''[] = listBF * (bf target t)
+      bf target ty
+        | tyHead ty == target = 1
+        | otherwise = 0
+
       eta  cn = maybe 0 id (lookup cn targetPatCons)
 
   -- | Representation Pat type family instance
@@ -215,9 +222,32 @@ reifyFunLHS funName = do
   fpats <- extractDPats here funName
   return (FunLHS funName fsig fpats)
 
+defaultExts :: [Ext.Extension]
+defaultExts = Ext.parseExtension <$>
+  [ "AllowAmbiguousTypes"
+  , "DataKinds"
+  , "DeriveFunctor"
+  , "DeriveGeneric"
+  , "ExistentialQuantification"
+  , "FlexibleContexts"
+  , "FlexibleContexts"
+  , "FlexibleInstances"
+  , "GADTs"
+  , "MultiParamTypeClasses"
+  , "PolyKinds"
+  , "Rank2Types"
+  , "ScopedTypeVariables"
+  , "StandaloneDeriving"
+  , "TemplateHaskell"
+  , "TypeApplications"
+  , "TypeFamilies"
+  , "TypeOperators"
+  , "UndecidableInstances"
+  ]
+
 extractDPats :: FilePath -> Name -> Q [[DPat]]
 extractDPats path funName = do
-  parsed <- liftIO (Ext.parseFile path)
+  parsed <- liftIO (Ext.parseFileWithExts defaultExts path)
   case parsed of
     Ext.ParseOk (Ext.Module _ _ _ _ decs) -> do
       let extractFunBinds (Ext.FunBind _ ms) = (ms:)
@@ -255,6 +285,14 @@ toTHDPat (Ext.PWildCard _)
   = pure DWildPa
 toTHDPat (Ext.PParen _ pat)
   = toTHDPat pat
+toTHDPat (Ext.PList _ pats)
+  = go pats
+  where
+    go [] = return $ DConPa '[] []
+    go (h : t) = do
+      h' <- toTHDPat h
+      t' <- go t
+      return $ DConPa '(:) [h', t']
 toTHDPat p
   = unsupported 'toTHDPat (Ext.prettyPrint p)
 

@@ -1,43 +1,56 @@
-name:                quickcheck-hrep
+name:                dragen-struct
 version:             0.1.0.0
-github:              "agustinmista/quickcheck-hrep"
+github:              "OctopiChalmers/dragen-struct"
 license:             BSD3
 license-file:        LICENSE
 author:              "Agustín Mista"
 maintainer:          "Agustín Mista"
-copyright:           "2018 Agustín Mista"
+copyright:           "2019 Agustín Mista"
 
 extra-source-files:
-- README.md
+  - README.md
 
 # Metadata used when publishing your package
-synopsis:            QuickCheck utilities to generated constrained data based on higher-order representations.
-category:            Testing
+synopsis:            
+  QuickCheck utilities to derive random generators using structural information.
+category: 
+  Testing
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
 description:
-  Please see the README on GitHub at <https://github.com/agustinmista/quickcheck-hrep#readme>
+  Please see the README on GitHub at <https://github.com/OctopiChalmers/dragen-struct#readme>
 
 dependencies:
-- base >= 4.7 && < 5
-- extra
+  - base >= 4.7 && < 5
+
+default-extensions:
+  - AllowAmbiguousTypes
+  - DataKinds
+  - DeriveFunctor
+  - DeriveGeneric
+  - ExistentialQuantification
+  - FlexibleContexts
+  - FlexibleContexts
+  - FlexibleInstances
+  - GADTs
+  - MultiParamTypeClasses
+  - PolyKinds
+  - Rank2Types
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TemplateHaskell
+  - TypeApplications
+  - TypeFamilies
+  - TypeOperators
+  - UndecidableInstances
 
 library:
   source-dirs:
     - src
-    - test
   exposed-modules:
-    - Test.QuickCheck.HRep
-    - Test.QuickCheck.HRep.Infix
-    - Test.QuickCheck.HRep.TH
-    - Test.QuickCheck.HRep.TH.TypeRep
-    - Test.QuickCheck.HRep.TH.FunPatsRep
-    - Test.QuickCheck.HRep.TH.ModIntRep
-    - Test.QuickCheck.Branching
-    - GHC.Generics.Countable
-    - Language.Haskell.TH.Desugar.Utils
+    - Dragen.Struct
   dependencies:
     - template-haskell
     - th-desugar

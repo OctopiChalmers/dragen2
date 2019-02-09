@@ -1,0 +1,63 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 462507b454212ec2a14b97a96ec1b350c015bde11a36089e2d2334730c75f100
+
+name:           dragen-struct
+version:        0.1.0.0
+synopsis:       QuickCheck utilities to derive random generators using structural information.
+description:    Please see the README on GitHub at <https://github.com/OctopiChalmers/dragen-struct#readme>
+category:       Testing
+homepage:       https://github.com/OctopiChalmers/dragen-struct#readme
+bug-reports:    https://github.com/OctopiChalmers/dragen-struct/issues
+author:         Agustín Mista
+maintainer:     Agustín Mista
+copyright:      2019 Agustín Mista
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/OctopiChalmers/dragen-struct
+
+library
+  exposed-modules:
+      Dragen.Struct
+  other-modules:
+      GHC.Generics.Countable
+      Language.Haskell.TH.Desugar.Utils
+      Test.QuickCheck.Branching
+      Test.QuickCheck.Gen.Utils
+      Test.QuickCheck.HRep
+      Test.QuickCheck.HRep.Infix
+      Test.QuickCheck.HRep.TH
+      Test.QuickCheck.HRep.TH.Common
+      Test.QuickCheck.HRep.TH.FunPatsRep
+      Test.QuickCheck.HRep.TH.ModIntRep
+      Test.QuickCheck.HRep.TH.TypeRep
+      Paths_dragen_struct
+  hs-source-dirs:
+      src
+  default-extensions: AllowAmbiguousTypes DataKinds DeriveFunctor DeriveGeneric ExistentialQuantification FlexibleContexts FlexibleContexts FlexibleInstances GADTs MultiParamTypeClasses PolyKinds Rank2Types ScopedTypeVariables StandaloneDeriving TemplateHaskell TypeApplications TypeFamilies TypeOperators UndecidableInstances
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , containers
+    , directory
+    , extra
+    , filepath
+    , ghc-prim
+    , haskell-src-exts
+    , matrix
+    , reflection
+    , split
+    , template-haskell
+    , th-desugar
+    , vector
+  default-language: Haskell2010

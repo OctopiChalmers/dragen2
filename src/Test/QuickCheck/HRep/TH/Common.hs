@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE IncoherentInstances #-}
 
 module Test.QuickCheck.HRep.TH.Common where
 
@@ -33,6 +35,10 @@ deriving instance Eq DType
 deriving instance Eq DCon
 deriving instance Eq DConFields
 
+
+listBF :: Int
+listBF = 5
+
 ----------------------------------------
 -- | Derive a generator for a possibly composite type.
 -- Use Arbitrary1 and Arbitrary2 instancies to lift it
@@ -41,18 +47,35 @@ deriveGen :: DExp -> DType -> DType -> Q DExp
 deriveGen gen target ty = mkGen ty
   where mkGen t | t == target
           = pure (smallerTH gen)
-        mkGen (DAppT (DAppT (DConT f) t1) t2)
+        mkGen (DConT f `DAppT` t1 `DAppT` t2)
           = ifM (isInstance ''QC.Arbitrary2 [ConT f])
-                   (liftArbitrary2TH
-                    <$> (smallerTH <$> mkGen t1)
-                    <*> (smallerTH <$> mkGen t2))
+            (liftArbitrary2TH
+              <$> (smallerTH <$> mkGen t1)
+              <*> (smallerTH <$> mkGen t2))
             (pure (smallerTH arbitraryTH))
-        mkGen (DAppT (DConT f) t)
+        mkGen (DConT f `DAppT` t)
+          | f == ''[] && t == DConT ''Char
+          = pure genStringTH
+          | f == ''[]
+          = genListTH <$> mkGen t
+        mkGen (DConT f `DAppT` t)
           = ifM (isInstance ''QC.Arbitrary1 [ConT f])
-            (liftArbitraryTH
-             <$> (smallerTH <$> mkGen t))
+            (liftArbitraryTH <$> (smallerTH <$> mkGen t))
             (pure (smallerTH arbitraryTH))
         mkGen _ = pure (smallerTH arbitraryTH)
+
+genString :: QC.Gen String
+genString = QC.resize (listBF * 5) (QC.listOf1 chars)
+    where chars = QC.elements [' ' .. '~']
+
+genList :: QC.Gen a -> QC.Gen [a]
+genList = customListGen (listBF * 2)
+
+customListGen :: Int -> QC.Gen a -> QC.Gen [a]
+customListGen n gen = do
+  n' <- QC.choose (0, n)
+  QC.vectorOf n' gen
+
 
 -- | Compare DTypes for equality
 (.==.) :: DType -> DType -> Bool
@@ -275,6 +298,12 @@ someTH n = DAppT (DConT (mkName ("Some" ++ show n)))
 
 smallerTH :: DExp -> DExp
 smallerTH = DAppE (DVarE 'QC.smaller)
+
+genListTH :: DExp -> DExp
+genListTH = DAppE (DVarE 'genList)
+
+genStringTH :: DExp
+genStringTH = DVarE 'genString
 
 reduceTH :: Integer -> DExp -> DExp
 reduceTH n = DAppE (DAppE (DVarE 'QC.reduce) (DLitE (IntegerL n)))

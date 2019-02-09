@@ -20,3 +20,14 @@ cabal.project.local
 cabal.project.local~
 .HTF/
 .ghc.environment.*
+
+paper/main.bbl
+paper/main.blg
+paper/main.dvi
+paper/main.log
+paper/main.out
+paper/main.pdf
+paper/main.ptb
+paper/main.tex
+paper/auto
+
