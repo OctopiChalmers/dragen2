@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
 module Test.QuickCheck.HRep.TH.ModIntRep where
 
 import Data.List
@@ -47,7 +48,9 @@ deriveModIntRep tyName modAlias tyFam blacklist = do
 
 returnsType :: Name -> Name -> Q Bool
 returnsType tyName funName
-  = checkRetTy <$> reifyOrFail funName
+  = dsReify funName >>= \case
+    Just info -> return (checkRetTy info)
+    Nothing -> return False
   where
     checkRetTy (DVarI _ ty _)
       | tyName == tyHead (retType ty) = True

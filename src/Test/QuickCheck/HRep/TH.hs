@@ -50,11 +50,11 @@ data Target
 type_ :: Name -> Target
 type_ tyName = TypeDefinition tyName [tyName]
 
-patterns_ :: Name -> Target
-patterns_ funName = FunctionPatterns funName 1 []
+patterns :: Name -> Target
+patterns funName = FunctionPatterns funName 1 []
 
-module_ :: Name -> Target
-module_ tyName = ModuleInterface tyName ("<" ++ nameBase tyName ++ ">") [] []
+interface :: Name -> Target
+interface tyName = ModuleInterface tyName ("[" ++ nameBase tyName ++ "]") [] []
 
 
 derive :: Target -> Q [Dec]
@@ -98,6 +98,9 @@ deriveArbitrary tyName spec = do
   return (sweeten [arbIns])
 
 
+deriveArbitraries :: [Name] -> Name -> Q [Dec]
+deriveArbitraries tyFam spec = concatMapM (flip deriveArbitrary spec) tyFam
+
 ----------------------------------------
 -- | Derive all the stuff
 
@@ -111,18 +114,25 @@ deriveAll tyFam targets specName = do
 ----------------------------------------
 -- | Optimize the frequencies of a specification
 
--- optimize :: forall spec root. HasSpec spec root
---          => Name -> String -> DistFun -> QCSize -> Q [Dec]
--- optimize specName alias dist size = do
---   let !newFreqs = optimizeFreqs @spec @root Rep size dist ogFreqs
---       ogFreqs   = natValss (Proxy @(MapRepFreqs (Values spec)))
+optimizeSpec :: forall spec root. HasSpec spec root
+         => Name -> DistFun -> QCSize -> Q Type
+optimizeSpec specName dist size = do
+  let !newFreqs = optimize @spec @root size dist
 
---       promoteList = foldr (\n -> appT (appT promotedConsT (litT (numTyLit n)))) promotedNilT
---       promoteSpec = foldr (\t -> appT (appT promotedConsT (promoteList t))) promotedNilT
+      promoteList = foldr (\n -> appT (appT promotedConsT (litT (numTyLit n)))) promotedNilT
+      promoteSpec = foldr (\t -> appT (appT promotedConsT (promoteList t))) promotedNilT
 
---   [d| type instance Optimized $(litT (strTyLit alias))
---         = SetSpecFreqs (MkSpec $(conT specName)) $(promoteSpec newFreqs)
---    |]
+  [t| SetSpecFreqs (MkSpec $(conT specName)) $(promoteSpec newFreqs) |]
+  -- [t| type instance Optimized $(litT (strTyLit specAlias))
+
+type WithFreqs spec freqs = SetSpecFreqs (MkSpec spec) freqs
+
+liftFreqs :: [[Integer]] -> Q Type
+liftFreqs freqs = promoteSpec freqs
+  where
+    promoteList = foldr (\n -> appT (appT promotedConsT (litT (numTyLit n)))) promotedNilT
+    promoteSpec = foldr (\t -> appT (appT promotedConsT (promoteList t))) promotedNilT
+
 
 ----------------------------------------
 -- | Optimize the frequencies of a specification

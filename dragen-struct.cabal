@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 462507b454212ec2a14b97a96ec1b350c015bde11a36089e2d2334730c75f100
+-- hash: bd8b4ad9f36ed2d17be57a7efe0ce245e2ff25246ef91a48e1ff581d00d50c91
 
 name:           dragen-struct
 version:        0.1.0.0
@@ -44,7 +44,7 @@ library
       Paths_dragen_struct
   hs-source-dirs:
       src
-  default-extensions: AllowAmbiguousTypes DataKinds DeriveFunctor DeriveGeneric ExistentialQuantification FlexibleContexts FlexibleContexts FlexibleInstances GADTs MultiParamTypeClasses PolyKinds Rank2Types ScopedTypeVariables StandaloneDeriving TemplateHaskell TypeApplications TypeFamilies TypeOperators UndecidableInstances
+  default-extensions: AllowAmbiguousTypes DataKinds DeriveFunctor DeriveGeneric ExistentialQuantification FlexibleContexts FlexibleInstances GADTs MultiParamTypeClasses PolyKinds Rank2Types ScopedTypeVariables StandaloneDeriving TemplateHaskell TypeApplications TypeFamilies TypeOperators UndecidableInstances
   build-depends:
       QuickCheck
     , base >=4.7 && <5

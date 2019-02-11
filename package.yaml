@@ -32,7 +32,6 @@ default-extensions:
   - DeriveGeneric
   - ExistentialQuantification
   - FlexibleContexts
-  - FlexibleContexts
   - FlexibleInstances
   - GADTs
   - MultiParamTypeClasses

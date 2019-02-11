@@ -449,7 +449,8 @@ type DistFun = forall (spec :: Spec) (root :: Symbol). HasSpec spec root
 
 chiSquareVec :: Floating a => [a] -> [a] -> a
 chiSquareVec expected observed
-  = sum (zipWith (\o e -> (o - e)^2 / e) observed expected)
+  = sum (zipWith (\o e -> ((o - e)^2 / e) + (0.1/o^2)) observed expected)
+  -- = sum (zipWith (\o e -> (o - e)^2 / e) observed expected)
 
 chiSquare :: Floating a => a -> [a] -> a
 chiSquare expected observed = chiSquareVec (repeat expected) observed
@@ -469,13 +470,14 @@ weighted weights (Proxy :: Proxy spec) (Proxy :: Proxy root) mode size freqs
     expected = multWeight <$> cnames
     multWeight cn = fromIntegral (fromJust (lookup cn weights) * size)
 
-epsilon = 0.001
+epsilon = 0.0001
 
-dot :: Double -> Int ->  a -> a
-dot delta heat x = unsafePerformIO $ do
-  putStrLn ("* delta:" ++ show delta ++ "\t heat:" ++ show heat)
+dot :: Double -> Double -> Double ->  a -> a
+dot delta heat dist x = unsafePerformIO $ do
+  putStrLn ("* delta:" ++ show delta ++ "\t heat:" ++ show heat ++ "\t dist:" ++ show dist)
   hFlush stdout
   return x
+
 
 optimize :: forall spec root. HasSpec spec root
   => QCSize -> DistFun -> [[Integer]]
@@ -486,28 +488,31 @@ optimize size dist
 optimizeFreqs :: forall spec root. HasSpec spec root
   => Mode -> QCSize -> DistFun -> [[Integer]] -> [[Integer]]
 optimizeFreqs mode size dist freqs
-  = localSearch @spec @root mode size (fromIntegral size ^ 2) dist freqs []
+  = localSearch @spec @root mode size (fromIntegral size) dist freqs []
+
 
 localSearch :: forall spec root. HasSpec spec root
-            => Mode -> QCSize -> Int -> DistFun
+            => Mode -> QCSize -> Double -> DistFun
             -> [[Integer]] -> [[[Integer]]] -> [[Integer]]
 localSearch mode size heat dist focus visited
-  | null newNeighbors
-    || delta <= epsilon
+  | null newNeighbors || delta <= epsilon
   = focus
   | delta <= epsilon
-  = dot delta heat $ localSearch @spec @root mode size heat dist bestNeighbor newFrontier
+  = dot delta heat bestNeighborDist
+    $ localSearch @spec @root mode size (heat * 1.0001) dist bestNeighbor newFrontier
   | otherwise
-  = dot delta heat $ localSearch @spec @root mode size newHeat dist bestNeighbor newFrontier
+  = dot delta heat bestNeighborDist
+    $ localSearch @spec @root mode size newHeat dist bestNeighbor newFrontier
   where
     delta = abs (focusDist - bestNeighborDist)
     focusDist = dist (Proxy @spec) (Proxy @root) mode size focus
     (bestNeighbor, bestNeighborDist) = minimumBy (comparing snd) neighborsDists
-    neighborsDists = zip newNeighbors (dist (Proxy @spec) (Proxy @root) mode size <$> newNeighbors)
-    newNeighbors = mutate (fromIntegral heat) focus \\ (focus:visited)
-    newHeat = floor $ fromIntegral heat / 1.05
-    gainRatio = bestNeighborDist / focusDist
-    newFrontier = newNeighbors ++ take ((sum (length <$> focus)) ^ 2) visited
+    neighborsDists = zip newNeighbors (dist (Proxy @spec) (Proxy @root)
+                                       mode size <$> newNeighbors)
+    newNeighbors = mutate (floor heat) focus \\ (focus:visited)
+    newHeat = max 1 (heat / (1.0001))
+    newFrontier = newNeighbors ++ take 300 visited
+    -- newFrontier = newNeighbors ++ take ((sum (length <$> focus)) ^ 3) visited
 
 
 type family
@@ -598,34 +603,14 @@ instance (KnownNats n, KnownNatss ns) => KnownNatss (n ': ns) where
 -- | Vector and Matrix utilities
 
 mutate :: Integer -> [[Integer]] -> [[[Integer]]]
-mutate n xss = map (mutateAt n xss) [0.. sum (length <$> xss) - 1]
+mutate n xss = map (mutateAt (+n) xss) [0.. sum (length <$> xss) - 1]
 
-mutateAt :: Integer -> [[Integer]] -> Int -> [[Integer]]
-mutateAt n (xs : xss) ix
+mutateAt :: (Integer -> Integer) -> [[Integer]] -> Int -> [[Integer]]
+mutateAt f (xs : xss) ix
   | ix < length xs
-  = (take ix xs ++ [(xs !! ix) + n]  ++ drop (ix+1) xs) : xss
+  = (take ix xs ++ [f (xs !! ix)]  ++ drop (ix+1) xs) : xss
   | otherwise
-  = xs : mutateAt n xss (ix - length xs)
-
-  -- take ix xss
-  --                 ++ concatMap (mutateType n (xss !! ix)) [0 .. length (xss !! ix)]
-  --                 ++ drop (ix + 1) xss
-
-
-
-
-
-mutateType :: Integer -> [Integer] -> Integer -> [Integer]
-mutateType = undefined
-
-
--- mutate :: Integer -> [[Integer]] -> [[[Integer]]]
--- mutate _ [] = [[]]
--- mutate n (x : xs) = ((:) <$> mutate' n x) <*> mutate n xs
-
--- mutate' :: Integer -> [Integer] -> [[Integer]]
--- mutate' _ [] = [[]]
--- mutate' n (x : xs) = [(x:), ((x+n):)] <*> mutate' n xs
+  = xs : mutateAt f xss (ix - length xs)
 
 normalize :: Vector Double -> Vector Double
 normalize v = Vector.map (/ vsum) v

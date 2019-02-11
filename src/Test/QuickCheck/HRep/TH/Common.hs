@@ -263,6 +263,7 @@ reifyOrFail :: Name -> Q DInfo
 reifyOrFail n = dsReify n >>= maybe err expand
   where err = error ("dsReify: error while reifiying " ++ show n)
 
+
 putStrLnQ :: String -> Q ()
 putStrLnQ = liftIO . putStrLn
 

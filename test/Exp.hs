@@ -1,54 +1,120 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleInstances #-}
-
+{-# OPTIONS_GHC -fdefer-type-errors #-}
 module Exp where
 
-import Test.QuickCheck.HRep
-import Test.QuickCheck.HRep.TH
+import GHC.Generics
+import Test.QuickCheck hiding (Fun)
+import Dragen.Struct
+
+
+deriving instance Generic Int
 
 ----------------------------------------
 
-data Exp v a
-  = Val a
-  | Var v
-  | Add (Exp v a) (Exp v a)
-  | Mul (Exp v a) (Exp v a)
-  deriving Show
+-- | Given the following mutually recursive data types
 
-foo :: Exp v a -> a
-foo (Add (Add _ _) _) = undefined
-foo (Add (Val _) _)   = undefined
-foo _                 = undefined
+data IExp
+  = Val Int
+  | Add IExp IExp
+  | If  BExp IExp IExp
+  deriving (Show, Generic)
 
-type ExpString = Exp String
+data BExp
+  = Bool Bool
+  | And  BExp BExp
+  | LEq  IExp IExp
+  deriving (Show, Generic)
 
-bar :: ExpString a -> a
-bar (Add (Var "very rare var") (Val _)) = undefined
-bar (Add _ _)                           = undefined
-bar _                                   = undefined
+ieval :: IExp -> Int
+ieval (Val n) = n
+ieval (Add x y) = ieval x + ieval y
+ieval (If b x y) = if beval b then ieval x else ieval y
 
-twice :: ExpString a -> ExpString a
-twice e = Add e e
+beval :: BExp -> Bool
+beval (Bool b) = b
+beval (And x y) = beval x && beval y
+beval (LEq x y) = ieval x <= ieval y
 
-pow :: Exp v Int -> Int -> Exp v Int
-pow e n = foldr Mul (Val 1) (replicate n e)
+-- | The following functions defined using pattern matching on them
 
-zero :: Exp v Int
+foo :: IExp -> a
+foo (Add (Add (Val _)   _) _) = undefined
+foo (Add (If _ (Val 10) _) _) = undefined
+foo _                         = undefined
+
+bar :: BExp -> a
+bar (LEq (Val _) _)              = undefined
+bar (And (Bool False) (LEq _ _)) = undefined
+bar _                            = undefined
+
+
+-- | And the following abstract abstract interface for creating expressions:
+
+zero :: IExp
 zero = Val 0
 
-fortyTwo :: Exp v Int
-fortyTwo = Add (Mul (Val 5) (Val 4)) (Val 22)
+twice :: IExp -> IExp
+twice x = Add x x
+
+eq :: IExp -> IExp -> BExp
+eq x y = And (LEq x y) (LEq y x)
 
 ----------------------------------------
 
-derive typeRep    { type_ = ''Exp }
-derive funPatsRep { fun   = 'foo  }
-derive funPatsRep { fun   = 'bar  }
-derive modIntRep  { type_ = ''Exp , alias = "my module" }
+-- | First, we write a "generation specification"
+type ExpS =
+  '[ "IExp"
+       := HRep "IExp"
+       :+ HRep "foo"
+       :+ HRep "[IExp]"
+   , "BExp"
+       := HRep "BExp"
+       :+ HRep "bar"
+       :+ HRep "[BExp]"
+   ]
+
+type ExpS_fine =
+  '[ "IExp"
+       := Term (Con 'Val)  :* 1
+       :+ Con 'Add         :* 2
+       :+ Con 'If          :* 3
+       :+ Pat "foo" 1      :* 4
+       :+ Pat "foo" 2      :* 5
+       :+ Fun "zero"       :* 6
+       :+ Fun "twice"      :* 7
+   , "BExp"
+       := Term (Con 'Bool) :* 1
+       :+ Con 'LEq         :* 2
+       :+ Pat "bar" 1      :* 3
+       :+ Pat "bar" 2      :* 4
+       :+ Fun "eq"         :* 5
+   ]
+
+deriveAll
+  -- | Mutually recursive family of types
+  [ ''IExp, ''BExp ]
+  -- | Targets
+  [ patterns   'foo
+  , patterns   'bar
+  , interface ''IExp
+  , interface ''BExp
+  ] ''ExpS
+
+
+pred :: Hist
+pred = predictRep @ExpS @"IExp" 15
+
+hist :: IO Hist
+hist = confirmRep @ExpS @"IExp" 15
+
+freqs :: [[Integer]]
+freqs = optimize @ExpS @"IExp" 15 uniform
+
+pred' :: Hist
+pred' = predictRepWith @ExpS @"IExp" freqs 15
+
+
+genExp :: IO IExp
+genExp = do
+  x <- generate $ resize 15 $ genFix @(ExpS ~> "IExp")
+  putStrLn $ "Fix point value:\n" ++ show x ++ "\n--------------"
+  return (eval x)
