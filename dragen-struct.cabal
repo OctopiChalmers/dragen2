@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bd8b4ad9f36ed2d17be57a7efe0ce245e2ff25246ef91a48e1ff581d00d50c91
+-- hash: e94c602a41d1f6e8699c0dcf6f5fdd7e2d75a46ba742656e29a206e5e5368ff3
 
 name:           dragen-struct
 version:        0.1.0.0
@@ -26,38 +26,59 @@ source-repository head
   type: git
   location: https://github.com/OctopiChalmers/dragen-struct
 
+flag debug
+  description: Turns on debug messages
+  manual: True
+  default: True
+
 library
   exposed-modules:
-      Dragen.Struct
+      Test.Dragen.Struct
   other-modules:
-      GHC.Generics.Countable
-      Language.Haskell.TH.Desugar.Utils
-      Test.QuickCheck.Branching
-      Test.QuickCheck.Gen.Utils
-      Test.QuickCheck.HRep
-      Test.QuickCheck.HRep.Infix
-      Test.QuickCheck.HRep.TH
-      Test.QuickCheck.HRep.TH.Common
-      Test.QuickCheck.HRep.TH.FunPatsRep
-      Test.QuickCheck.HRep.TH.ModIntRep
-      Test.QuickCheck.HRep.TH.TypeRep
+      Test.Dragen.Struct.Algebra
+      Test.Dragen.Struct.BoundedArbitrary
+      Test.Dragen.Struct.Branching
+      Test.Dragen.Struct.Countable
+      Test.Dragen.Struct.Infix
+      Test.Dragen.Struct.Optimization
+      Test.Dragen.Struct.Prediction
+      Test.Dragen.Struct.Rep
+      Test.Dragen.Struct.Spec
+      Test.Dragen.Struct.TH
+      Test.Dragen.Struct.TH.Extract
+      Test.Dragen.Struct.TH.FunPats
+      Test.Dragen.Struct.TH.Ppr
+      Test.Dragen.Struct.TH.Ppr.Ppr
+      Test.Dragen.Struct.TH.Ppr.PprLib
+      Test.Dragen.Struct.TH.TypeDef
+      Test.Dragen.Struct.TH.TypeInt
+      Test.Dragen.Struct.TH.Util
+      Test.Dragen.Struct.TypeLevel
+      TestTree
+      Tree
       Paths_dragen_struct
   hs-source-dirs:
       src
-  default-extensions: AllowAmbiguousTypes DataKinds DeriveFunctor DeriveGeneric ExistentialQuantification FlexibleContexts FlexibleInstances GADTs MultiParamTypeClasses PolyKinds Rank2Types ScopedTypeVariables StandaloneDeriving TemplateHaskell TypeApplications TypeFamilies TypeOperators UndecidableInstances
+      test
+  default-extensions: AllowAmbiguousTypes ConstraintKinds DataKinds DeriveFunctor DeriveGeneric ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs MultiParamTypeClasses NoStarIsType PolyKinds QuantifiedConstraints RankNTypes ScopedTypeVariables StandaloneDeriving TemplateHaskell TypeApplications TypeFamilies TypeOperators UndecidableInstances
   build-depends:
       QuickCheck
+    , ansi-terminal
     , base >=4.7 && <5
     , containers
     , directory
     , extra
     , filepath
+    , ghc-boot-th
     , ghc-prim
     , haskell-src-exts
     , matrix
+    , pretty
     , reflection
     , split
     , template-haskell
     , th-desugar
     , vector
+  if flag(debug)
+    cpp-options: -DDEBUG
   default-language: Haskell2010

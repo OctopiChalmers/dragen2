@@ -11,9 +11,9 @@ extra-source-files:
   - README.md
 
 # Metadata used when publishing your package
-synopsis:            
+synopsis:
   QuickCheck utilities to derive random generators using structural information.
-category: 
+category:
   Testing
 
 # To avoid duplicated efforts in documentation and dealing with the
@@ -25,18 +25,28 @@ description:
 dependencies:
   - base >= 4.7 && < 5
 
+flags:
+  debug:
+    description: Turns on debug messages
+    manual: True
+    default: True
+
 default-extensions:
   - AllowAmbiguousTypes
+  - ConstraintKinds
   - DataKinds
   - DeriveFunctor
   - DeriveGeneric
   - ExistentialQuantification
   - FlexibleContexts
   - FlexibleInstances
+  - FunctionalDependencies
   - GADTs
   - MultiParamTypeClasses
+  - NoStarIsType
   - PolyKinds
-  - Rank2Types
+  - QuantifiedConstraints
+  - RankNTypes
   - ScopedTypeVariables
   - StandaloneDeriving
   - TemplateHaskell
@@ -48,19 +58,28 @@ default-extensions:
 library:
   source-dirs:
     - src
+    - test
   exposed-modules:
-    - Dragen.Struct
+    - Test.Dragen.Struct
   dependencies:
+    - QuickCheck
+    - containers
+    - directory
+    - extra
+    - filepath
+    - ghc-prim
+    - haskell-src-exts
+    - matrix
+    - reflection
+    - split
+    - ghc-boot-th
     - template-haskell
     - th-desugar
-    - haskell-src-exts
-    - ghc-prim
-    - containers
-    - extra
-    - split
-    - filepath
-    - directory
-    - QuickCheck
-    - reflection
-    - matrix
     - vector
+    - ansi-terminal
+    - pretty
+
+  when:
+    - condition: flag(debug)
+      cpp-options: -DDEBUG
+
