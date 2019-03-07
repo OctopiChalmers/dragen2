@@ -42,7 +42,8 @@ chiSquare :: Floating a => [a] -> [a] -> a
 chiSquare expected observed
   = sum (zipWith f observed expected)
   where
-    f o e =  (o - e)**2 / e -- + 0.2 * (1/o)
+    f o e = 0.9 * ((o - e)**2 / e)
+          + 0.1 * (1 / o)
 
 chiSquareConst :: Floating a => a -> [a] -> a
 chiSquareConst expected observed
@@ -53,17 +54,28 @@ chiSquareConst expected observed
 -- | Simulation-based optimization
 
 epsilon :: Double
-epsilon = 0.00001
+epsilon = 0.001
 
 heatDecay :: Double
-heatDecay = 0.999
+heatDecay = 0.95
 
 neighborsCount :: Int
 neighborsCount = 300
 
+tabuCount :: Int
+tabuCount = 30
+
+
 
 mutate :: Integer -> [[Integer]] -> [[[Integer]]]
-mutate n xss = map (mutateAt (+n) xss) [0.. sum (length <$> xss) - 1]
+mutate n xss
+  = fmap (mutateAt (+n) xss) indices
+  where indices = concat (filter ((>1) . length) (indicesFrom 0 xss))
+
+indicesFrom :: Foldable t => Int -> [t a] -> [[Int]]
+indicesFrom _ [] = []
+indicesFrom n (ys : yss)
+  = take (length ys) [n .. ] : indicesFrom (n + length ys) yss
 
 mutateAt :: (Integer -> Integer) -> [[Integer]] -> Int -> [[Integer]]
 mutateAt f (xs : xss) ix
@@ -76,19 +88,19 @@ mutateAt _ _ _ = error "mutateAt: empty list"
 localSearch
   :: forall spec root.
      spec `StartingFrom` root
-  => MaxDepth -> Double -> DistFun
+  => Int -> MaxDepth -> Double -> DistFun
   -> [[Integer]] -> [[[Integer]]] -> [[Integer]]
-localSearch  maxDepth heat dist focus visited
-  | null newNeighbors || delta <= epsilon
-  = focus
-  | delta <= epsilon
+localSearch tabu maxDepth heat dist focus visited
+  | tabu == tabuCount && (heat == 1 || delta <= epsilon)
+  = dot delta heat bestNeighborDist $ focus
+  | heat == 1 || null newNeighbors || delta <= epsilon
   = dot delta heat bestNeighborDist
     $ localSearch @spec @root
-    maxDepth (heat/heatDecay) dist bestNeighbor newFrontier
+    (tabu+1) maxDepth newHeat dist bestNeighbor newFrontier
   | otherwise
   = dot delta heat bestNeighborDist
     $ localSearch @spec @root
-    maxDepth newHeat dist bestNeighbor newFrontier
+    0 maxDepth newHeat dist bestNeighbor newFrontier
   where
     delta         = abs (focusDist - bestNeighborDist)
     focusDist     = dist (Proxy @spec) (Proxy @root) maxDepth focus
@@ -117,5 +129,5 @@ optimizeFreqs
      spec `StartingFrom` root
   => MaxDepth -> DistFun -> [[Integer]] -> [[Integer]]
 optimizeFreqs maxDepth dist freqs
-  = localSearch @spec @root maxDepth heat dist freqs []
-  where heat = fromIntegral maxDepth
+  = localSearch @spec @root 0 maxDepth heat dist freqs []
+  where heat = fromIntegral maxDepth ** 2

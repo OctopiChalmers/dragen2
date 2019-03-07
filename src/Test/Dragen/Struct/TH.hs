@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Test.Dragen.Struct.TH where
 
@@ -134,14 +135,15 @@ optimize
   => DistFun -> MaxDepth -> Q Type
 optimize dist depth = do
 
-  dragenMsg' "optimizing frequencies"
+  dragenMsg' "optimizing frequencies:"
 
-  let oldFreqs = map (const 1) <$> natValss (Proxy @(SpecFreqs (MkSpec spec)))
-      newFreqs = optimizeFreqs @spec @root depth dist oldFreqs
+  let !oldFreqs = map (const 1) <$> natValss (Proxy @(SpecFreqs (MkSpec spec)))
+      !newFreqs = optimizeFreqs @spec @root depth dist oldFreqs
 
       promoteSpec = flip foldr promotedNilT $ \t ->
         appT (appT promotedConsT (promoteList t))
       promoteList = flip foldr promotedNilT $ \n ->
         appT (appT promotedConsT (litT (numTyLit n)))
 
+  dragenMsg "optimized frequencies:" [show newFreqs]
   promoteSpec newFreqs

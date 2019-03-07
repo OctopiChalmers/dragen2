@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e94c602a41d1f6e8699c0dcf6f5fdd7e2d75a46ba742656e29a206e5e5368ff3
+-- hash: efd158c29e9e685f17b7090bd9288a1b1dbe184a39831b9613f61b5b8a82bd0d
 
 name:           dragen-struct
 version:        0.1.0.0
@@ -54,12 +54,9 @@ library
       Test.Dragen.Struct.TH.TypeInt
       Test.Dragen.Struct.TH.Util
       Test.Dragen.Struct.TypeLevel
-      TestTree
-      Tree
       Paths_dragen_struct
   hs-source-dirs:
       src
-      test
   default-extensions: AllowAmbiguousTypes ConstraintKinds DataKinds DeriveFunctor DeriveGeneric ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs MultiParamTypeClasses NoStarIsType PolyKinds QuantifiedConstraints RankNTypes ScopedTypeVariables StandaloneDeriving TemplateHaskell TypeApplications TypeFamilies TypeOperators UndecidableInstances
   build-depends:
       QuickCheck
@@ -81,4 +78,22 @@ library
     , vector
   if flag(debug)
     cpp-options: -DDEBUG
+  default-language: Haskell2010
+
+test-suite dragen-struct-tests
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Tree
+      TreeOpt
+      Paths_dragen_struct
+  hs-source-dirs:
+      test/
+  default-extensions: AllowAmbiguousTypes ConstraintKinds DataKinds DeriveFunctor DeriveGeneric ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs MultiParamTypeClasses NoStarIsType PolyKinds QuantifiedConstraints RankNTypes ScopedTypeVariables StandaloneDeriving TemplateHaskell TypeApplications TypeFamilies TypeOperators UndecidableInstances
+  cpp-options: -DDEBUG
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , dragen-struct
+    , vector
   default-language: Haskell2010

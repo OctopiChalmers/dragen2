@@ -9,6 +9,7 @@ module Test.Dragen.Struct
   , module Test.Dragen.Struct.Rep
   , module Test.Dragen.Struct.Spec
   , module Test.Dragen.Struct.TH
+  , module Test.Dragen.Struct.TypeLevel
   ) where
 
 import Test.Dragen.Struct.Algebra
@@ -21,3 +22,4 @@ import Test.Dragen.Struct.Prediction
 import Test.Dragen.Struct.Rep
 import Test.Dragen.Struct.Spec
 import Test.Dragen.Struct.TH
+import Test.Dragen.Struct.TypeLevel

@@ -128,7 +128,7 @@ derivePatRep funName typeFam funArgType funArgDefTypeVars
       repBrBindings
         = thSingleton <$$>
         [ ('Branching.typeNames
-          , thString (nameBase funName))
+          , thString (nameBase funName ++ "#" ++ show patNum))
         , ('Branching.typeAtomic
           , thFalse)
         , ('Branching.typeBranchingProbs

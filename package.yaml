@@ -24,6 +24,8 @@ description:
 
 dependencies:
   - base >= 4.7 && < 5
+  - QuickCheck
+  - vector
 
 flags:
   debug:
@@ -58,11 +60,9 @@ default-extensions:
 library:
   source-dirs:
     - src
-    - test
   exposed-modules:
     - Test.Dragen.Struct
   dependencies:
-    - QuickCheck
     - containers
     - directory
     - extra
@@ -75,11 +75,15 @@ library:
     - ghc-boot-th
     - template-haskell
     - th-desugar
-    - vector
     - ansi-terminal
     - pretty
-
   when:
     - condition: flag(debug)
       cpp-options: -DDEBUG
 
+tests:
+  dragen-struct-tests:
+    source-dirs: test/
+    main: Main.hs
+    dependencies: dragen-struct
+    cpp-options: -DDEBUG

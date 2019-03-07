@@ -1,9 +1,6 @@
 module Tree where
 
 import Test.Dragen.Struct
-import Test.Dragen.Struct.TH.Util
-
-import Test.QuickCheck hiding (Fun)
 
 
 data Tree a
@@ -28,9 +25,10 @@ node :: Tree a -> Tree a -> Tree a
 node t1 t2 = Node t1 t2
 
 
-foo _ (Node (Forest xs) (Leaf _))      = undefined
+foo :: something -> Tree a -> somethingElse
+foo _ (Node (Forest _) (Leaf _))       = undefined
 foo _ (Forest (Rose [Leaf _, Leaf _])) = undefined
-
+foo _ _                                = undefined
 
 
 derive
@@ -45,13 +43,13 @@ derive
   , constructors ''Rose
   ]
 
-
-type GenSpec =
+type TreeSpec =
   '[ "Tree"
        := Con' "Leaf" :* 2
        :+ Con  "Node"
        :+ Fun  "node"
        :+ Pat  "foo" 1
+       :+ Pat  "foo" 2
    , "Rose"
        := Con' "Rose"
    ]
