@@ -21,13 +21,13 @@ cabal.project.local~
 .HTF/
 .ghc.environment.*
 
-paper/main.bbl
-paper/main.blg
-paper/main.dvi
-paper/main.log
-paper/main.out
-paper/main.pdf
-paper/main.ptb
-paper/main.tex
-paper/auto
+papers/**/*.bbl
+papers/**/*.blg
+papers/**/*.dvi
+papers/**/*.log
+papers/**/*.out
+papers/**/*.pdf
+papers/**/*.ptb
+papers/**/*.tex
+papers/**/auto
 
