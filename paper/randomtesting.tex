@@ -132,7 +132,7 @@ that can be chosen by the user---in this example, 2, 1, 4 and 3 for |Text|,
 |Single|, |Tag|, and |Join|, respectively.
 %
 When it picks to generate a |Text| or a |Single| data constructor, it also
-generates a random |String| value using the standard QuickCheck generator
+generates a random |String| value using the standard \quickcheck generator
 |genString|.% (\quickcheck provides standard random generators for most base types
 % like |String|, |Int|, |Bool|, etc.)
 \footnote{%
@@ -141,7 +141,7 @@ generates a random |String| value using the standard QuickCheck generator
   point being made in this work.}
 %$
 On the other hand, when it picks to generate a |Join| constructor, it also
-generates two independent random sub-expression recursively, decreasing the
+generates two independent random sub-expressions recursively, decreasing the
 generation size by a unit on each recursive invocation (|smaller genHtml|).
 %
 The case of random generation of |Tag| constructors follows analogously.

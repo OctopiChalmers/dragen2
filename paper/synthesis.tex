@@ -56,7 +56,7 @@ distribution of constructors at the generation $n$, noted $E[G_n]$, as follows:
   E[G_n]^T = E[G_0]^T \cdot M^n
   \label{eqn:prediction}
 \end{align}
-
+%
 Vector $E[G_0]$ represents the initial distribution of constructors that our
 generator produces, which simply consists of the generation probability of each
 one.
@@ -82,11 +82,11 @@ definitions, % \cite{DBLP:conf/haskell/MistaRH18}
 as well as the individual probability of generating each constructor.
 %
 For instance, the average number of |Text| data constructors that we will
-generate provided that we generated a |Join| data constructor on the previous
-level is calculated as follows:
+generate provided that we generated a |Join| constructor on the previous
+level results:
 %
 $$ M_{\mathrm{Join, Text}} = 2\cdot p_{\mathrm{Text}} $$
-%
+
 where $2$ is the number of holes present when generating a partial ADT value
 |Join| (i.e., |Join hole hole|) and $p_{\mathrm{Text}}$ is the probability of
 individually generating the constructor |Text|.
