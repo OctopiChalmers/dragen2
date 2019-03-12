@@ -1,0 +1,99 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: efd158c29e9e685f17b7090bd9288a1b1dbe184a39831b9613f61b5b8a82bd0d
+
+name:           dragen-struct
+version:        0.1.0.0
+synopsis:       QuickCheck utilities to derive random generators using structural information.
+description:    Please see the README on GitHub at <https://github.com/OctopiChalmers/dragen-struct#readme>
+category:       Testing
+homepage:       https://github.com/OctopiChalmers/dragen-struct#readme
+bug-reports:    https://github.com/OctopiChalmers/dragen-struct/issues
+author:         Agustín Mista
+maintainer:     Agustín Mista
+copyright:      2019 Agustín Mista
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/OctopiChalmers/dragen-struct
+
+flag debug
+  description: Turns on debug messages
+  manual: True
+  default: True
+
+library
+  exposed-modules:
+      Test.Dragen.Struct
+  other-modules:
+      Test.Dragen.Struct.Algebra
+      Test.Dragen.Struct.BoundedArbitrary
+      Test.Dragen.Struct.Branching
+      Test.Dragen.Struct.Countable
+      Test.Dragen.Struct.Infix
+      Test.Dragen.Struct.Optimization
+      Test.Dragen.Struct.Prediction
+      Test.Dragen.Struct.Rep
+      Test.Dragen.Struct.Spec
+      Test.Dragen.Struct.TH
+      Test.Dragen.Struct.TH.Extract
+      Test.Dragen.Struct.TH.FunPats
+      Test.Dragen.Struct.TH.Ppr
+      Test.Dragen.Struct.TH.Ppr.Ppr
+      Test.Dragen.Struct.TH.Ppr.PprLib
+      Test.Dragen.Struct.TH.TypeDef
+      Test.Dragen.Struct.TH.TypeInt
+      Test.Dragen.Struct.TH.Util
+      Test.Dragen.Struct.TypeLevel
+      Paths_dragen_struct
+  hs-source-dirs:
+      src
+  default-extensions: AllowAmbiguousTypes ConstraintKinds DataKinds DeriveFunctor DeriveGeneric ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs MultiParamTypeClasses NoStarIsType PolyKinds QuantifiedConstraints RankNTypes ScopedTypeVariables StandaloneDeriving TemplateHaskell TypeApplications TypeFamilies TypeOperators UndecidableInstances
+  build-depends:
+      QuickCheck
+    , ansi-terminal
+    , base >=4.7 && <5
+    , containers
+    , directory
+    , extra
+    , filepath
+    , ghc-boot-th
+    , ghc-prim
+    , haskell-src-exts
+    , matrix
+    , pretty
+    , reflection
+    , split
+    , template-haskell
+    , th-desugar
+    , vector
+  if flag(debug)
+    cpp-options: -DDEBUG
+  default-language: Haskell2010
+
+test-suite dragen-struct-tests
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Tree
+      TreeOpt
+      Paths_dragen_struct
+  hs-source-dirs:
+      test/
+  default-extensions: AllowAmbiguousTypes ConstraintKinds DataKinds DeriveFunctor DeriveGeneric ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs MultiParamTypeClasses NoStarIsType PolyKinds QuantifiedConstraints RankNTypes ScopedTypeVariables StandaloneDeriving TemplateHaskell TypeApplications TypeFamilies TypeOperators UndecidableInstances
+  cpp-options: -DDEBUG
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , dragen-struct
+    , vector
+  default-language: Haskell2010

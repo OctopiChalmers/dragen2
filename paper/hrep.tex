@@ -26,9 +26,9 @@ We proceed to exemplify the need to consider such sources with examples.
 
 \subsection{Branching on input data}
 
-To exemplify the first source of structure information, we consider that we want
-to use randomly generated |Html| values to test the function |simplify :: Html
--> Html|.
+To exemplify the first source of structural information, consider that we want
+to use randomly generated |Html| values to test a function |simplify :: Html ->
+Html|.
 %
 In Haskell, the notation |f :: T| means that program |f| has type |T|.
 %
@@ -38,7 +38,7 @@ In our example, function |simplify| takes an |Html| as an input and produces an
 Intuitively, the purpose of this function is to assemble sequences of |Text|
 constructors into a single big one.
 %
-More specifically, the code of |simplify| is as follows.
+More specifically, the code of |simplify| is as follows:
 %
 \begin{code}
 simplify :: Html -> Html
@@ -56,7 +56,7 @@ Function |concat| just concatenates two strings.
 The body of |simplify| is described using \emph{pattern matching} over possible
 kinds of |Html| values.
 %
-Pattern matching allows to define functions idiomatically by given different
+Pattern matching allows to define functions idiomatically by defining different
 function clauses for each input pattern we are interested in.
 %
 In other words, pattern matching is a mechanism that functions have to branch on
@@ -232,10 +232,10 @@ bold x = Tag "b" x
 % represents in plain text.
 %
 These functions encode additional information about the structure of |Html|
-values in the form of specific Html tags.
+values in the form of specific HTML tags.
 %
 Primitive |hr| represents the tag \texttt{<hr>} used to separate content in an
-HTML pages.
+HTML page.
 %
 Function |div| and |bold| place an |Html| value within the tags \texttt{div} and
 \texttt{b} in order to introduce divisions and activate bold fonts,
@@ -267,7 +267,7 @@ As a consequence of this practice, generators derived by only looking into ADT
 definitions often fail to synthesize useful random values, e.g., random HTML
 pages with valid tags.
 %
-After all, most of the \emph{valid structures} of values has been encoded into
+After all, most of the \emph{valid structure} of values has been encoded into
 the primitives of the ADT abstract interface.
 %
 When considering the generator described in Section \ref{sec:randomtesting}, the
