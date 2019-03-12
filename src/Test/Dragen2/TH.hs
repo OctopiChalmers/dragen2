@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE BangPatterns #-}
 
-module Test.Dragen.Struct.TH where
+module Test.Dragen2.TH where
 
 import Data.Proxy
 
@@ -11,16 +11,16 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Desugar
 
 import Test.QuickCheck
-import Test.Dragen.Struct.Rep
-import Test.Dragen.Struct.Spec
-import Test.Dragen.Struct.Optimization
-import Test.Dragen.Struct.BoundedArbitrary
-import Test.Dragen.Struct.TypeLevel
+import Test.Dragen2.Rep
+import Test.Dragen2.Spec
+import Test.Dragen2.Optimization
+import Test.Dragen2.BoundedArbitrary
+import Test.Dragen2.TypeLevel
 
-import Test.Dragen.Struct.TH.Util
-import Test.Dragen.Struct.TH.TypeDef
-import Test.Dragen.Struct.TH.TypeInt
-import Test.Dragen.Struct.TH.FunPats
+import Test.Dragen2.TH.Util
+import Test.Dragen2.TH.TypeDef
+import Test.Dragen2.TH.TypeInt
+import Test.Dragen2.TH.FunPats
 
 ----------------------------------------
 -- | Derivation targets and dispatcher

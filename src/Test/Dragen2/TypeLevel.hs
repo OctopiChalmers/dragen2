@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
-module Test.Dragen.Struct.TypeLevel where
+module Test.Dragen2.TypeLevel where
 
 import Data.Kind
 import Data.Proxy

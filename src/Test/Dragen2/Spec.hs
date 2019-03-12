@@ -1,4 +1,4 @@
-module Test.Dragen.Struct.Spec where
+module Test.Dragen2.Spec where
 
 import Data.Kind
 import GHC.TypeLits
@@ -10,13 +10,13 @@ import qualified Data.Map.Strict as Map
 
 import Test.QuickCheck
 
-import Test.Dragen.Struct.Algebra
-import Test.Dragen.Struct.BoundedArbitrary
-import Test.Dragen.Struct.Branching
-import Test.Dragen.Struct.Countable
-import Test.Dragen.Struct.Prediction
-import Test.Dragen.Struct.Rep
-import Test.Dragen.Struct.TypeLevel
+import Test.Dragen2.Algebra
+import Test.Dragen2.BoundedArbitrary
+import Test.Dragen2.Branching
+import Test.Dragen2.Countable
+import Test.Dragen2.Prediction
+import Test.Dragen2.Rep
+import Test.Dragen2.TypeLevel
 
 
 ----------------------------------------

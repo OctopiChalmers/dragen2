@@ -2,7 +2,7 @@
 
 -- | Monadic front-end to Text.PrettyPrint
 
-module Test.Dragen.Struct.TH.Ppr.PprLib (
+module Test.Dragen2.TH.Ppr.PprLib (
 
         -- * The document type
         Doc,            -- Abstract, instance of Show

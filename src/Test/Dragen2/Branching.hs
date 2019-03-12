@@ -1,4 +1,4 @@
-module Test.Dragen.Struct.Branching where
+module Test.Dragen2.Branching where
 
 import Data.Kind
 

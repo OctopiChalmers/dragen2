@@ -1,6 +1,6 @@
 module Tree where
 
-import Test.Dragen.Struct
+import Test.Dragen2
 
 
 data Tree a

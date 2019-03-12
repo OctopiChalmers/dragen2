@@ -1,4 +1,4 @@
-module Test.Dragen.Struct.Rep where
+module Test.Dragen2.Rep where
 
 import GHC.TypeLits
 import GHC.Generics
@@ -7,10 +7,10 @@ import Data.Kind
 
 import Test.QuickCheck hiding (Fun)
 
-import Test.Dragen.Struct.Algebra
-import Test.Dragen.Struct.BoundedArbitrary
-import Test.Dragen.Struct.Branching
-import Test.Dragen.Struct.TypeLevel
+import Test.Dragen2.Algebra
+import Test.Dragen2.BoundedArbitrary
+import Test.Dragen2.Branching
+import Test.Dragen2.TypeLevel
 
 ----------------------------------------
 -- | Type-level combinators

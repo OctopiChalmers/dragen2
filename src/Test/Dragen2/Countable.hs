@@ -1,7 +1,7 @@
 {-# LANGUAGE KindSignatures  #-}
 {-# LANGUAGE DefaultSignatures  #-}
 
-module Test.Dragen.Struct.Countable where
+module Test.Dragen2.Countable where
 
 import GHC.Generics
 import Data.Kind

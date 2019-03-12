@@ -1,4 +1,4 @@
-module Test.Dragen.Struct.Optimization where
+module Test.Dragen2.Optimization where
 
 import Data.Proxy
 import Data.Ord
@@ -10,8 +10,8 @@ import System.IO.Unsafe
 
 import qualified Data.Map.Strict as Map
 
-import Test.Dragen.Struct.BoundedArbitrary
-import Test.Dragen.Struct.Spec
+import Test.Dragen2.BoundedArbitrary
+import Test.Dragen2.Spec
 
 ----------------------------------------
 -- | Distance functions

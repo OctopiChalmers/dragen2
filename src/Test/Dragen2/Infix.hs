@@ -1,7 +1,7 @@
-module Test.Dragen.Struct.Infix where
+module Test.Dragen2.Infix where
 
-import Test.Dragen.Struct.Rep
-import Test.Dragen.Struct.TypeLevel
+import Test.Dragen2.Rep
+import Test.Dragen2.TypeLevel
 
 -- | Infix representation of operators
 

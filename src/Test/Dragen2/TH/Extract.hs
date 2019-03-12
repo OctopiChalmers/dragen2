@@ -1,4 +1,4 @@
-module Test.Dragen.Struct.TH.Extract where
+module Test.Dragen2.TH.Extract where
 
 import Data.List
 
@@ -9,7 +9,7 @@ import Language.Haskell.Exts
 import qualified Language.Haskell.TH as TH
 import qualified Language.Haskell.TH.Desugar as THD
 
-import Test.Dragen.Struct.TH.Util
+import Test.Dragen2.TH.Util
 
 
 ----------------------------------------

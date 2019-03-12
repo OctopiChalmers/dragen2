@@ -1,4 +1,4 @@
-module Test.Dragen.Struct.Algebra where
+module Test.Dragen2.Algebra where
 
 import Data.Kind
 import GHC.Generics

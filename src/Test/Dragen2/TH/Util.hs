@@ -2,7 +2,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE CPP #-}
 
-module Test.Dragen.Struct.TH.Util where
+module Test.Dragen2.TH.Util where
 
 import System.FilePath
 import System.Directory
@@ -13,7 +13,7 @@ import Control.Monad.Extra
 import Control.Monad.IO.Class
 import System.Console.ANSI
 
-import Test.Dragen.Struct.TH.Ppr
+import Test.Dragen2.TH.Ppr
 import Language.Haskell.TH hiding (Ppr, ppr, pprint)
 import Language.Haskell.TH.PprLib
 import Language.Haskell.TH.Desugar
@@ -21,8 +21,8 @@ import Language.Haskell.TH.Desugar
 import qualified Data.Vector as Vector
 import qualified GHC.Generics as Generics
 import qualified Test.QuickCheck as QC
-import qualified Test.Dragen.Struct.Rep as Rep
-import qualified Test.Dragen.Struct.BoundedArbitrary as BoundedArb
+import qualified Test.Dragen2.Rep as Rep
+import qualified Test.Dragen2.BoundedArbitrary as BoundedArb
 
 
 -- | Derive "syntactic" equivalence relations for DTypes

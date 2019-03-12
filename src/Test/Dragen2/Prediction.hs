@@ -1,4 +1,4 @@
-module Test.Dragen.Struct.Prediction where
+module Test.Dragen2.Prediction where
 
 import Data.Proxy
 import GHC.TypeLits
@@ -8,10 +8,10 @@ import Data.Matrix (Matrix, (<->), (<|>))
 import qualified Data.Vector as Vector
 import qualified Data.Matrix as Matrix
 
-import Test.Dragen.Struct.BoundedArbitrary
-import Test.Dragen.Struct.Branching
-import Test.Dragen.Struct.Rep
-import Test.Dragen.Struct.TypeLevel
+import Test.Dragen2.BoundedArbitrary
+import Test.Dragen2.Branching
+import Test.Dragen2.Rep
+import Test.Dragen2.TypeLevel
 
 
 

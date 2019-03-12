@@ -40,7 +40,7 @@ extra-deps:
 allow-newer: true
 
 flags:
-  dragen-struct:
+  dragen2:
     debug: True
 
 # Override default flag values for local packages and extra-deps

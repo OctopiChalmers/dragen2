@@ -1,6 +1,6 @@
 module TreeOpt where
 
-import Test.Dragen.Struct
+import Test.Dragen2
 
 import Tree
 

@@ -1,11 +1,11 @@
-module Test.Dragen.Struct.BoundedArbitrary where
+module Test.Dragen2.BoundedArbitrary where
 
 import GHC.TypeLits
 import Data.Kind
 import Test.QuickCheck
 
-import Test.Dragen.Struct.Algebra
-import Test.Dragen.Struct.TypeLevel
+import Test.Dragen2.Algebra
+import Test.Dragen2.TypeLevel
 
 ----------------------------------------
 -- | Depth-bounded arbitrary generation

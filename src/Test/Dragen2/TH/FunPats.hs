@@ -1,4 +1,4 @@
-module Test.Dragen.Struct.TH.FunPats where
+module Test.Dragen2.TH.FunPats where
 
 import Data.Foldable
 import Control.Monad.Extra
@@ -6,14 +6,14 @@ import Control.Monad.Extra
 import Language.Haskell.TH
 import Language.Haskell.TH.Desugar
 
-import Test.Dragen.Struct.TH.Util
-import Test.Dragen.Struct.TH.Extract
+import Test.Dragen2.TH.Util
+import Test.Dragen2.TH.Extract
 
 import qualified Test.QuickCheck as QC
-import qualified Test.Dragen.Struct.Rep as Rep
-import qualified Test.Dragen.Struct.Algebra as Algebra
-import qualified Test.Dragen.Struct.BoundedArbitrary as BoundedArb
-import qualified Test.Dragen.Struct.Branching as Branching
+import qualified Test.Dragen2.Rep as Rep
+import qualified Test.Dragen2.Algebra as Algebra
+import qualified Test.Dragen2.BoundedArbitrary as BoundedArb
+import qualified Test.Dragen2.Branching as Branching
 
 ----------------------------------------
 -- | Derive the complete representation for a every pattern of a function, plus

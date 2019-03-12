@@ -3,14 +3,14 @@
 -- | contains a prettyprinter for the
 -- Template Haskell datatypes
 
-module Test.Dragen.Struct.TH.Ppr.Ppr where
+module Test.Dragen2.TH.Ppr.Ppr where
     -- All of the exports from this module should
     -- be "public" functions.  The main module TH
     -- re-exports them all.
 
 import Text.PrettyPrint (renderStyle, Style(..), style)
 -- import Language.Haskell.TH.PprLib
-import Test.Dragen.Struct.TH.Ppr.PprLib
+import Test.Dragen2.TH.Ppr.PprLib
 import Language.Haskell.TH.Syntax
 import Data.Word ( Word8 )
 import Data.Char ( toLower, chr)

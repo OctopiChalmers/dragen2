@@ -2,7 +2,7 @@ module Main where
 
 import qualified Data.Vector as Vector
 
-import Test.Dragen.Struct
+import Test.Dragen2
 
 import TreeOpt
 import Tree

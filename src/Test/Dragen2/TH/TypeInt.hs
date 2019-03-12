@@ -1,4 +1,4 @@
-module Test.Dragen.Struct.TH.TypeInt where
+module Test.Dragen2.TH.TypeInt where
 
 import Data.List
 import Data.Foldable
@@ -7,14 +7,14 @@ import Control.Monad.Extra
 import Language.Haskell.TH
 import Language.Haskell.TH.Desugar
 
-import Test.Dragen.Struct.TH.Util
-import Test.Dragen.Struct.TH.Extract
+import Test.Dragen2.TH.Util
+import Test.Dragen2.TH.Extract
 
 import qualified Test.QuickCheck as QC
-import qualified Test.Dragen.Struct.Rep as Rep
-import qualified Test.Dragen.Struct.Algebra as Algebra
-import qualified Test.Dragen.Struct.BoundedArbitrary as BoundedArb
-import qualified Test.Dragen.Struct.Branching as Branching
+import qualified Test.Dragen2.Rep as Rep
+import qualified Test.Dragen2.Algebra as Algebra
+import qualified Test.Dragen2.BoundedArbitrary as BoundedArb
+import qualified Test.Dragen2.Branching as Branching
 
 ----------------------------------------
 -- | Derive a complete representation for every function in a module returning

@@ -1,6 +1,6 @@
-name:                dragen-struct
+name:                dragen2
 version:             0.1.0.0
-github:              "OctopiChalmers/dragen-struct"
+github:              "OctopiChalmers/dragen2"
 license:             BSD3
 license-file:        LICENSE
 author:              "Agustín Mista"
@@ -20,7 +20,7 @@ category:
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
 description:
-  Please see the README on GitHub at <https://github.com/OctopiChalmers/dragen-struct#readme>
+  Please see the README on GitHub at <https://github.com/OctopiChalmers/dragen2#readme>
 
 dependencies:
   - base >= 4.7 && < 5
@@ -61,7 +61,7 @@ library:
   source-dirs:
     - src
   exposed-modules:
-    - Test.Dragen.Struct
+    - Test.Dragen2
   dependencies:
     - containers
     - directory
@@ -82,8 +82,8 @@ library:
       cpp-options: -DDEBUG
 
 tests:
-  dragen-struct-tests:
+  dragen2-tests:
     source-dirs: test/
     main: Main.hs
-    dependencies: dragen-struct
+    dependencies: dragen2
     cpp-options: -DDEBUG
