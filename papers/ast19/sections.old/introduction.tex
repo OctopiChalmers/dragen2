@@ -1,0 +1,34 @@
+\section{Introduction}
+
+Aliquam erat volutpat. Nunc eleifend leo vitae magna. In id erat non orci
+commodo lobortis. Proin neque massa, cursus ut, gravida ut, lobortis eget,
+lacus. Sed diam. Praesent fermentum tempor tellus. Nullam tempus. Mauris ac
+felis vel velit tristique imperdiet. Donec at pede. Etiam vel neque nec dui
+dignissim bibendum. Vivamus id enim. Phasellus neque orci, porta a, aliquet
+quis, semper a, massa. Phasellus purus. Pellentesque tristique imperdiet tortor.
+Nam euismod tellus id erat\cite{grieco2017}.
+
+The main contribuitions of this paper are:
+%
+\begin{itemize}
+  %
+\item We identify two patological scenarios for which standard type-driven
+  automatic derivation tools fail to synthesize practical random generators, due
+  to a lack of either type structure or domain knowleadge (Section
+  \ref{sec:randomtesting}).
+  %
+\item We present a generation technique able to encode stronger properties of
+  the target data type by reifying the static information present on the program
+  codebase (Section \ref{sec:hrep}).
+  %
+\item We apply and extend the theory of branching processes to analitically
+  predict the average distribution of generated values.
+  %
+  Furthermore, we use the predictions to perform simulation-based optimization
+  of the random generation parameters (Section \ref{sec:synthesis}).
+  %
+\item We provide an implementation of our ideas in the form of a Haskell library
+  to perform automatic derivation of random generators capable to extract useful
+  structure information from the user source code.
+  %
+\end{itemize}

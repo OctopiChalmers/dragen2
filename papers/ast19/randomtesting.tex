@@ -1,0 +1,219 @@
+\section{Background} \label{sec:randomtesting}
+
+In this section, we briefly introduce the common approach for automatically
+deriving random data generators for ADTs in QuickCheck.
+%by using the information
+%found at the type-level.
+%
+%type-driven approach, along
+%with its main drawbacks.
+%
+% Haskell is a strongly typed programming language with a powerful type system.
+% %
+% It lets programmers encode a considerable amount of information about the
+% structure of their systems using data types that can be checked at compilation
+% time.
+% %
+% One of its key aspects is the support for Algebraic Data Types (ADTs).
+% %
+% Essentially, an ADTs is a composite type defined by combining other types in
+% terms of \textbf{sums} (also known as \emph{variant types}) and
+% \textbf{products} (or tuples) of other data types.
+% %
+%
+To exemplify this, and for illustrative purposes, let us consider the following
+ADT definition to encode simple |Html| pages:
+%
+\begin{code}
+data Html  =   Text    String
+           pp  Single  String
+           pp  Tag     String  Html
+           pp  Join    Html    Html
+
+\end{code}
+%
+The type |Html| allows to build pages via four possible constructions:
+|Text|---which represents plain text values---, |Single| and |Tag|---which
+represent singular and paired HTML tags, respectively---, and |Join|---which
+concatenates two HTML pages one after another.
+%
+% In the previous definition, we declare |Html| as the sum of four possible
+% constructions: |Text| represents plain text values. |Sing| and |Tag| represent
+% singular and paired Html tags, and |Join| concats two expression one after
+% another.
+% %
+% We only encode a very small subset of the actual Html specification for
+% illustrative reasons.
+% %
+In Haskell, |Text|, |Single|, |Tag|, and |Join| are known as \emph{data
+  constructors} (or constructors for short) and are used to distinguish which
+variant of the ADT we are constructing.
+%
+Each data constructor is defined as a product of zero or more types known as
+\emph{fields}.
+%
+For instance, |Text| has a field of type |String|, whereas |Join| has two
+recursive fields of type |Html|.
+%
+In general, we will say that a data constructor with no recursive fields is
+\emph{terminal}, and \emph{non-terminal} or \emph{recursive} if it has at least
+one field of such nature.
+%
+With this representation, the example page \texttt{<html>hello<hr>bye</html>}
+can be encoded as:
+%
+\begin{code}
+Tag "html" (Join (Join
+  (Text "hello") (Single "hr")) (Text "bye"))
+\end{code}
+%
+% Additionally, we can define a function |render| to serialize |Html| values as
+% follows:
+% %
+% \begin{code}
+% render :: Html -> String
+% render (Text t) = t
+% render (Sing t) = "<" ++ t ++ ">"
+% render (Join x y) = render x ++ render y
+% render (Tag t x)
+%   = "<" ++ t ++ ">" ++ render x ++ "</" ++ t ++ ">"
+% \end{code}
+
+% In the previous definition, |render| is described using \emph{pattern matching}
+% over each possible kind of value.
+% %
+% Using pattern matching we can define functions idiomatically by defining
+% different function clauses for each input pattern we are interested on.
+% %
+% Patterns can be defined to match specific constructors, literal values or
+% variable subexpressions (like |t|, |x| and |y| in the definition of |render|).
+% %
+% They can also be nested in order to match very specific patterns of values.
+
+
+\subsection{Type-driven generation of random values}
+
+In order to generate random ADTs values, most approaches require users to provide
+a random data generator for each ADT definition.
+%
+This is a cumbersome and error prone task that usually \emph{follows closely the
+  structure of the ADTs}.
+%
+For instance, consider the following definition of a \quickcheck random
+generator for the type |Html|:
+%
+\begin{code}
+genHtml = sized (\size ->
+  if size == 0
+  then frequency
+  [  (2,  Text    <$> genString)
+  ,  (1,  Single  <$> genString) ]
+  else frequency
+  [  (2,  Text    <$> genString)
+  ,  (1,  Single  <$> genString)
+  ,  (4,  Tag     <$> genString <*> smaller genHtml)
+  ,  (3,  Join    <$> smaller genHtml <*> smaller genHtml) ])
+\end{code} %$
+%
+We use the Haskell syntax |[]| and |(,)| for denoting lists and pairs of
+elements, respectively (e.g., |[(1,2),(3,4)]| is a list of pairs of numbers.)
+%
+The random generator |genHtml| is defined using \quickcheck's function |sized|
+to parameterize the generation process up to an external natural number known as
+the \emph{generation size}---captured in the code with variable |size|.
+%
+This parameter is chosen by the user, and it is used to limit the maximum amount
+of recursive calls that this random generator can perform and thus ensuring
+the termination of the generation process.
+%
+When called with a positive generation size, this generator can pick to generate
+among any |Html| data constructor with an explicitly \emph{generation frequency}
+that can be chosen by the user---in this example, 2, 1, 4 and 3 for |Text|,
+|Single|, |Tag|, and |Join|, respectively.
+%
+When it picks to generate a |Text| or a |Single| data constructor, it also
+generates a random |String| value using the standard \quickcheck generator
+|genString|.% (\quickcheck provides standard random generators for most base types
+% like |String|, |Int|, |Bool|, etc.)
+\footnote{%
+  The operators |<$>| and |<*>| are used in Haskell to combine values obtained
+  from calling random generators and they are not particularly relevant for the
+  point being made in this work.}
+%$
+On the other hand, when it picks to generate a |Join| constructor, it also
+generates two independent random sub-expressions recursively, decreasing the
+generation size by a unit on each recursive invocation (|smaller genHtml|).
+%
+The case of random generation of |Tag| constructors follows analogously.
+%
+This random process keeps calling itself recursively until the generation size
+reaches zero, where the generator is constrained to pick among terminal data
+constructors, being |Text| and |Single| the only possible choices in our
+particular case.
+
+% Strictly decreasing the the generation size by one on each recursive call
+% results in a useful property over the generated data: every generated value has
+% at most |n| levels, where |n| is the generation size set by the user.
+%
+% This property enables us to model the generation process using the theory of
+% branching processes introduced by \tocite, and extended in this work as
+% described in Section \ref{sec:synthesis}.
+
+
+The previous definition is rather mechanical, except perhaps for the chosen
+generation frequencies.
+%
+% In this light, it easy to extend this procedure to any data type defined in an
+% algebraic fashion.
+% %
+% Fortunately, there exists different meta-programming tools to avoid the user
+% from having to mechanically write random generators over and over again for each
+% user-defined ADT.
+% %
+% The simplest tool for such purpose is \megadeth \tocite.
+% %
+% Given a target data type, it synthesizes a random generator for it that behaves
+% similarly to the one presented above, where the generation frequencies are
+% defined to be uniform across constructors.
+% %
+% However, picking among different data constructors with uniform frequency can
+% lead to a generation process biased towards generating (in average) very small
+% values, regardless of the generation sized set by the user \tocite.
+%
+\dragen \cite{DBLP:conf/haskell/MistaRH18} is a tool conceived to mitigate the
+problem of finding the appropriated generation frequencies.
+%
+It uses the theory of branching processes \cite{gw1875} to model and predict
+analytically the expected number of generated data constructors.
+%
+This prediction mechanism is used to feedback a simulation-based optimization
+process that adjusts the generation frequency of each data constructor in order
+to obtain a particular distribution of values that can be specified by the
+user---thus providing a flexible testing environment while still being mostly
+automated.
+
+As many other tools for automatic derivation of generators
+(e.g.,\cite{GriecoCB16,RuncimanNL08,mitchell2007,DuregardJW12}), {\dragen}
+synthesizes random generators similar to the one shown before, where the
+generation process is limited to pick \emph{a single data constructor at the
+  time and then recursively generate each required sub-expression
+  independently}.
+%
+% type. the limitations arise quickly when we consider that the underlying
+% generation model is essentially the same:
+%
+% Althogh both \megadeth and \dragen synthesize random generators that are
+% theoretically capable to generate the whole space of values of the target data
+% type. the limitations arise quickly when we consider that the underlying
+% generation model is essentially the same: they pick a single data constructor
+% and recusively generate each required subexpression independently.
+%
+In practice, this procedure is often too generic to generate random data with
+enough structural complexity required for testing certain applications.
+% to be used for testing purposes.
+
+
+% Local Variables:
+% TeX-master: "main.lhs.tex"
+% TeX-command-default: "Make"
+% End:

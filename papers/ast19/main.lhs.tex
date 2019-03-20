@@ -1,0 +1,163 @@
+\documentclass[conference, fleqn]{IEEEtran}
+
+%include polycode.fmt
+%include notation.fmt
+
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+
+\usepackage[para]{footmisc}
+\usepackage{algorithmic}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{cancel}
+\usepackage{caption}
+\usepackage{cite}
+\usepackage{color}
+\usepackage{gensymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{mathdots}
+\usepackage{microtype}
+\usepackage{multirow}
+\usepackage{pgfplots}
+\usepackage{relsize}
+\usepackage{siunitx}
+\usepackage{tabularx}
+\usepackage{textcomp}
+\usepackage{tikz}
+\usepackage{todonotes}
+\usepackage{wrapfig}
+\usepackage{xcolor}
+\usepackage{xspace}
+\usepackage{yhmath}
+
+\usetikzlibrary{bending,patterns,matrix,fadings,positioning,shapes}
+\pgfplotsset{compat=1.12}
+
+
+\definecolor{darkred}{HTML}{600018}
+\definecolor{darkblue}{HTML}{1D2F73}
+\definecolor{darkgreen}{HTML}{417505}
+\definecolor{lightblue}{HTML}{76E9BB}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Macros
+\newcommand{\tocite}{\textbf{CITE}}
+\newcommand{\quickcheck}{\emph{QuickCheck}\xspace}
+\newcommand{\megadeth}{\emph{MegaDeTH}\xspace}
+\newcommand{\dragen}{\dragenlogo\xspace}
+\newcommand{\dragenp}{\dragenplogo\xspace}
+
+%% To see the notes
+% \paperwidth=\dimexpr \paperwidth + 6cm\relax
+% \oddsidemargin=\dimexpr\oddsidemargin + 3cm\relax
+% \evensidemargin=\dimexpr\evensidemargin + 3cm\relax
+% \marginparwidth=\dimexpr \marginparwidth + 3cm\relax
+\newcommand{\todoale}[1]{\todo[color=blue!40]{#1}}
+%%%%
+
+\newlength\htG\newlength\dpg
+\protected\def\dragenlogo{\settoheight{\htG}{G}\settodepth{\dpg}{g}%
+  \raisebox{-0.0\dpg}{\includegraphics[height=0.6\htG+\dpg]{dragenlogo}}}
+\protected\def\dragenplogo{\settoheight{\htG}{G}\settodepth{\dpg}{g}%
+  \raisebox{-0.0\dpg}{\includegraphics[height=0.6\htG+\dpg]{dragen2logo}}}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Some parameters
+\setlength{\mathindent}{\parindent}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Title
+\title{Generating Random Structurally Rich \\ Algebraic Data Type Values}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Authors
+\author{
+  \IEEEauthorblockN{
+    % 1\textsuperscript{st}
+    Agust\'in Mista
+  }
+  \IEEEauthorblockA{
+    % \textit{Department of Computer Science and Engineering} \\
+    \textit{Chalmers University of Technology}\\
+    Gothenburg, Sweden \\
+    mista@@chalmers.se
+  }
+\and
+\IEEEauthorblockN{
+  % 2\textsuperscript{nd}
+  Alejandro Russo
+  }
+  \IEEEauthorblockA{
+    % \textit{Department of Computer Science and Engineering} \\
+    \textit{Chalmers University of Technology}\\
+    Gothenburg, Sweden \\
+    russo@@chalmers.se
+  }
+}
+
+\maketitle
+
+
+\newenvironment{CompactItemize}%
+  {\begin{list}{$\, \  \blacktriangleright$}%
+   {\leftmargin=0pt \itemsep=2pt \topsep=5pt
+     \parsep=0pt \partopsep=0pt}}%
+  {\end{list}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Abstract
+
+%include abstract.tex
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Keywords
+\begin{IEEEkeywords}
+random testing, algebraic data types, Haskell
+\end{IEEEkeywords}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Sections
+
+%include introduction.tex
+%\newpage
+
+%include randomtesting.tex
+
+%include hrep.tex
+
+%include hrep2.tex
+
+%include synthesis.tex
+
+%include casestudies.tex
+
+%include relatedwork.tex
+
+%include finalremarks.tex
+
+\emph{Acknoledgements} This work was funded by the Swedish Foundation for
+Strategic Research (SSF) under the project Octopi (Ref. RIT17-0023) and WebSec
+(Ref. RIT17-0011) as well as the Swedish research agency Vetenskapsr\r{a}det.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Bibliography
+
+\bibliographystyle{IEEEtran}
+\bibliography{references.bib}
+
+\end{document}
+
+% Local Variables:
+% TeX-master: "main.lhs.tex"
+% TeX-command-default: "Make"
+% End:

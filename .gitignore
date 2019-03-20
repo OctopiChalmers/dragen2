@@ -28,6 +28,5 @@ papers/**/*.log
 papers/**/*.out
 papers/**/*.pdf
 papers/**/*.ptb
-papers/**/*.tex
+papers/**/main.tex
 papers/**/auto
-

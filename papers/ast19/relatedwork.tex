@@ -1,0 +1,78 @@
+\section{Related Work}
+
+%The literature on random generation of structured data is vast, both in
+%practical and in theoretical terms.
+
+%
+% Boltzmann models
+%
+Boltzmann models \cite{Duchon2004} are a general approach to randomly generating
+combinatorial structures such as trees and graphs, closed simply-typed lambda
+terms, etc.
+%
+A random generator built around such models uniformly generates values of a
+target size with a certain size tolerance.
+%
+However, it has been argued that this approach has theoretical and practical
+limitations in the context of software testing \cite{feldt2013}.
+%
+In a recent work, Bendkowski et al. provides a framework called
+\emph{boltzmann-brain} to specify and synthesize standalone Haskell random
+generators based on Boltzmann models \cite{bendkowski2018}.
+%
+This framework mixes parameter tuning and rejection of samples of unwanted sizes
+to approximate the desired distribution of values according to user demands.
+%
+The overall discard ratio then depends on how constrained the desired sizes of
+values are.
+%
+On the other hand, our work is focused on approximating the desired distribution
+as much as possible via parameter optimization, without discarding any generated
+value at runtime.
+%
+Although promising, we found difficulties to compare both approaches in practice
+due that \emph{boltzmann-brain} is considered a conceptual standalone utility
+that produces self-contained samplers.
+%
+In this light, data specifications have to be manually written using a special
+syntax, and cannot include Haskell ground types like |String| or |Int|,
+difficulting the integration of this tool to existing Haskell codebases like the
+ones we consider in this work.
+
+
+
+%
+% GodelTest
+%
+From the practical point of view, Feldt and Poulding propose \emph{G\"odelTest}
+\cite{feldt2013}, a search-based framework for generating biased data.
+%
+% \emph{G\"odelTest} uses non-determinism to generate a wide range of data structures.
+%
+Similar to our approach, \emph{G\"odelTest} works by optimizing the parameters
+governing the desired biases on the generated data.
+%
+However, the optimization mechanism uses meta-heuristic search to find the best
+parameters at runtime.
+%
+\dragenp on the other hand implements an analytic and composable prediction
+mechanism that is only used at compile time to optimize the generation
+parameters, thus avoiding performing any kind of runtime reinforcement.
+
+
+%
+% DART
+%
+Directed Automated Random Testing (DART) is a technique that combines random
+testing with symbolic execution for C programs \cite{godefroid2005dart}.
+%
+It requires instrumenting the target programs in order to introduce testing
+assertions and obtain feedback from previous testing executions, which is used
+to explore new paths in the source code.
+%
+This technique has been shown to be remarkably useful, although it forces a
+strong coupling between the testing suite and the target code.
+%
+Our tool intends to provide better random generation of values following an
+undirected fashion, without having to instrument the target code, but still
+extracting useful structural information from it.

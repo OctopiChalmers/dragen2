@@ -1,0 +1,413 @@
+\section{Predicting Distributions} \label{sec:synthesis}
+
+Characterizing the distribution of values of an arbitrary random generator is a
+hard task.
+%
+It requires modeling every random choice that a generator could possibly make to
+generate a value.
+%
+In a recent work \cite{DBLP:conf/haskell/MistaRH18}, we have shown that it is
+possible to \emph{analytically} predict the average distribution of data
+constructors produced by random generators automatically derived considering
+only ADT definitions---like the one presented on Section
+\ref{sec:randomtesting}.
+%
+For this purpose, we found that random generation of ADT values can be
+characterized using the theory of \emph{branching processes} \cite{gw1875}.
+%
+This probabilistic theory was originally conceived to predict the growth and
+extinction of royal family trees the Victorian Era, later being applied to a
+wide variety of research areas.
+%
+In this work, we adapt this model to predict the average distribution of values
+of random generators derived considering structural information coming from
+functions' pattern matchings and abstract interfaces.
+
+Essentially, a branching process is a special kind of Markov process that models
+the evolution of a population of \emph{individuals of different kinds} across
+discrete time steps known as \emph{generations}.
+%
+Each kind of individual is expected to produce an average number of offspring of
+(possibly) different kinds from one generation to the next one.
+%
+Mista el at. \cite{DBLP:conf/haskell/MistaRH18} show that branching processes
+can be adapted to predict the generation of ADT values by simply considering
+each data constructor as a kind of its own.
+%
+In fact, any ADT value can be seen as a tree where each node represents a root
+data constructor and has its sub-expressions as sub-trees---hence note the
+similarity with family trees.
+%
+In this light, each tree level of a random value can be seen as a generation of
+individuals in this model.
+
+
+We characterize the numbers of constructors that a random generator produces in
+the $n$-th generation as a vector $G_n$, a vector that groups the number of
+constructors of each kind produced in that generation---in our |Html| example,
+this vector has four components, i.e., one for each constructor.
+%
+%We note $G_n$ to the vector of real numbers that represents the distribution of
+%
+From branching processes theory, the following equation captures the expected
+distribution of constructors at the generation $n$, noted $E[G_n]$, as follows:
+%
+\begin{align}
+  E[G_n]^T = E[G_0]^T \cdot M^n
+  \label{eqn:prediction}
+\end{align}
+%
+Vector $E[G_0]$ represents the initial distribution of constructors that our
+generator produces, which simply consists of the generation probability of each
+one.
+%
+The interesting aspect of the prediction mechanism is encoded in the matrix $M$,
+known as a the \emph{mean matrix} of this stochastic process.
+%
+$M$ is a squared matrix with as rows and columns as different data constructors
+involved in the generation process.
+%
+Each element $M_{i,j}$ of this matrix encodes the average number of data
+constructors of kind $j$ that gets generated in a given generation, provided that we
+generated a constructor of kind $i$ at the previous one.
+%
+In this sense, this matrix encodes the ``branching'' behavior of our random
+generation from one generation to the next one.
+%
+Each element of the matrix can be automatically calculated by exploiting ADT
+definitions, % \cite{DBLP:conf/haskell/MistaRH18}
+%
+% ---specially the recursive fields---
+%
+as well as the individual probability of generating each constructor.
+%
+For instance, the average number of |Text| data constructors that we will
+generate provided that we generated a |Join| constructor on the previous
+level results:
+%
+\begin{align*}
+  M_{\mathrm{Join, Text}} = 2\cdot p_{\mathrm{Text}}
+\end{align*}
+%
+where $2$ is the number of holes present when generating a partial ADT value
+|Join| (i.e., |Join hole hole|) and $p_{\mathrm{Text}}$ is the probability of
+individually generating the constructor |Text|.
+%
+This reasoning can be used to build the rest of the mean matrix analogously.
+
+%\todo[inline]{Complete this!}
+
+% \begin{align*}
+%   E \left[ P_n \right]
+%   = \beta_{Html}^T \cdot \left( \frac{I - (M_{Html})^{n+1}}{I - M_{Html}}\right)
+% \end{align*}
+
+\subsection{Extending predictions for structural information}
+
+In this work, we show how to naturally fit structural information beyond ADT
+definitions into the prediction mechanism of branching processes.
+%
+Our realization is that it suffices to consider \emph{each different pattern
+  matching and function call as a kind of individual on its own}.
+%
+In that manner, we can extend our mean matrix $M$ adding a row and a column for
+each different pattern matching and function call as shown in Figure
+\ref{fig:meanmatrix}.
+%
+\begin{wrapfigure}{r}{0.26\textwidth}
+  \vspace{-8pt}
+  \newcommand{\ph}{\phantom{\square}}
+  \newcommand{\el}{\square}
+  \centering
+  \resizebox{4.5cm}{!}{
+    \begin{tikzpicture}
+      [ baseline=-0.5ex
+      % , transform canvas={scale=0.9}
+      , every left delimiter/.style={xshift=.5em}
+      , every right delimiter/.style={xshift=-.5em}
+      ]
+      \matrix
+      [ matrix of math nodes
+      , column sep=-1pt
+      , row sep=-1pt
+      , ampersand replacement=\&
+      , left delimiter={[}
+      , right delimiter={]}
+      ] (m)
+      {
+        \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % Text
+        \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % Sing
+        \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % Tag
+        \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % Join
+        \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % simplify#1
+        \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \el \& \ph \& \ph \\ % simplify#1
+        \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % simplify#1
+        \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % simplify#1
+        \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \& \ph \\ % simplify#1
+      };
+      % Color squares
+      \fill[red, opacity=0.15]
+      (m-1-1.north west)
+      -|| (m-1-3.north east)
+      -|| (m-3-3.south east)
+      -|| ([xshift=1pt]m-3-1.south west)
+      -|| cycle;
+      \fill[blue, opacity=0.15]
+      ([yshift=-1pt]m-4-1.north west)
+      -|| (m-1-3.north east)
+      -|| ([yshift=-1pt]m-1-9.south east)
+      -|| (m-9-9.south east)
+      -|| ([xshift=-1pt, yshift=0pt]m-9-1.south east)
+      -|| cycle;
+      % Upper labels
+      \node[above,text depth=1pt] at (m-1-1.north) {$ C_1$};
+      \node[above,text depth=1pt] at (m-1-2.north) {$ \cdots$};
+      \node[above,text depth=1pt] at (m-1-3.north) {$ C_i$};
+      \node[above,text depth=1pt] at (m-1-4.north) {$ P_1$};
+      \node[above,text depth=1pt] at (m-1-5.north) {$ \cdots$};
+      \node[above,text depth=1pt] at (m-1-6.north) {$ P_j$};
+      \node[above,text depth=1pt] at (m-1-7.north) {$ F_1$};
+      \node[above,text depth=1pt] at (m-1-8.north) {$ \cdots$};
+      \node[above,text depth=1pt] at (m-1-9.north) {$ F_k$};
+      % Left labels
+      \node[left,overlay] at (m-1-1.west) {$ C_1$};
+      \node[left,overlay] at ([xshift=-4pt, yshift=2pt]m-2-1.west) {$ \vdots$};
+      \node[left,overlay] at (m-3-1.west) {$ C_i$};
+      \node[left,overlay] at (m-4-1.west) {$ P_1$};
+      \node[left,overlay] at ([xshift=-4pt, yshift=2pt]m-5-1.west) {$ \vdots$};
+      \node[left,overlay] at (m-6-1.west) {$ P_j$};
+      \node[left,overlay] at (m-7-1.west) {$ F_1$};
+      \node[left,overlay] at ([xshift=-4pt, yshift=2pt]m-8-1.west) {$ \vdots$};
+      \node[left,overlay] at (m-9-1.west) {$ F_k$};
+      % Dashed lines
+      \draw[densely dashed, semithick] ([xshift=-2pt]m-3-1.south west) -- ([xshift=2pt]m-3-9.south east);
+      \draw[densely dashed, semithick] ([xshift=-2pt]m-6-1.south west) -- ([xshift=2pt]m-6-9.south east);
+      \draw[densely dashed, semithick] ([yshift=2pt]m-1-3.north east) -- ([yshift=-2pt]m-9-3.south east);
+      \draw[densely dashed, semithick] ([yshift=2pt]m-1-6.north east) -- ([yshift=-2pt]m-9-6.south east);
+      % \draw[dotted, semithick] (m-3-1.west) -- ([xshift=3pt]m-3-3.west);
+      % \draw[dotted, semithick] (m-1-3.north) -- ([yshift=-3pt]m-3-3.north);
+      \draw[dotted, thick] (m-6-1.west) -- ([xshift=4pt]m-6-7.west);
+      \draw[dotted, thick] (m-1-7.north) -- ([yshift=-3pt]m-6-7.north);
+    \end{tikzpicture}
+}
+  \caption{Mean matrix $M$ including pattern matching and function calls
+    information.}
+  \label{fig:meanmatrix}
+  \vspace{-6pt}
+\end{wrapfigure}
+%
+Symbol $C_1\! \cdots C_i$ denotes constructors, $P_1\! \cdots P_j$ pattern
+matchings, and $F_1\! \cdots F_k$ function calls.
+%
+The light-red colored matrix is what we had before, whereas the light-blue
+colored cells are new---we encourage readers to obtain a colored copy of this
+work.
+%
+% To extend $M$ to consider the new possible constructions, we need to calculate
+% $M_{i,j}$ for every new combination of ``father'' and ``son'' constructions $i$
+% and $j$, respectively.
+% %
+
+The new cells are filled as before: we need to consider the amount of holes when
+generating partial pattern matching values and function calls as well as their
+individual probabilities.
+%
+% Fortunately, it is possible to follow the same pattern as we did on our original
+% work, this time considering the amount of recursive pattern variables if it the
+% case of a pattern matching value being a father individual, and the amount of
+% recursive arguments if we deal with a abstract interface function call as a
+% father individual.
+%
+For instance, if we consider $P_j$ as the second pattern of function |simplify|
+and $F_1$ as function |div|, then the marked cell above has the value
+$2\cdot p_{div}$, i.e., the amount of holes in the partially generated pattern
+|(Join (Join (Text s) hole) hole)|, where |s| is some random string, times the
+probability to generate a call to function |div|.
+%
+The rest of this matrix can be computed analogously.
+
+% the average amount of function calls to |div| that we will produce
+% provided that we generated a value matching the second pattern of |simplify| as a
+% father results $2\cdot p_{div}$.
+%
+% Similarly, the average amount of values satisfying the first pattern matching of
+% |simplify| provided that we generated a |Tag| constructor as a father results
+% $1 \cdot p_{simplify\# 1}$.
+
+As another contribution, we found that the whole prediction process can be
+factored in terms of two vectors $\beta$ and $\mathcal{P}$, such that $\beta$
+represents the number of holes in each partial ADT value that we generate,
+whereas $\mathcal{P}$ simply represents the probability of generating that
+partial ADT value.
+% (this probability can be easily calculated based on the
+% generation frequencies used in the random generator).
+%
+Then, the equation (\ref{eqn:prediction}) can be rewritten as:
+%
+\begin{align*}
+  E[G_n]^T = \beta^T \cdot (\beta \cdot \mathcal{P}^T)^{n}
+\end{align*}
+%
+% The vector $\beta$ can be obtained by analyzing the shape (namely holes) of each
+% source of structural information that we consider, and joining them together.
+%
+For instance, $\beta$ and $\mathcal{P}$ for our generation specification of HTML
+values are as shown in Figure \ref{fig:vectors}.
+%
+We note |simplify1| and |simplify2| to the patterns occurring in the first and
+second clauses of |simplify|, respectively.
+%(Dashed lines indicate the composition of the diffent sub-vectors
+%that are calculated separately).
+
+\begin{figure}[t]
+  \resizebox{!}{2cm}{
+\begin{equation*}
+  \hspace{20pt}
+  \beta = \qquad \qquad \
+  \begin{tikzpicture}
+    [ baseline=-0.65ex
+    , every left delimiter/.style={xshift=.5em}
+    , every right delimiter/.style={xshift=-.5em}
+    ]
+    \matrix
+    [ matrix of math nodes
+    , column sep=0ex
+    , row sep=-1pt
+    , ampersand replacement=\&
+    , left delimiter={[}
+    , right delimiter={]}
+    ] (v)
+    {
+      0 \\ % Text
+      0 \\ % Sing
+      1 \\ % Tag
+      2 \\ % Join
+      0 \\ % simplify#1
+      2 \\ % simplify#1
+      0 \\ % hr
+      1 \\ % div
+      1 \\ % bold
+    };
+    \draw[densely dashed] ([xshift=-3pt]v-4-1.south west) -- ([xshift=3pt]v-4-1.south east);
+    \draw[densely dashed] ([xshift=-3pt]v-6-1.south west) -- ([xshift=3pt]v-6-1.south east);
+    \node[left,overlay] at ([xshift=-2pt]v-1-1.west) {$\scriptstyle \mathrm{Text}$};
+    \node[left,overlay] at ([xshift=-2pt]v-2-1.west) {$\scriptstyle \mathrm{Single}$};
+    \node[left,overlay] at ([xshift=-2pt]v-3-1.west) {$\scriptstyle \mathrm{Tag}$};
+    \node[left,overlay] at ([xshift=-2pt]v-4-1.west) {$\scriptstyle \mathrm{Join}$};
+    \node[left,overlay] at ([xshift=-2pt]v-5-1.west) {$\scriptstyle \mathrm{simplify}\#1$};
+    \node[left,overlay] at ([xshift=-2pt]v-6-1.west) {$\scriptstyle \mathrm{simplify}\#2$};
+    \node[left,overlay] at ([xshift=-2pt]v-7-1.west) {$\scriptstyle \mathrm{hr}$};
+    \node[left,overlay] at ([xshift=-2pt]v-8-1.west) {$\scriptstyle \mathrm{div}$};
+    \node[left,overlay] at ([xshift=-2pt]v-9-1.west) {$\scriptstyle \mathrm{bold}$};
+  \end{tikzpicture}
+  \hspace{30pt}
+  \mathcal{P} =
+  \begin{tikzpicture}
+    [ baseline=-0.65ex
+    , every left delimiter/.style={xshift=.5em}
+    , every right delimiter/.style={xshift=-.5em}
+    ]
+    \matrix
+    [ matrix of math nodes
+    , column sep=0ex
+    , row sep=-1pt
+    , ampersand replacement=\&
+    , left delimiter={[}
+    , right delimiter={]}
+    ] (v)
+    {
+      p_{\mathrm{Text}} \\
+      p_{\mathrm{Single}} \\
+      p_{\mathrm{Tag}}  \\
+      p_{\mathrm{Join}} \\
+      p_{\mathrm{simplify\#1}} \\
+      p_{\mathrm{simplify\#2}} \\
+      p_{\mathrm{hr}} \\
+      p_{\mathrm{div}} \\
+      p_{\mathrm{bold}} \\
+    };
+    \draw[densely dashed] ([xshift=-15pt]v-4-1.south west) -- ([xshift=15pt]v-4-1.south east);
+    \draw[densely dashed] ([xshift=-3pt]v-6-1.south west) -- ([xshift=3pt]v-6-1.south east);
+  \end{tikzpicture}
+\end{equation*}
+}
+\vspace{-5pt}
+\caption{Prediction vectors of our |Html| generation specification.}
+\label{fig:vectors}
+\vspace{-10pt}
+\end{figure}
+
+Note that by varying the shape of the vector $\mathcal{P}$ we can tune the
+distribution of our random generator in a way that can be always characterized
+and predicted.
+%
+\dragenp follows a similar approach as \dragen and uses an heuristic to tune the
+generation probabilities of each source of structural information.
+%
+This is done by running a simulation-based optimization process at compile-time.
+%
+This process is parameterized by the desired distribution of values set by the
+user.
+%
+In this manner, developers can specify, for instance, a uniform distribution of
+data constructors, pattern matching values and function calls or, alternatively,
+a distribution of values with some constructions appearing in a different
+proportion as others, e.g., two times more functions calls to |div| than |Join|
+constructors.
+
+\subsection{Overall prediction}
+%\paragraph{End-to-End Prediction}
+%
+% So far we have shown that our prection model is able to predict the distribution
+% of data constructors, composite pattern values and interface function calls that
+% our automatically derived random generators will produce on average.
+
+It is possible to provide an overall prediction of the expected number of
+constructors when restricting the generation process to only bare data
+constructors and pattern matching values.
+%
+To achieve that, we should stop considering pattern matching values as atomic
+constructions and start seeing them as compositions of several data
+constructors.
+%
+In that manner, it is possible to obtain the expected \emph{total} number of
+generated data constructors that our generators will produce---regardless if they
+are generated on their own, or as part of a pattern matching value.
+%
+We note this number as $E^\downarrow\![\_]$ and, to calculate it, we only need
+to add the expected number of bare constructors that are included within each
+pattern matching.
+%
+For instance, we can calculate the total expected number of constructors |Text|
+and |Join| that we will generate by simply expanding the expected number of
+generated pattern matching values |simplify1| and |simplify2| into their
+corresponding data constructors:
+%
+{\small
+  \begin{alignat*}{4}
+    &E^\downarrow\!\left[ |Text| \right]
+    &= E\left[ |Text| \right]
+      &+ 2 \cdot E\!\left[ |simplify1| \right]\
+      &+\ 1 \cdot E\!\left[ |simplify2| \right] \\
+    &E^\downarrow\!\left[ |Join| \right]
+    &= E\left[ |Join| \right]
+      &+ 1 \cdot E\!\left[ |simplify1| \right]\
+      &+\ 2 \cdot E\!\left[ |simplify2| \right]
+  \end{alignat*}
+}
+%
+Observe that each time we generate a value satisfying the first pattern matching
+of the function |simplify|, we add two |Text| and one |Join| data constructors
+to our random value.
+%
+The case of the second pattern matching of |simplify| follows analogously.
+%
+Note that the overall prediction cannot be applied if we also generate random
+values containing function calls, as we cannot predict the output of an
+arbitrary function.
+
+
+% Local Variables:
+% TeX-master: "main.lhs.tex"
+% TeX-command-default: "Make"
+% End:

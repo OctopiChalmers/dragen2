@@ -1,0 +1,153 @@
+\section{Unified Representation of Constructions}
+\label{sec:representation}
+
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
+tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
+eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
+parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
+Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
+Nam vestibulum accumsan nisl.
+
+\begin{code}
+data ((f :: * -> *) oplus (g :: * -> *)) a = InL (f a) | InR (g a)
+\end{code}
+\begin{code}
+data ((f :: * -> *) otimes (n :: Nat)) a = Freq (f a)
+\end{code}
+\begin{code}
+data Term (f :: * -> *) a = Term (f a)
+\end{code}
+
+\begin{code}
+  data Fix (f :: * -> *) = Fix { unFix :: (f (Fix f)) }
+\end{code}
+
+\begin{code}
+class Functor f => Algebra f a | f -> a where
+  alg :: f a -> a
+\end{code}
+
+% cata :: Functor f => (f a -> a) -> Fix f -> a
+% cata f = f . fmap (cata f) . unFix
+
+\begin{code}
+eval :: Algebra f a => Fix f -> a
+eval = alg . fmap eval . unFix
+\end{code}
+
+
+\begin{code}
+instance (Algebra f a, Algebra g a) => Algebra (f oplus g) a
+  where  alg (InL f) = alg f
+         alg (InR g) = alg g
+
+instance Algebra f a => Algebra (f otimes n) a
+  where alg (Freq f) = alg f
+
+instance Algebra f a => Algebra (Term f) a
+  where alg (Term f) = alg f
+\end{code}
+
+
+\begin{code}
+instance BoundedArb1 f => BoundedArb1 (f otimes n) where
+  liftBounded gen lvl = Freq <$> liftBounded gen lvl
+
+instance BoundedArb1 f => BoundedArb1 (Term f) where
+  liftBounded gen lvl = Term <$> liftBounded gen lvl
+\end{code}
+
+
+\begin{code}
+type family FreqOf (f :: * -> *) :: Nat where
+  FreqOf (f oplus g)   = FreqOf f + FreqOf g
+  FreqOf (f otimes n)  = n * FreqOf f
+  FreqOf (Term f)      = FreqOf f
+  FreqOf _             = 1
+\end{code}
+
+\begin{code}
+type family FreqOf' (f :: * -> *) :: Nat where
+  FreqOf' (f oplus g)   = FreqOf' f  +  FreqOf' g
+  FreqOf' (f otimes n)  = n  *  FreqOf' f
+  FreqOf' (Term f)      = FreqOf f
+  FreqOf' _             = 0
+\end{code}
+
+
+\begin{code}
+instance (BoundedArb1 f, BoundedArb1 g)
+  => BoundedArb1 (f oplus g) where
+  liftBounded gen lvl =
+    if lvl > 0
+    then frequency
+    [ (natVal  at(FreqOf f) ,  InL <$> liftBounded gen lvl)
+    , (natVal  at(FreqOf g) ,  InR <$> liftBounded gen lvl) ]
+    else frequency
+    [ (natVal  at(FreqOf' f) ,  InL <$> liftBounded gen lvl)
+    , (natVal  at(FreqOf' g) ,  InR <$> liftBounded gen lvl) ]
+\end{code}
+
+% Depth bounded generators
+\begin{code}
+type BoundedGen a = Int -> Gen a
+
+class BoundedArb (a :: *) where
+  boundedArb :: BoundedGen a
+\end{code}
+
+\begin{code}
+class BoundedArb1 (f :: * -> *) where
+  liftBounded :: BoundedGen a -> BoundedGen (f a)
+\end{code}
+
+\begin{code}
+instance BoundedArb1 f => BoundedArb (Fix f) where
+  boundedArb lvl = Fix <$> liftBounded boundedArb lvl
+\end{code} %$
+
+\begin{code}
+genFix  ::  forall f dot BoundedArb1 f =>  BoundedGen (Fix f)
+genFix lvl = boundedArb at(Fix f) lvl
+\end{code}
+
+\begin{code}
+genEval :: forall f a dot (BoundedArb1 f, Algebra f a) =>  BoundedGen a
+genEval lvl = eval <$> genFix at f lvl
+\end{code} %$
+
+
+\begin{code}
+data Some (f :: * -> * -> *) (r :: *) = forall (a :: *) dot Some (f a r)
+\end{code}
+
+\begin{code}
+type family (t :: * -> *) apply (a :: *) :: * -> *  where
+  (Some t)      apply  a  = t a
+  (f oplus g)   apply  a  = (f apply a) oplus (g apply a)
+  (f otimes n)  apply  a  = (f apply a) otimes n
+  (Term t)      apply  a  = Term (t apply a)
+  t             apply  a  = t
+\end{code}
+
+\begin{code}
+type family Rep (t :: Symbol) :: * -> *
+
+type family Con (c :: Symbol) :: * -> *
+type family Fun (f :: Symbol) :: * -> *
+type family Pat (p :: Symbol) (n :: Nat) :: * -> *
+
+type Con' a    = Term  (Con a)
+type Fun' a    = Term  (Fun a)
+type Pat' a n  = Term  (Pat a n)
+\end{code}
+
+\begin{code}
+type HtmlSpec
+  =      Con'  "Text"
+  oplus  Con   "Join"      otimes 2
+  oplus  Fun'  "hr"        otimes 4
+  oplus  Fun   "div"       otimes 9
+  oplus  Pat   "simpl"  1  otimes 3
+  oplus  Pat   "simpl"  2  otimes 5
+\end{code}
