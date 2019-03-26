@@ -7,13 +7,13 @@
 \definecolor{lightblue}{HTML}{76E9BB}
 
 \renewcommand{\Varid}[1]{{\color{darkblue} \texttt{#1}}}
-\renewcommand{\Conid}[1]{{\color{darkred} \texttt{#1}}}
+\renewcommand{\Conid}[1]{{\color{darkred}  \texttt{#1}}}
 
-\newcommand{\variable}[1]{{\color{darkblue} \texttt{#1}}}
-\newcommand{\constructor}[1]{{\color{darkred} \texttt{#1}}}
-\newcommand{\constructorp}[1]{{\color{darkred} \texttt{#1}^\star}}
+\newcommand{\variable}[1]{{\color{darkblue}    \mathtt{ #1 } }}
+\newcommand{\constructor}[1]{{\color{darkred}  \texttt{ #1 } }}
+\newcommand{\constructorp}[1]{{\color{darkred} \texttt{#1}^\star }}
 
-%subst varsym  a	= "{\color{darkblue} \texttt{"  a "}}"
+%subst varsym  a	= "{\color{darkblue}  \texttt{" a "}}"
 %subst numeral a 	= "{\color{darkgreen} \texttt{" a "}}"
 %subst string  a 	= "{\color{darkgreen} \texttt{\char34" a "\char34}}"
 
@@ -22,13 +22,16 @@
 %% Rep
 
 %format family = "\mathbf{family}"
-%format at = "\,\texttt{@}\!"
+%format at = "\,\texttt{@}\!\!"
 %format apply = "\lhd\!"
 %format dot = "."
-%format forall = "\forall"
+%format forall = "\forall\!"
 %format + = "+"
 %format * = "*"
 %format > = ">"
+
+%format :+: = ":\!+\!:"
+%format :=> = ":>"
 
 %format FreqOf' = "\constructorp{FreqOf}"
 %format Con' = "\constructorp{Con}"

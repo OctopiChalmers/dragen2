@@ -9,11 +9,44 @@ Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
 Nam vestibulum accumsan nisl.
 
 \begin{code}
+class Arbitrary (a :: *) where
+  arbitrary :: Gen a
+\end{code}
+
+\begin{code}
+class Arbitrary1 (f :: * -> *) where
+  liftGen :: Gen a -> Gen (f a)
+\end{code}
+
+\begin{code}
+instance Arbitrary Html where
+  arbitrary = sized gen
+    where
+      gen 0 = frequency
+        [  (2,  Text    <$> arbitrary)
+        ,  (1,  Single  <$> arbitrary) ]
+      gen n = frequency
+        [  (2,  Text    <$> arbitrary)
+        ,  (1,  Single  <$> arbitrary)
+        ,  (4,  Tag     <$> arbitrary  <*> gen (n-1))
+        ,  (3,  Join    <$> gen (n-1)  <*> gen (n-1)) ]
+\end{code} %$
+
+\begin{code}
+type BoundedGen a = Int -> Gen a
+
+class BoundedArb (a :: *) where
+  boundedArb :: BoundedGen a
+\end{code}
+
+\begin{code}
 data ((f :: * -> *) oplus (g :: * -> *)) a = InL (f a) | InR (g a)
 \end{code}
+
 \begin{code}
 data ((f :: * -> *) otimes (n :: Nat)) a = Freq (f a)
 \end{code}
+
 \begin{code}
 data Term (f :: * -> *) a = Term (f a)
 \end{code}
@@ -46,6 +79,105 @@ instance Algebra f a => Algebra (f otimes n) a
 
 instance Algebra f a => Algebra (Term f) a
   where alg (Term f) = alg f
+\end{code}
+
+
+\begin{code}
+data Con_Text   r = Con_Text String
+data Con_Sing   r = Con_Sing String
+data Con_Tag    r = Con_Tag  String r
+data Con_infix  r = Con_infix r r
+\end{code}
+
+\begin{code}
+data Fun_br     r = Fun_br
+data Fun_bold   r = Fun_bold r
+data Fun_infix  r = Fun_infix r r
+data Fun_list   r = Fun_list [r]
+\end{code}
+
+\begin{code}
+data Pat_simplify_1 r = Pat_simplify_1 String String
+data Pat_simplify_2 r = Pat_simplify_2 String r r
+\end{code}
+
+\begin{code}
+instance Algebra Con_Text Html where
+  alg (Con_Text x) = Text x
+
+instance Algebra Con_Sing Html where
+  alg (Con_Sing x) = Sing x
+
+instance Algebra Con_Tag Html where
+  alg (Con_Tag t x) = Tag t x
+
+instance Algebra Con_infix Html where
+  alg (Con_infix x y) = x :+: y
+\end{code}
+
+\begin{code}
+instance Algebra Fun_br Html where
+  alg Fun_br = br
+
+instance Algebra Fun_bold Html where
+  alg (Fun_bold x) = bold x
+
+instance Algebra Fun_infix Html where
+  alg (Fun_infix x y) = x <+> y
+
+instance Algebra Fun_list Html where
+  alg (Fun_list xs) = list xs
+\end{code}
+
+\begin{code}
+instance Algebra Pat_simplify_1 Html where
+  alg (Pat_simplify_1 t1 t2) = Text t1 :+: Text t2
+
+instance Algebra Pat_simplify_2 Html where
+  alg (Pat_simplify_1 t x y) = (Text t :+: x) :+: y
+\end{code}
+
+
+\begin{code}
+instance BoundedArb1 Con_Text where
+  liftBounded gen lvl = Con_Text <$> arbitrary
+
+instance BoundedArb1 Con_Sing where
+  liftBounded gen lvl = Con_Sing <$> arbitrary
+
+instance BoundedArb1 Con_Tag where
+  liftBounded gen lvl
+    = Con_Tag <$> arbitrary <*> gen (lvl - 1)
+
+instance BoundedArb1 Con_infix where
+  liftBounded gen lvl
+    = Con_infix <$> gen (lvl - 1) <*> gen (lvl - 1)
+\end{code} %$
+
+\begin{code}
+instance BoundedArb1 Fun_br where
+  liftBounded gen lvl = pure Fun_br
+
+instance BoundedArb1 Fun_bold where
+  liftBounded gen lvl = Fun_bold <$> gen (lvl - 1)
+
+instance BoundedArb1 Fun_infix where
+  liftBounded gen lvl
+    = Fun_infix <$> gen (lvl - 1) <*> gen (lvl - 1)
+
+instance BoundedArb1 Fun_list where
+  liftBounded gen lvl
+    = Fun_list <$> liftGen (gen (lvl - 1))
+\end{code} %$
+
+\begin{code}
+instance BoundedArb1 Pat_simplify_1 where
+  liftBounded gen lvl
+    = Pat_simplify_1 <$> arbitrary <*> arbitrary
+
+instance BoundedArb1 Pat_simplify_2 where
+  liftBounded gen lvl
+    = Pat_simplify_2 <$> gen (lvl - 1) <*> gen (lvl - 1)
 \end{code}
 
 
@@ -88,13 +220,6 @@ instance (BoundedArb1 f, BoundedArb1 g)
     , (natVal  at(FreqOf' g) ,  InR <$> liftBounded gen lvl) ]
 \end{code}
 
-% Depth bounded generators
-\begin{code}
-type BoundedGen a = Int -> Gen a
-
-class BoundedArb (a :: *) where
-  boundedArb :: BoundedGen a
-\end{code}
 
 \begin{code}
 class BoundedArb1 (f :: * -> *) where
@@ -145,9 +270,9 @@ type Pat' a n  = Term  (Pat a n)
 \begin{code}
 type HtmlSpec
   =      Con'  "Text"
-  oplus  Con   "Join"      otimes 2
-  oplus  Fun'  "hr"        otimes 4
-  oplus  Fun   "div"       otimes 9
-  oplus  Pat   "simpl"  1  otimes 3
-  oplus  Pat   "simpl"  2  otimes 5
+  oplus  Con   "Join"         otimes 2
+  oplus  Fun'  "br"           otimes 4
+  oplus  Fun   "<+>"          otimes 9
+  oplus  Pat   "simplify"  1  otimes 3
+  oplus  Pat   "simplify"  2  otimes 5
 \end{code}
