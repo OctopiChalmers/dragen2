@@ -1,0 +1,115 @@
+\section{Unified Representation of Constructions}
+\label{sec:representation}
+
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
+tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
+eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
+parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
+Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
+Nam vestibulum accumsan nisl.
+
+\begin{code}
+data ((f :: * -> *) oplus (g :: * -> *)) a = InL (f a) | InR (g a)
+\end{code}
+
+\begin{code}
+  data Fix (f :: * -> *) = Fix { unFix :: (f (Fix f)) }
+\end{code}
+
+\begin{code}
+class Functor f => Algebra f a | f -> a where
+  alg :: f a -> a
+\end{code}
+
+% cata :: Functor f => (f a -> a) -> Fix f -> a
+% cata f = f . fmap (cata f) . unFix
+
+\begin{code}
+eval :: Algebra f a => Fix f -> a
+eval = alg . fmap eval . unFix
+\end{code}
+
+
+\begin{code}
+instance (Algebra f a, Algebra g a) => Algebra (f oplus g) a
+  where  alg (InL f) = alg f
+         alg (InR g) = alg g
+\end{code}
+
+
+\begin{code}
+data Con_Text   r = Con_Text String
+data Con_Sing   r = Con_Sing String
+data Con_Tag    r = Con_Tag  String r
+data Con_infix  r = Con_infix r r
+\end{code}
+
+\begin{code}
+data Fun_br     r = Fun_br
+data Fun_bold   r = Fun_bold r
+data Fun_infix  r = Fun_infix r r
+data Fun_list   r = Fun_list [r]
+\end{code}
+
+\begin{code}
+data Pat_simplify_1 r = Pat_simplify_1 String String
+data Pat_simplify_2 r = Pat_simplify_2 String r r
+\end{code}
+
+\begin{code}
+instance Algebra Con_Text Html where
+  alg (Con_Text x) = Text x
+
+instance Algebra Con_Sing Html where
+  alg (Con_Sing x) = Sing x
+
+instance Algebra Con_Tag Html where
+  alg (Con_Tag t x) = Tag t x
+
+instance Algebra Con_infix Html where
+  alg (Con_infix x y) = x :+: y
+\end{code}
+
+\begin{code}
+instance Algebra Fun_br Html where
+  alg Fun_br = br
+
+instance Algebra Fun_bold Html where
+  alg (Fun_bold x) = bold x
+
+instance Algebra Fun_infix Html where
+  alg (Fun_infix x y) = x <+> y
+
+instance Algebra Fun_list Html where
+  alg (Fun_list xs) = list xs
+\end{code}
+
+\begin{code}
+instance Algebra Pat_simplify_1 Html where
+  alg (Pat_simplify_1 t1 t2) = Text t1 :+: Text t2
+
+instance Algebra Pat_simplify_2 Html where
+  alg (Pat_simplify_1 t x y) = (Text t :+: x) :+: y
+\end{code}
+
+
+\begin{code}
+data Some (f :: * -> * -> *) (r :: *) = forall (a :: *) dot Some (f a r)
+\end{code}
+
+\begin{code}
+type family (t :: * -> *) apply (a :: *) :: * -> *  where
+  (Some t)      apply  a  = t a
+  (f oplus g)   apply  a  = (f apply a) oplus (g apply a)
+  (f otimes n)  apply  a  = (f apply a) otimes n
+  (Term t)      apply  a  = Term (t apply a)
+  t             apply  a  = t
+\end{code}
+
+\begin{code}
+type family Rep (t :: Symbol) :: * -> *
+
+type family Con (c :: Symbol) :: * -> *
+type family Fun (f :: Symbol) :: * -> *
+type family Pat (p :: Symbol) (n :: Nat) :: * -> *
+\end{code}

@@ -1,0 +1,157 @@
+\section{Generating Composable Data via Type Specfications}
+\label{sec:generators}
+
+
+\begin{code}
+type BoundedGen a = Int -> Gen a
+
+class BoundedArb (a :: *) where
+  boundedArb :: BoundedGen a
+\end{code}
+
+
+\begin{code}
+class Arbitrary1 (f :: * -> *) where
+  liftGen :: Gen a -> Gen (f a)
+\end{code}
+
+\begin{code}
+class BoundedArb1 (f :: * -> *) where
+  liftBounded :: BoundedGen a -> BoundedGen (f a)
+\end{code}
+
+\begin{code}
+data ((f :: * -> *) otimes (n :: Nat)) a = Freq (f a)
+\end{code}
+
+\begin{code}
+data Term (f :: * -> *) a = Term (f a)
+\end{code}
+
+\begin{code}
+instance Algebra f a => Algebra (f otimes n) a
+  where alg (Freq f) = alg f
+\end{code}
+
+\begin{code}
+instance Algebra f a => Algebra (Term f) a
+  where alg (Term f) = alg f
+\end{code}
+
+
+\begin{code}
+instance BoundedArb1 f => BoundedArb1 (f otimes n) where
+  liftBounded gen lvl = Freq <$> liftBounded gen lvl
+
+instance BoundedArb1 f => BoundedArb1 (Term f) where
+  liftBounded gen lvl = Term <$> liftBounded gen lvl
+\end{code}
+
+
+\begin{code}
+type family FreqOf (f :: * -> *) :: Nat where
+  FreqOf (f oplus g)   = FreqOf f + FreqOf g
+  FreqOf (f otimes n)  = n * FreqOf f
+  FreqOf (Term f)      = FreqOf f
+  FreqOf _             = 1
+\end{code}
+
+\begin{code}
+type family FreqOf' (f :: * -> *) :: Nat where
+  FreqOf' (f oplus g)   = FreqOf' f  +  FreqOf' g
+  FreqOf' (f otimes n)  = n  *  FreqOf' f
+  FreqOf' (Term f)      = FreqOf f
+  FreqOf' _             = 0
+\end{code}
+
+
+\begin{code}
+instance (BoundedArb1 f, BoundedArb1 g)
+  => BoundedArb1 (f oplus g) where
+  liftBounded gen lvl =
+    if lvl > 0
+    then frequency
+    [ (freqVal  at(FreqOf f) ,  InL <$> liftBounded gen lvl)
+    , (freqVal  at(FreqOf g) ,  InR <$> liftBounded gen lvl) ]
+    else frequency
+    [ (freqVal  at(FreqOf' f) ,  InL <$> liftBounded gen lvl)
+    , (freqVal  at(FreqOf' g) ,  InR <$> liftBounded gen lvl) ]
+\end{code}
+
+
+\begin{code}
+instance BoundedArb1 Con_Text where
+  liftBounded gen lvl = Con_Text <$> arbitrary
+
+instance BoundedArb1 Con_Sing where
+  liftBounded gen lvl = Con_Sing <$> arbitrary
+
+instance BoundedArb1 Con_Tag where
+  liftBounded gen lvl
+    = Con_Tag <$> arbitrary <*> gen (lvl - 1)
+
+instance BoundedArb1 Con_infix where
+  liftBounded gen lvl
+    = Con_infix <$> gen (lvl - 1) <*> gen (lvl - 1)
+\end{code} %$
+
+
+\begin{code}
+instance BoundedArb1 Fun_br where
+  liftBounded gen lvl = pure Fun_br
+
+instance BoundedArb1 Fun_bold where
+  liftBounded gen lvl = Fun_bold <$> gen (lvl - 1)
+
+instance BoundedArb1 Fun_infix where
+  liftBounded gen lvl
+    = Fun_infix <$> gen (lvl - 1) <*> gen (lvl - 1)
+
+instance BoundedArb1 Fun_list where
+  liftBounded gen lvl
+    = Fun_list <$> liftGen (gen (lvl - 1))
+\end{code} %$
+
+\begin{code}
+instance BoundedArb1 Pat_simplify_1 where
+  liftBounded gen lvl
+    = Pat_simplify_1 <$> arbitrary <*> arbitrary
+
+instance BoundedArb1 Pat_simplify_2 where
+  liftBounded gen lvl
+    = Pat_simplify_2 <$> gen (lvl - 1) <*> gen (lvl - 1)
+\end{code}
+
+
+\begin{code}
+instance BoundedArb1 f => BoundedArb (Fix f) where
+  boundedArb lvl = Fix <$> liftBounded boundedArb lvl
+\end{code} %$
+
+\begin{code}
+genFix  ::  forall f dot BoundedArb1 f =>  BoundedGen (Fix f)
+genFix lvl = boundedArb at(Fix f) lvl
+\end{code}
+
+\begin{code}
+genEval :: forall f a dot (BoundedArb1 f, Algebra f a) =>  BoundedGen a
+genEval lvl = eval <$> genFix at f lvl
+\end{code} %$
+
+
+\begin{code}
+type Con' a    = Term  (Con a)
+type Fun' a    = Term  (Fun a)
+type Pat' a n  = Term  (Pat a n)
+\end{code}
+
+
+\begin{code}
+type HtmlSpec
+  =      Con'  "Text"
+  oplus  Con   "Join"         otimes 2
+  oplus  Fun'  "br"           otimes 4
+  oplus  Fun   "<+>"          otimes 9
+  oplus  Pat   "simplify"  1  otimes 3
+  oplus  Pat   "simplify"  2  otimes 5
+\end{code}
