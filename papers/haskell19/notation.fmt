@@ -52,6 +52,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Construction names
 
+
+%format Html_Spec = "\constructor{Html_{Spec}}"
+
 %format InL = "\constructor{In_L}"
 %format InR = "\constructor{In_R}"
 

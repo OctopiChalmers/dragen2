@@ -1,0 +1,51 @@
+\section{Type-Level Generation Specifications}
+\label{sec:typelevel}
+
+
+
+\begin{code}
+type family Con (c :: Symbol)             :: * -> *
+type family Pat (p :: Symbol) (n :: Nat)  :: * -> *
+type family Fun (f :: Symbol)             :: * -> *
+\end{code}
+
+\begin{code}
+data Some (f :: * -> * -> *) (r :: *) = forall (a :: *) dot Some (f a r)
+\end{code}
+
+\begin{code}
+type family (t :: * -> *) apply (a :: *) :: * -> *  where
+  (Some t)      apply  a  = t a
+  (f oplus g)   apply  a  = (f apply a) oplus (g apply a)
+  (f otimes n)  apply  a  = (f apply a) otimes n
+  (Term t)      apply  a  = Term (t apply a)
+  t             apply  a  = t
+\end{code}
+
+\begin{code}
+type instance Con "Text"        = Con_Text
+type instance Pat "simplify" 1  = Pat_simplify_1
+type instance Fun "<+>"         = Fun_cat
+\end{code}
+
+\begin{code}
+type Con' a    = Term  (Con a)
+type Fun' a    = Term  (Fun a)
+type Pat' a n  = Term  (Pat a n)
+\end{code}
+
+\begin{code}
+type Html_Spec
+  =      Con'  "Text"
+  oplus  Con   "Join"         otimes 2
+  oplus  Fun'  "br"           otimes 4
+  oplus  Fun   "<+>"          otimes 9
+  oplus  Pat   "simplify"  1  otimes 3
+  oplus  Pat   "simplify"  2  otimes 5
+\end{code}
+
+
+\begin{code}
+instance Arbitrary Html where
+  arbitrary = sized (genEval at Html_Spec)
+\end{code}

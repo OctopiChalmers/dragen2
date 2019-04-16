@@ -134,31 +134,6 @@ instance Algebra Pat_simplify_2 Html where
 \end{code}
 
 
-\begin{code}
-data Some (f :: * -> * -> *) (r :: *) = forall (a :: *) dot Some (f a r)
-\end{code}
-
-\begin{code}
-type family (t :: * -> *) apply (a :: *) :: * -> *  where
-  (Some t)      apply  a  = t a
-  (f oplus g)   apply  a  = (f apply a) oplus (g apply a)
-  (f otimes n)  apply  a  = (f apply a) otimes n
-  (Term t)      apply  a  = Term (t apply a)
-  t             apply  a  = t
-\end{code}
-
-\begin{code}
-type family Con (c :: Symbol)             :: * -> *
-type family Pat (p :: Symbol) (n :: Nat)  :: * -> *
-type family Fun (f :: Symbol)             :: * -> *
-\end{code}
-
-\begin{code}
-type instance Con "Text"        = Con_Text
-type instance Pat "simplify" 1  = Pat_simplify_1
-type instance Fun "<+>"         = Fun_cat
-\end{code}
-
 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
 tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
 eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis

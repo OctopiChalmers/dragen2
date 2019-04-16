@@ -132,21 +132,3 @@ genFix lvl = bounded at(Fix f) lvl
 genEval :: forall f a dot (BArbitrary1 f, Algebra f a) => BGen a
 genEval lvl = eval <$> genFix at f lvl
 \end{code} %$
-
-
-\begin{code}
-type Con' a    = Term  (Con a)
-type Fun' a    = Term  (Fun a)
-type Pat' a n  = Term  (Pat a n)
-\end{code}
-
-
-\begin{code}
-type HtmlSpec
-  =      Con'  "Text"
-  oplus  Con   "Join"         otimes 2
-  oplus  Fun'  "br"           otimes 4
-  oplus  Fun   "<+>"          otimes 9
-  oplus  Pat   "simplify"  1  otimes 3
-  oplus  Pat   "simplify"  2  otimes 5
-\end{code}
