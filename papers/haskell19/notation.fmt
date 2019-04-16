@@ -25,7 +25,7 @@
 
 %format hole = "\bullet"
 %format == = "=="
-%format at = "\,\texttt{@}\!\!"
+%format at = "\,\texttt{@}\!\!\,"
 %format apply = "\!\lhd\!"
 %format dot = "."
 %format + = "+"
@@ -48,6 +48,7 @@
 %format oplus' = "\!\;\oplus"
 %format oplus'' = "\!\!\oplus\!\!"
 %format otimes = "\otimes"
+%format vdots = "\;\;\vdots"
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Construction names
@@ -80,6 +81,10 @@
 %format t1 = "\variable{t_1}"
 %format t2 = "\variable{t_2}"
 
+%format Con_Leaf = "\constructor{Con_{Leaf}}"
+%format Con_Node = "\constructor{Con_{Node}}"
+
+%format Tree_Spec = "\constructor{Tree_{Spec}}"
 
 % Local Variables:
 % TeX-mbigstarer: "main.lhs.tex"

@@ -41,10 +41,10 @@ instance Algebra f a => Algebra (Term f) a where
 
 \begin{code}
 instance BArbitrary1 f => BArbitrary1 (f otimes n) where
-  liftBGen gen lvl = Freq <$> liftBGen gen lvl
+  liftBGen gen d = Freq <$> liftBGen gen d
 
 instance BArbitrary1 f => BArbitrary1 (Term f) where
-  liftBGen gen lvl = Term <$> liftBGen gen lvl
+  liftBGen gen d = Term <$> liftBGen gen d
 \end{code}
 
 \begin{code}
@@ -67,68 +67,71 @@ type family FreqOf' (f :: * -> *) :: Nat where
 \begin{code}
 instance (BArbitrary1 f, BArbitrary1 g)
   => BArbitrary1 (f oplus g) where
-  liftBGen gen lvl =
-    if lvl > 0
+  liftBGen gen d =
+    if d > 0
     then frequency
-      [ (freqVal  at(FreqOf f) ,  InL <$> liftBGen gen lvl)
-      , (freqVal  at(FreqOf g) ,  InR <$> liftBGen gen lvl) ]
+      [ (freqVal  at(FreqOf f) ,  InL <$> liftBGen gen d)
+      , (freqVal  at(FreqOf g) ,  InR <$> liftBGen gen d) ]
     else frequency
-      [ (freqVal  at(FreqOf' f) ,  InL <$> liftBGen gen lvl)
-      , (freqVal  at(FreqOf' g) ,  InR <$> liftBGen gen lvl) ]
+      [ (freqVal  at(FreqOf' f) ,  InL <$> liftBGen gen d)
+      , (freqVal  at(FreqOf' g) ,  InR <$> liftBGen gen d) ]
 \end{code}
 
+\begin{code}
+freqVal :: forall n dot KnownNat n => Int
+\end{code}
 
 \begin{code}
 instance BArbitrary1 Con_Text where
-  liftBGen gen lvl = Con_Text <$> arbitrary
+  liftBGen gen d = Con_Text <$> arbitrary
 
 instance BArbitrary1 Con_Sing where
-  liftBGen gen lvl = Con_Sing <$> arbitrary
+  liftBGen gen d = Con_Sing <$> arbitrary
 
 instance BArbitrary1 Con_Tag where
-  liftBGen gen lvl = Con_Tag <$> arbitrary <*> gen (lvl - 1)
+  liftBGen gen d = Con_Tag <$> arbitrary <*> gen (d - 1)
 
 instance BArbitrary1 Con_Join where
-  liftBGen gen lvl = Con_Join <$> gen (lvl - 1) <*> gen (lvl - 1)
+  liftBGen gen d = Con_Join <$> gen (d - 1) <*> gen (d - 1)
 \end{code} %$
 
 
 \begin{code}
 instance BArbitrary1 Fun_br where
-  liftBGen gen lvl = pure Fun_br
+  liftBGen gen d = pure Fun_br
 
 instance BArbitrary1 Fun_bold where
-  liftBGen gen lvl = Fun_bold <$> gen (lvl - 1)
+  liftBGen gen d = Fun_bold <$> gen (d - 1)
 
 instance BArbitrary1 Fun_cat where
-  liftBGen gen lvl = Fun_cat <$> gen (lvl - 1) <*> gen (lvl - 1)
+  liftBGen gen d = Fun_cat <$> gen (d - 1) <*> gen (d - 1)
 
 instance BArbitrary1 Fun_list where
-  liftBGen gen lvl = Fun_list <$> liftGen (gen (lvl - 1))
+  liftBGen gen d = Fun_list <$> liftGen (gen (d - 1))
 \end{code} %$
 
 \begin{code}
 instance BArbitrary1 Pat_simplify_1 where
-  liftBGen gen lvl
+  liftBGen gen d
     = Pat_simplify_1 <$> arbitrary <*> arbitrary
 
 instance BArbitrary1 Pat_simplify_2 where
-  liftBGen gen lvl
-    = Pat_simplify_2 <$> gen (lvl - 1) <*> gen (lvl - 1)
+  liftBGen gen d
+    = Pat_simplify_2 <$> gen (d - 1) <*> gen (d - 1)
 \end{code}
 
 
 \begin{code}
 instance BArbitrary1 f => BArbitrary (Fix f) where
-  bounded lvl = Fix <$> liftBGen bounded lvl
+  bounded d = Fix <$> liftBGen bounded d
 \end{code} %$
 
 \begin{code}
 genFix  ::  forall f dot BArbitrary1 f =>  BGen (Fix f)
-genFix lvl = bounded at(Fix f) lvl
+genFix d = bounded at(Fix f) d
 \end{code}
 
 \begin{code}
 genEval :: forall f a dot (BArbitrary1 f, Algebra f a) => BGen a
-genEval lvl = eval <$> genFix at f lvl
+genEval d = eval <$> genFix at f d
 \end{code} %$

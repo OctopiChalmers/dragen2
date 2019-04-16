@@ -1,39 +1,6 @@
 \section{Type-Level Generation Specifications}
 \label{sec:typelevel}
 
-
-
-\begin{code}
-type family Con (c :: Symbol)             :: * -> *
-type family Pat (p :: Symbol) (n :: Nat)  :: * -> *
-type family Fun (f :: Symbol)             :: * -> *
-\end{code}
-
-\begin{code}
-data Some (f :: * -> * -> *) (r :: *) = forall (a :: *) dot Some (f a r)
-\end{code}
-
-\begin{code}
-type family (t :: * -> *) apply (a :: *) :: * -> *  where
-  (Some t)      apply  a  = t a
-  (f oplus g)   apply  a  = (f apply a) oplus (g apply a)
-  (f otimes n)  apply  a  = (f apply a) otimes n
-  (Term t)      apply  a  = Term (t apply a)
-  t             apply  a  = t
-\end{code}
-
-\begin{code}
-type instance Con "Text"        = Con_Text
-type instance Pat "simplify" 1  = Pat_simplify_1
-type instance Fun "<+>"         = Fun_cat
-\end{code}
-
-\begin{code}
-type Con' a    = Term  (Con a)
-type Fun' a    = Term  (Fun a)
-type Pat' a n  = Term  (Pat a n)
-\end{code}
-
 \begin{code}
 type Html_Spec
   =      Con'  "Text"
@@ -44,8 +11,80 @@ type Html_Spec
   oplus  Pat   "simplify"  2  otimes 5
 \end{code}
 
+\begin{code}
+instance BArbitrary Html where
+  bounded = genEval at Html_Spec
+
+instance Arbitrary Html where
+  arbitrary = sized bounded
+\end{code}
 
 \begin{code}
-instance Arbitrary Html where
-  arbitrary = sized (genEval at Html_Spec)
+type family Con (c :: Symbol)             :: * -> *
+type family Pat (p :: Symbol) (n :: Nat)  :: * -> *
+type family Fun (f :: Symbol)             :: * -> *
+\end{code}
+
+\begin{code}
+type instance Con "Text"        = Con_Text
+type instance Pat "simplify" 1  = Pat_simplify_1
+type instance Fun "<+>"         = Fun_cat
+\end{code}
+
+\begin{code}
+type Con' a    = Term  (Con a)
+type Pat' a n  = Term  (Pat a n)
+type Fun' a    = Term  (Fun a)
+\end{code}
+
+\begin{code}
+data Tree a = Leaf a | Node (Tree a) (Tree a)
+\end{code}
+
+\begin{code}
+data Con_Leaf a r = Con_Leaf a
+data Con_Node a r = Con_Node r r
+\end{code}
+
+\begin{code}
+instance Algebra (Con_Leaf a) (Tree a) where ...
+instance Algebra (Con_Node a) (Tree a) where ...
+\end{code}
+
+\begin{code}
+instance Arbitrary a => BArbitrary1 (Con_Leaf a) where ...
+instance Arbitrary a => BArbitrary1 (Con_Node a) where ...
+\end{code}
+
+
+\begin{code}
+data Some (f :: * -> * -> *) (r :: *) = forall (a :: *) dot Some (f a r)
+\end{code}
+
+
+\begin{code}
+type instance Con "Leaf" = Some Con_Leaf
+type instance Con "Node" = Some Con_Node
+\end{code}
+
+
+\begin{code}
+type Tree_Spec
+  =      Con "Leaf" otimes 2
+  oplus  Con "Node" otimes 3
+\end{code}
+
+
+\begin{code}
+type family (f :: * -> *) apply (a :: *) :: * -> *  where
+  (Some f)      apply  a  = f a
+  (f oplus g)   apply  a  = (f apply a) oplus (g apply a)
+  (f otimes n)  apply  a  = (f apply a) otimes n
+  (Term f)      apply  a  = Term (t apply a)
+  f             apply  a  = f
+\end{code}
+
+\begin{code}
+instance Arbitrary a => BArbitrary (Tree a) where
+  bounded = genEval at (Tree_Spec apply a)
 \end{code}
