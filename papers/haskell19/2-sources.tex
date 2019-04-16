@@ -1,5 +1,6 @@
-\section{Sources of Constructions}
+\section{Random Testing using Hints}
 \label{sec:sources}
+
 
 Pellentesque dapibus suscipit ligula. Donec posuere augue in quam. Etiam vel
 tortor sodales tellus ultricies commodo. Suspendisse potenti. Aenean in sem ac
@@ -17,34 +18,16 @@ data Html
   =  Text  String
   |  Sing  String
   |  Tag   String Html
-  |  Html  :+: Html
+  |  Join  Html Html
 \end{code}
 
-\begin{code}
-br :: Html
-br = Sing "br"
-
-bold :: Html -> Html
-bold = Tag "b"
-
-(<+>) :: Html -> Html -> Html
-(<+>) x y = x :+: br :+: y
-
-list :: [Html] -> Html
-list xs = Tag "ul" (foldl1 (:+:) (Tag "li" <$> xs))
-\end{code} %$
+A value of type |Html| represents either plain text strings, via the |Text| data
+constructor; single and paired HTML tags using the |Sing| and |Tag| data
+constructors, respectively; and concatenation of ...
 
 \begin{code}
-simplify :: Html -> Html
-simplify (Text t1 :+: Text t2)
-  = Text (t1 ++ t2)
-simplify ((Text t1 :+: x) :+: y)
-  = simplify (Text t1 :+: simplify (x :+: y))
-simplify (x :+: y)
-  = simplify x :+: simplify y
-simplify (Tag t x)
-  = Tag t (simplify x)
-simplify x = x
+class Arbitrary (a :: *) where
+  arbitrary :: Gen a
 \end{code}
 
 \begin{code}
@@ -65,3 +48,31 @@ instance Arbitrary Html where
         ,  (4,  Tag     <$> arbitrary  <*> gen (n-1))
         ,  (3,  Join    <$> gen (n-1)  <*> gen (n-1)) ]
 \end{code} %$
+
+
+\begin{code}
+br :: Html
+br = Sing "br"
+
+bold :: Html -> Html
+bold = Tag "b"
+
+(<+>) :: Html -> Html -> Html
+(<+>) x y = Join x (Join br y)
+
+list :: [Html] -> Html
+list xs = Tag "ul" (foldl1 Join (Tag "li" <$> xs))
+\end{code} %$
+
+\begin{code}
+simplify :: Html -> Html
+simplify (Join (Text t1) (Text t2))
+  = Text (t1 ++ t2)
+simplify (Join (Join (Text t1) x) y)
+  = simplify (Join (Text t1) (simplify (Join x y)))
+simplify (Join x y)
+  = Join (simplify x) (simplify y)
+simplify (Tag t x)
+  = Tag t (simplify x)
+simplify x = x
+\end{code}

@@ -1,59 +1,63 @@
 \section{Unified Representation of Constructions}
 \label{sec:representation}
 
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
-tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
-eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
-parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
-Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
-Nam vestibulum accumsan nisl.
-
-\begin{code}
-data ((f :: * -> *) oplus (g :: * -> *)) a = InL (f a) | InR (g a)
-\end{code}
-
-\begin{code}
-  data Fix (f :: * -> *) = Fix { unFix :: (f (Fix f)) }
-\end{code}
-
-\begin{code}
-class Functor f => Algebra f a | f -> a where
-  alg :: f a -> a
-\end{code}
-
-% cata :: Functor f => (f a -> a) -> Fix f -> a
-% cata f = f . fmap (cata f) . unFix
-
-\begin{code}
-eval :: Algebra f a => Fix f -> a
-eval = alg . fmap eval . unFix
-\end{code}
+% --------------------------------------
+% The basic idea
+%
+This section introduces a unified representation for the different constructions
+we might want to consider when generating random values.
+%
+The key idea of this work is to lift each different source of structural
+information to the type level.
+%
+In this light, we will define a set of different simple ``open'' data types,
+each one in charge of representing a single construction.
+%
+Later, these types can be
+\begin{inparaenum}[(i)]
+  \item combined in several ways depending on the desired shape of our test data,
+\item randomly generated (see Section \ref{sec:generators}), and finally,
+\item transformed back to corresponding values of the target data type automatically.
+\end{inparaenum}
+%
+This lifted representation of constructions can be automatically derived from
+our source code in compile-time, relieving programmers of the burden of writing
+random generators by hand.
 
 
-\begin{code}
-instance (Algebra f a, Algebra g a) => Algebra (f oplus g) a
-  where  alg (InL f) = alg f
-         alg (InR g) = alg g
-\end{code}
+% --------------------------------------
+% Representing data constructors
+%
+\paragraph{Representing Data Constructors}
+%
+The simplest piece of meaningful%
+\footnote{We avoid considering $\bot$ as it does not contain any useful
+  information.}
+%
+information we can consider when generating values of an algebraic data type, is
+the one given by each one of its data constructors.
+%
+In this light, the representation of each individual data constructor of the
+target data type is simply given by a new data type containing a single
+constructor with the same fields as the corresponding one, except for the
+recursive fields which are abstracted away using a type parameter.
 
+
+Recalling our |Html| example, each one of it data constructors can be
+represented as follows:
 
 \begin{code}
 data Con_Text   r = Con_Text String
 data Con_Sing   r = Con_Sing String
 data Con_Tag    r = Con_Tag  String r
-data Con_infix  r = Con_infix r r
+data Con_Join   r = Con_Join r r
 \end{code}
 
-\begin{code}
-data Fun_br     r = Fun_br
-data Fun_bold   r = Fun_bold r
-data Fun_infix  r = Fun_infix r r
-data Fun_list   r = Fun_list [r]
-\end{code}
+
 
 \begin{code}
-data Pat_simplify_1 r = Pat_simplify_1 String String
-data Pat_simplify_2 r = Pat_simplify_2 String r r
+class Functor f => Algebra f a | f -> a where
+  alg :: f a -> a
 \end{code}
 
 \begin{code}
@@ -66,8 +70,44 @@ instance Algebra Con_Sing Html where
 instance Algebra Con_Tag Html where
   alg (Con_Tag t x) = Tag t x
 
-instance Algebra Con_infix Html where
-  alg (Con_infix x y) = x :+: y
+instance Algebra Con_Join Html where
+  alg (Con_Join x y) = Join x y
+\end{code}
+
+
+
+\begin{code}
+data ((f :: * -> *) oplus (g :: * -> *)) a = InL (f a) | InR (g a)
+\end{code}
+
+
+\begin{code}
+instance (Algebra f a, Algebra g a) => Algebra (f oplus g) a
+  where  alg (InL f) = alg f
+         alg (InR g) = alg g
+\end{code}
+
+
+\begin{code}
+  data Fix (f :: * -> *) = Fix { unFix :: (f (Fix f)) }
+\end{code}
+
+\begin{code}
+eval :: Algebra f a => Fix f -> a
+eval = alg . fmap eval . unFix
+\end{code}
+
+
+\begin{code}
+data Fun_br     r = Fun_br
+data Fun_bold   r = Fun_bold r
+data Fun_cat    r = Fun_cat r r
+data Fun_list   r = Fun_list [r]
+\end{code}
+
+\begin{code}
+data Pat_simplify_1 r = Pat_simplify_1 String String
+data Pat_simplify_2 r = Pat_simplify_2 String r r
 \end{code}
 
 \begin{code}
@@ -77,8 +117,8 @@ instance Algebra Fun_br Html where
 instance Algebra Fun_bold Html where
   alg (Fun_bold x) = bold x
 
-instance Algebra Fun_infix Html where
-  alg (Fun_infix x y) = x <+> y
+instance Algebra Fun_cat Html where
+  alg (Fun_cat x y) = x <+> y
 
 instance Algebra Fun_list Html where
   alg (Fun_list xs) = list xs
@@ -86,10 +126,10 @@ instance Algebra Fun_list Html where
 
 \begin{code}
 instance Algebra Pat_simplify_1 Html where
-  alg (Pat_simplify_1 t1 t2) = Text t1 :+: Text t2
+  alg (Pat_simplify_1 t1 t2) = Join (Text t1) (Text t2)
 
 instance Algebra Pat_simplify_2 Html where
-  alg (Pat_simplify_1 t x y) = (Text t :+: x) :+: y
+  alg (Pat_simplify_1 t x y) = Join (Join (Text t) x) y
 \end{code}
 
 
@@ -107,9 +147,14 @@ type family (t :: * -> *) apply (a :: *) :: * -> *  where
 \end{code}
 
 \begin{code}
-type family Rep (t :: Symbol) :: * -> *
-
-type family Con (c :: Symbol) :: * -> *
-type family Fun (f :: Symbol) :: * -> *
-type family Pat (p :: Symbol) (n :: Nat) :: * -> *
+type family Con (c :: Symbol)             :: * -> *
+type family Fun (f :: Symbol)             :: * -> *
+type family Pat (p :: Symbol) (n :: Nat)  :: * -> *
 \end{code}
+
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
+tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
+eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
+parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
+Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
+Nam vestibulum accumsan nisl\cite{godefroid2005dart}.

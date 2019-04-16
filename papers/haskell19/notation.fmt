@@ -10,22 +10,24 @@
 \renewcommand{\Conid}[1]{{\color{darkred}  \texttt{#1}}}
 
 \newcommand{\variable}[1]{{\color{darkblue}    \mathtt{ #1 } }}
-\newcommand{\constructor}[1]{{\color{darkred}  \texttt{ #1 } }}
-\newcommand{\constructorp}[1]{{\color{darkred} \texttt{#1}^\star }}
+\newcommand{\constructor}[1]{{\color{darkred}  \mathtt{ #1 } }}
+\newcommand{\constructorp}[1]{{\color{darkred} \mathtt{ #1 }\texttt{'} }}
 
 %subst varsym  a	= "{\color{darkblue}  \texttt{" a "}}"
 %subst numeral a 	= "{\color{darkgreen} \texttt{" a "}}"
 %subst string  a 	= "{\color{darkgreen} \texttt{\char34" a "\char34}}"
 
+%format family = "\mathbf{family}"
+%format forall = "\forall\!"
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Rep
+%% Operators
 
-%format family = "\mathbf{family}"
+%format hole = "\bullet"
+%format == = "=="
 %format at = "\,\texttt{@}\!\!"
-%format apply = "\lhd\!"
+%format apply = "\!\lhd\!"
 %format dot = "."
-%format forall = "\forall\!"
 %format + = "+"
 %format * = "*"
 %format > = ">"
@@ -33,136 +35,47 @@
 %format :+: = ":\!+\!:"
 %format :=> = ":>"
 
+%format <+> = "\mathop{\langle\! +\! \rangle}"
+%format <$> = "\mathop{ \langle \$ \rangle }"
+%format <*> = "\mathop{ \langle \ast \rangle }"
+
 %format FreqOf' = "\constructorp{FreqOf}"
 %format Con' = "\constructorp{Con}"
 %format Fun' = "\constructorp{Fun}"
 %format Pat' = "\constructorp{Pat}"
-
-
-%format simplify1 = "\constructor{simplify\#1}"
-%format simplify2 = "\constructor{simplify\#2}"
-
-%format HtmlS      = "Html_S"
-%format HRep_      = "\hrep{}"
-%format HRepHtml   = "\hrep{Html}"
-%format HRepSimpl  = "\hrep{simpl}"
-%format HRepM      = "\hrep{M}"
-
-%format HRepText   = "\hrep{Text}"
-%format HRepJoin   = "\hrep{Join}"
-%format HRepSing   = "\hrep{Sing}"
-%format HRepTag    = "\hrep{Tag}"
-%format HRepSimpl1 = "\hrep{simpl\#1}"
-%format HRepSimpl2 = "\hrep{simpl\#2}"
-%format HRepdiv   = "\hrep{div}"
-%format HRepbold   = "\hrep{bold}"
-%format HRephr     = "\hrep{hr}"
-
-%format HRepText_term = "\term{\hrep{Text}}"
-%format HRepSing_term = "\term{\hrep{Sing}}"
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Constructor names
-
-%format ConText = "Con_{Text}"
-%format ConJoin = "Con_{Join}"
-%format ConSing = "Con_{Sing}"
-%format ConTag  = "Con_{Tag}"
-
-%format PatSimpl1 = "Pat_{simpl\#1}"
-%format PatSimpl2 = "Pat_{simpl\#2}"
-
-%format Fundiv = "Fun_{div}"
-%format Funbold = "Fun_{bold}"
-%format Funhr   = "Fun_{hr}"
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% gen
-
-%format genr = "\gen{r}"
-%format genf = "\gen{f}"
-%format geng = "\gen{g}"
-%format gen_f_term = "\gen{f}^\bigstar"
-%format gen_f_plus_g  = "\gen{f \oplus g}"
-%format gen_f_times_n  = "\gen{f \otimes n}"
-%format genFix_f      = "genFix_{f}"
-%format genFix_HRep_Html = "genFix_{\hrep{Html}}"
-
-%format genHtml     = "\variable{gen_{Html}}"
-%format genString   = "\variable{gen_{String}}"
-
-
-%format genText = "\gen{Text}"
-%format genSing = "\gen{Sing}"
-%format genJoin = "\gen{Join}"
-%format genTag  = "\gen{Tag}"
-
-%format genSimpl1 = "\gen{simpl\#1}"
-%format genSimpl2 = "\gen{simpl\#2}"
-
-%format gendiv   = "\gen{div}"
-%format genbold   = "\gen{bold}"
-%format genhr     = "\gen{hr}"
-
-
-%format html_example = "<\!\!html\!\!>\!\!hello\!\!<\!\!hr\!\!>\!\!bye\!\!<\!\!/html\!\!>"
-
-%format == = "=="
-
-%format term = "\term{\_}"
-%format f_term = "\term{f}"
 
 %format oplus = "\oplus"
 %format oplus' = "\!\;\oplus"
 %format oplus'' = "\!\!\oplus\!\!"
 %format otimes = "\otimes"
 
-%format eval_s_Html = "\evalrep{s}{Html}"
-%format eval_t1_Html = "\evalrep{t1}{Html}"
-%format eval_t2_Html = "\evalrep{t2}{Html}"
-%format eval_x_Html = "\evalrep{x}{Html}"
-%format eval_y_Html = "\evalrep{y}{Html}"
-%format eval_x_HRep_Html = "\evalrep{x\ :\ Fix (\hrep_{Html})}{Html}"
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Construction names
+
+%format InL = "\constructor{In_L}"
+%format InR = "\constructor{In_R}"
+
+%format Con_Text = "\constructor{Con_{Text}}"
+%format Con_Join = "\constructor{Con_{Join}}"
+%format Con_Sing = "\constructor{Con_{Sing}}"
+%format Con_Tag  = "\constructor{Con_{Tag}}"
+
+%format Pat_simplify_1 = "\constructor{Pat_{simplify\#1}}"
+%format Pat_simplify_2 = "\constructor{Pat_{simplify\#2}}"
+
+%format Fun_br   = "\constructor{Fun_{br}}"
+%format Fun_list = "\constructor{Fun_{list}}"
+%format Fun_bold = "\constructor{Fun_{bold}}"
+%format Fun_cat  = "\constructor{Fun_{\mathop{\langle\! +\! \rangle}}}"
 
 %format at_f = "\textit{@}\!f"
 %format at_g = "\textit{@}\!g"
 
-%format <+> = "\mathop{\langle\! +\! \rangle}"
-%format <$> = "\mathop{ \langle \$ \rangle }"
-%format <*> = "\mathop{ \langle \ast \rangle }"
+%format simplify1 = "\constructor{simplify\#1}"
+%format simplify2 = "\constructor{simplify\#2}"
 
-%format pred = "(n{-}1)"
-%format pp = "\,\ \vert"
-
-%format ===> = "\Longrightarrow"
-
-% %format t  = "t"
 %format t1 = "\variable{t_1}"
 %format t2 = "\variable{t_2}"
-
-%format hole = "\bullet"
-
-%format str = "str"
-%format str1
-%format str2
-%format str3
-%format strI
-
-%format HtmlADT = "Html_{ADT}"
-%format HtmlPatterns = "Html_{Patterns}"
-%format HtmlInterface = "Html_{Interface}"
-
-
-%format Textp = "p_{C_1}"
-%format Singlep = "p_{C_2}"
-%format Tagp = "p_{C_3}"
-%format Joinp = "p_{C_4}"
-%format Pat1 = "p_{Pat_1}"
-%format Pat2 = "p_{Pat_2}"
-%format hrp = "p_{F_1}"
-%format divp = "p_{F_2}"
-%format boldp = "p_{F_3}"
-
 
 
 % Local Variables:

@@ -1,12 +1,12 @@
-\section{Generating Composable Data via Type Specfications}
+\section{Generating Composable Data via Type-level Specfications}
 \label{sec:generators}
 
 
 \begin{code}
-type BoundedGen a = Int -> Gen a
+type BGen a = Int -> Gen a
 
-class BoundedArb (a :: *) where
-  boundedArb :: BoundedGen a
+class BArbitrary (a :: *) where
+  bounded :: BGen a
 \end{code}
 
 
@@ -16,8 +16,8 @@ class Arbitrary1 (f :: * -> *) where
 \end{code}
 
 \begin{code}
-class BoundedArb1 (f :: * -> *) where
-  liftBounded :: BoundedGen a -> BoundedGen (f a)
+class BArbitrary1 (f :: * -> *) where
+  liftBGen :: BGen a -> BGen (f a)
 \end{code}
 
 \begin{code}
@@ -29,24 +29,23 @@ data Term (f :: * -> *) a = Term (f a)
 \end{code}
 
 \begin{code}
-instance Algebra f a => Algebra (f otimes n) a
-  where alg (Freq f) = alg f
+instance Algebra f a => Algebra (f otimes n) a where
+  alg (Freq f) = alg f
 \end{code}
 
 \begin{code}
-instance Algebra f a => Algebra (Term f) a
-  where alg (Term f) = alg f
+instance Algebra f a => Algebra (Term f) a where
+  alg (Term f) = alg f
 \end{code}
 
 
 \begin{code}
-instance BoundedArb1 f => BoundedArb1 (f otimes n) where
-  liftBounded gen lvl = Freq <$> liftBounded gen lvl
+instance BArbitrary1 f => BArbitrary1 (f otimes n) where
+  liftBGen gen lvl = Freq <$> liftBGen gen lvl
 
-instance BoundedArb1 f => BoundedArb1 (Term f) where
-  liftBounded gen lvl = Term <$> liftBounded gen lvl
+instance BArbitrary1 f => BArbitrary1 (Term f) where
+  liftBGen gen lvl = Term <$> liftBGen gen lvl
 \end{code}
-
 
 \begin{code}
 type family FreqOf (f :: * -> *) :: Nat where
@@ -66,75 +65,71 @@ type family FreqOf' (f :: * -> *) :: Nat where
 
 
 \begin{code}
-instance (BoundedArb1 f, BoundedArb1 g)
-  => BoundedArb1 (f oplus g) where
-  liftBounded gen lvl =
+instance (BArbitrary1 f, BArbitrary1 g)
+  => BArbitrary1 (f oplus g) where
+  liftBGen gen lvl =
     if lvl > 0
     then frequency
-    [ (freqVal  at(FreqOf f) ,  InL <$> liftBounded gen lvl)
-    , (freqVal  at(FreqOf g) ,  InR <$> liftBounded gen lvl) ]
+      [ (freqVal  at(FreqOf f) ,  InL <$> liftBGen gen lvl)
+      , (freqVal  at(FreqOf g) ,  InR <$> liftBGen gen lvl) ]
     else frequency
-    [ (freqVal  at(FreqOf' f) ,  InL <$> liftBounded gen lvl)
-    , (freqVal  at(FreqOf' g) ,  InR <$> liftBounded gen lvl) ]
+      [ (freqVal  at(FreqOf' f) ,  InL <$> liftBGen gen lvl)
+      , (freqVal  at(FreqOf' g) ,  InR <$> liftBGen gen lvl) ]
 \end{code}
 
 
 \begin{code}
-instance BoundedArb1 Con_Text where
-  liftBounded gen lvl = Con_Text <$> arbitrary
+instance BArbitrary1 Con_Text where
+  liftBGen gen lvl = Con_Text <$> arbitrary
 
-instance BoundedArb1 Con_Sing where
-  liftBounded gen lvl = Con_Sing <$> arbitrary
+instance BArbitrary1 Con_Sing where
+  liftBGen gen lvl = Con_Sing <$> arbitrary
 
-instance BoundedArb1 Con_Tag where
-  liftBounded gen lvl
-    = Con_Tag <$> arbitrary <*> gen (lvl - 1)
+instance BArbitrary1 Con_Tag where
+  liftBGen gen lvl = Con_Tag <$> arbitrary <*> gen (lvl - 1)
 
-instance BoundedArb1 Con_infix where
-  liftBounded gen lvl
-    = Con_infix <$> gen (lvl - 1) <*> gen (lvl - 1)
+instance BArbitrary1 Con_Join where
+  liftBGen gen lvl = Con_Join <$> gen (lvl - 1) <*> gen (lvl - 1)
 \end{code} %$
 
 
 \begin{code}
-instance BoundedArb1 Fun_br where
-  liftBounded gen lvl = pure Fun_br
+instance BArbitrary1 Fun_br where
+  liftBGen gen lvl = pure Fun_br
 
-instance BoundedArb1 Fun_bold where
-  liftBounded gen lvl = Fun_bold <$> gen (lvl - 1)
+instance BArbitrary1 Fun_bold where
+  liftBGen gen lvl = Fun_bold <$> gen (lvl - 1)
 
-instance BoundedArb1 Fun_infix where
-  liftBounded gen lvl
-    = Fun_infix <$> gen (lvl - 1) <*> gen (lvl - 1)
+instance BArbitrary1 Fun_cat where
+  liftBGen gen lvl = Fun_cat <$> gen (lvl - 1) <*> gen (lvl - 1)
 
-instance BoundedArb1 Fun_list where
-  liftBounded gen lvl
-    = Fun_list <$> liftGen (gen (lvl - 1))
+instance BArbitrary1 Fun_list where
+  liftBGen gen lvl = Fun_list <$> liftGen (gen (lvl - 1))
 \end{code} %$
 
 \begin{code}
-instance BoundedArb1 Pat_simplify_1 where
-  liftBounded gen lvl
+instance BArbitrary1 Pat_simplify_1 where
+  liftBGen gen lvl
     = Pat_simplify_1 <$> arbitrary <*> arbitrary
 
-instance BoundedArb1 Pat_simplify_2 where
-  liftBounded gen lvl
+instance BArbitrary1 Pat_simplify_2 where
+  liftBGen gen lvl
     = Pat_simplify_2 <$> gen (lvl - 1) <*> gen (lvl - 1)
 \end{code}
 
 
 \begin{code}
-instance BoundedArb1 f => BoundedArb (Fix f) where
-  boundedArb lvl = Fix <$> liftBounded boundedArb lvl
+instance BArbitrary1 f => BArbitrary (Fix f) where
+  bounded lvl = Fix <$> liftBGen bounded lvl
 \end{code} %$
 
 \begin{code}
-genFix  ::  forall f dot BoundedArb1 f =>  BoundedGen (Fix f)
-genFix lvl = boundedArb at(Fix f) lvl
+genFix  ::  forall f dot BArbitrary1 f =>  BGen (Fix f)
+genFix lvl = bounded at(Fix f) lvl
 \end{code}
 
 \begin{code}
-genEval :: forall f a dot (BoundedArb1 f, Algebra f a) =>  BoundedGen a
+genEval :: forall f a dot (BArbitrary1 f, Algebra f a) => BGen a
 genEval lvl = eval <$> genFix at f lvl
 \end{code} %$
 
