@@ -26,6 +26,7 @@ dependencies:
   - base >= 4.7 && < 5
   - QuickCheck
   - vector
+  - reflection
 
 flags:
   debug:
@@ -70,7 +71,6 @@ library:
     - ghc-prim
     - haskell-src-exts
     - matrix
-    - reflection
     - split
     - ghc-boot-th
     - template-haskell

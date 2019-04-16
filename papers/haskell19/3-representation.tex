@@ -82,9 +82,10 @@ data ((f :: * -> *) oplus (g :: * -> *)) a = InL (f a) | InR (g a)
 
 
 \begin{code}
-instance (Algebra f a, Algebra g a) => Algebra (f oplus g) a
-  where  alg (InL f) = alg f
-         alg (InR g) = alg g
+instance (Algebra f a, Algebra g a)
+  => Algebra (f oplus g) a where
+  alg (InL f) = alg f
+  alg (InR g) = alg g
 \end{code}
 
 
@@ -148,8 +149,14 @@ type family (t :: * -> *) apply (a :: *) :: * -> *  where
 
 \begin{code}
 type family Con (c :: Symbol)             :: * -> *
-type family Fun (f :: Symbol)             :: * -> *
 type family Pat (p :: Symbol) (n :: Nat)  :: * -> *
+type family Fun (f :: Symbol)             :: * -> *
+\end{code}
+
+\begin{code}
+type instance Con "Text"        = Con_Text
+type instance Pat "simplify" 1  = Pat_simplify_1
+type instance Fun "<+>"         = Fun_cat
 \end{code}
 
 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor

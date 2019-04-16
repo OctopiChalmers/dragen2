@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d6ff8289eb074e72059dde9efa44ed0ed770fe10fb570a3bd8691a839a28a7c8
+-- hash: 19c611d706122a91433a4edb78d4cfaa114db19e4a6b1ec5b63b0c9fbeefa038
 
 name:           dragen2
 version:        0.1.0.0
@@ -95,5 +95,6 @@ test-suite dragen2-tests
       QuickCheck
     , base >=4.7 && <5
     , dragen2
+    , reflection
     , vector
   default-language: Haskell2010
