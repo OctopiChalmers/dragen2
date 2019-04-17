@@ -8,57 +8,103 @@ This section introduces a unified representation for the different constructions
 we might want to consider when generating random values.
 %
 The key idea of this work is to lift each different source of structural
-information to the type level.
+information into the type level.
 %
-In this light, we will define a set of different simple ``open'' data types,
-each one in charge of representing a single construction.
+In this light, the ``shape'' of our random data is determined entirely by
+the type we use to represent it during the generation process.
 %
-Later, these types can be
+For this, we will define a set of different simple ``open'' data types,
+each one in charge of representing a single construction of our target data
+type.
+%
+These types can be later
 \begin{inparaenum}[(i)]
-  \item combined in several ways depending on the desired shape of our test data,
+\item combined in several ways depending on the desired shape of our test data,
 \item randomly generated (see Section \ref{sec:generators}), and finally,
-\item transformed back to corresponding values of the target data type automatically.
+\item transformed back into the corresponding values of the target data type
+  automatically.
 \end{inparaenum}
 %
 This lifted representation of constructions can be automatically derived from
-our source code in compile-time, relieving programmers of the burden of writing
-random generators by hand.
+our source code in compile-time, relieving programmers of the burden of manually
+implementing this required machinery.
 
 
 % --------------------------------------
 % Representing data constructors
 %
-\paragraph{Representing Data Constructors}
+When generating values of algebraic data types, the simplest piece of meaningful
+information we ought to consider is the one given by each one of its data
+constructors.
 %
-The simplest piece of meaningful%
-\footnote{We avoid considering $\bot$ as it does not contain any useful
-  information.}
+\footnote{We explicitly avoid considering $\bot$ when generating random values.}
 %
-information we can consider when generating values of an algebraic data type, is
-the one given by each one of its data constructors.
+In this light, each individual data constructor of the target data type can be
+represented simply by a new data type with a single constructor.
 %
-In this light, the representation of each individual data constructor of the
-target data type is simply given by a new data type containing a single
-constructor with the same fields as the corresponding one, except for the
-recursive fields which are abstracted away using a type parameter.
-
-
-Recalling our |Html| example, each one of it data constructors can be
-represented as follows:
+Recalling our |Html| example, its data constructors can be represented as
+follows:
 
 \begin{code}
-data Con_Text   r = Con_Text String
-data Con_Sing   r = Con_Sing String
-data Con_Tag    r = Con_Tag  String r
-data Con_Join   r = Con_Join r r
+data Con_Text   r = Con_Text  String
+data Con_Sing   r = Con_Sing  String
+data Con_Tag    r = Con_Tag   String r
+data Con_Join   r = Con_Join  r r
+\end{code}
+
+Where each representation has the same fields as its corresponding constructor,
+except for the recursive ones which are abstracted away using a type parameter
+|r|.
+%
+This parametricity lets us leave the type of each recursive sub-term unspecified
+until we have decided the overall shape of our random data.
+%
+Then, for instance, the value |Con_Tag "div" x :: Con_Tag y| represents the
+|Html| value |Tag "div" x|, for some sub-term |x :: y| that can be transformed
+back to |Html| as well.
+%
+It is easy to note how each one of these simple representations encode the
+minimal amount of information they need, leaving everything else unspecified.
+
+An important property of these parametric representations is that, in most
+cases, they form a functor over its type parameter, and thus we can use
+Haskell's |deriving| mechanism to obtain a suitable |Functor| instances for
+free:
+
+\begin{code}
+deriving instance Functor Con_Text
+deriving instance Functor Con_Sing
+deriving instance Functor Con_Tag
+deriving instance Functor Con_Join
 \end{code}
 
 
+% --------------------------------------
+% F-Algebras
+%
+The next building block of our approach consists of providing a mapping from
+each constructor representation to its actual target value, provided that each
+recursive sub-term has already been translated to its corresponding target
+value.
+%
+For this purpose, we will define a type class |Algebra| as follows:
 
 \begin{code}
 class Functor f => Algebra f a | f -> a where
   alg :: f a -> a
 \end{code}
+
+Where |f| is the functor type used to represent a construction of the target
+type |a|.
+%
+Note the functional dependency |f -> a|, ensuring that a given representation
+|f| can be translated to a unique target type |a|.
+%
+This mapping is usually referred categorically as an F-Algebra.
+%
+
+
+
 
 \begin{code}
 instance Algebra Con_Text Html where
@@ -73,7 +119,6 @@ instance Algebra Con_Tag Html where
 instance Algebra Con_Join Html where
   alg (Con_Join x y) = Join x y
 \end{code}
-
 
 
 \begin{code}

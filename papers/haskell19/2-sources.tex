@@ -41,10 +41,10 @@ instance Arbitrary Html where
     where
       gen 0 = frequency
         [  (2,  Text    <$> arbitrary)
-        ,  (1,  Single  <$> arbitrary) ]
+        ,  (1,  Sing    <$> arbitrary) ]
       gen n = frequency
         [  (2,  Text    <$> arbitrary)
-        ,  (1,  Single  <$> arbitrary)
+        ,  (1,  Sing    <$> arbitrary)
         ,  (4,  Tag     <$> arbitrary  <*> gen (n-1))
         ,  (3,  Join    <$> gen (n-1)  <*> gen (n-1)) ]
 \end{code} %$
