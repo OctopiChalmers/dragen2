@@ -49,12 +49,14 @@
 %format oplus'' = "\!\!\oplus\!\!"
 %format otimes = "\otimes"
 %format vdots = "\;\;\vdots"
+%format dots = "\cdots"
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Construction names
 
 
 %format Html_Spec = "\constructor{Html_{Spec}}"
+%format Html_simplify = "\constructor{Html_{simplify}}"
 
 %format InL = "\constructor{In_L}"
 %format InR = "\constructor{In_R}"
@@ -80,6 +82,9 @@
 
 %format t1 = "\variable{t_1}"
 %format t2 = "\variable{t_2}"
+%format f1 = "\variable{f_1}"
+%format f2 = "\variable{f_2}"
+%format fk = "\variable{f_k}"
 
 %format Con_Leaf = "\constructor{Con_{Leaf}}"
 %format Con_Node = "\constructor{Con_{Node}}"

@@ -9,7 +9,7 @@ type (:*) = Freq
 infixl 6 :*
 
 type (:+) = Sum
-infixl 5 :+
+infixr 5 :+
 
 type (m :> k) = Lookup m k
 infix 4 :>

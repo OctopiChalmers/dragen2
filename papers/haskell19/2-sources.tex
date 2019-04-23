@@ -57,11 +57,11 @@ br = Sing "br"
 bold :: Html -> Html
 bold = Tag "b"
 
-(<+>) :: Html -> Html -> Html
-(<+>) x y = Join x (Join br y)
-
 list :: [Html] -> Html
 list xs = Tag "ul" (foldl1 Join (Tag "li" <$> xs))
+
+(<+>) :: Html -> Html -> Html
+(<+>) x y = Join x (Join br y)
 \end{code} %$
 
 \begin{code}
