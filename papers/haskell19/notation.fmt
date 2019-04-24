@@ -48,6 +48,8 @@
 %format oplus' = "\!\;\oplus"
 %format oplus'' = "\!\!\oplus\!\!"
 %format otimes = "\otimes"
+%format otimes' = "\!\otimes\!"
+%format otimes'' = "\!\!\otimes\!\!"
 %format vdots = "\;\;\vdots"
 %format dots = "\cdots"
 

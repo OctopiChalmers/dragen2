@@ -224,13 +224,22 @@ data, we want each one of its recursive fields to be instantiated with itself.
 This can be easily achieved by using a type-level fixed point operator:
 
 \begin{code}
-data Fix (f :: * -> *) = Fix { unFix :: (f (Fix f)) }
+newtype Fix (f :: * -> *) = Fix { unFix :: f (Fix f) }
 \end{code}
 %
 Given a parametric type |f| of kind |* -> *| representing some target data type,
 the type |Fix f| instantiates each recursive field of |f| with |Fix f|, thus
 closing the definition of |f| into itself---note thus that the kind of |Fix f|
 results |*|.
+%
+In addition, note that we defined |Fix| as a |newtype|.
+%
+This way, the compiler will avoid producing a runtime representation for it,
+thus avoiding unnecessary overhead.
+%
+This is possible since we only use it as a wrapper to obtain a self-recursive
+type from a parametric one.
+
 
 In general, if |f| is a representation for a given target type, we will refer to
 |Fix f| as a \emph{final representation}, since it cannot be further combined or

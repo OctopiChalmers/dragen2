@@ -58,7 +58,8 @@ bold :: Html -> Html
 bold = Tag "b"
 
 list :: [Html] -> Html
-list xs = Tag "ul" (foldl1 Join (Tag "li" <$> xs))
+list []  = Text "empty list"
+list xs  = Tag "ul" (foldl1 Join (Tag "li" <$> xs)
 
 (<+>) :: Html -> Html -> Html
 (<+>) x y = Join x (Join br y)
