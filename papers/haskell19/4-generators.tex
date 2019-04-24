@@ -1,31 +1,255 @@
 \section{Generating Random Constructions}
 \label{sec:generators}
 
+% --------------------------------------
+% Intro
+%
+So far we have seen how to encode different constructions representing
+interesting values from our target data types.
+%
+Such representations follow a modular approach, where each different
+construction is considered independent from the rest.
+%
+This modularity allows us to derive each different construction independently,
+as well to specify the shape of our target data with with a fine granularity.
+
+
+In this section we introduce the machinery required to randomly generate the
+values encoded using our representations.
+%
+For this purpose, this step also follows the modular, fine-grained fashion,
+resulting in a generation process entirely compositional.
+%
+In this light, our random generators are built from smaller ones (each one
+representing a single construction), and they are based solely on the types we
+use to represent the shape of our random data.
+
+Ideally, our aim is to be able to obtain random generators with a behavior
+similar to the one presented for |Html| in Section \ref{sec:sources}.
+%
+If we take a closer look at its definition, we can observe three factors
+happening simultaneously:
+%
+\begin{itemize}
+\item We use the QuickCheck's generation size to limit the depth of the
+  generated values, reducing it by one on each recursive call of the local
+  auxiliary function |gen|.
+\item We differentiate between \emph{terminal} and \emph{non-terminal
+    constructors}, limiting our generator to pick only among terminal ones when
+  we have reached the maximum depth (case |gen 0|).
+\item We generate different constructions in a (possibly) different frequency
+  that is fixed over time.
+\end{itemize}
+%
+Then, in order to achieve the desired generation behavior, we will need to model
+these previous aspects in our modular framework, and in such a way that we do
+not compromise the compositionality obtained so far.
+
+
+% --------------------------------------
+% Depth-bounded generators
+%
+\subsection{Depth-Bounded Modular Generators}
+
+The first obstacle that arises when trying to generate random values with a
+limited depth using our approach is related to modularity.
+%
+If we recall the random generator for |Html| from Section \ref{sec:sources}, we
+can observe that the depth parameter |d| is threaded to the different recursive
+call of our generator, but always within the scope of the |gen| local function.
+%
+Since each construction will have an specialized random generator, we cannot
+group them as we did before using an internal |gen| function.
+%
+Instead, we will define a depth-bounded generator data type, wrapping
+QuickCheck's |Gen| data type with a external parameter representing the current
+maximum recursive depth:
 
 \begin{code}
 type BGen a = Int -> Gen a
+\end{code}
 
+A |BGen| is essentially a normal |Gen| with the maximum recursive depth as an
+input parameter.
+%
+Using this previous definition, we can generalize QuickCheck's |Arbitrary| class
+to work with depth-bounded generators simply as follows:
+
+\begin{code}
 class BArbitrary (a :: *) where
   bounded :: BGen a
 \end{code}
 
+From now on, we will use this type class as a more flexibe substitute of
+|Arbitrary|, given that now we have two parameters to tune: the maximum
+recursive depth, and the QuickCheck generation size.
+%
+Where the former is useful to tune the overall size of our random data, whereas
+the latter can be use for tuning the values of the ``leaves'', such as the
+maximum length of random |String| or the maximum/minumum random |Int|s.
+
+
+Here we want to actively remark that, even though we could have reused the
+QuickCheck generation size parameter to simultaneously model the maximum
+recursive depth and the maximum size of the leaves, doing so would imply
+generating random leaves with a decresing size as we move deeper within a random
+value, obtaining for instance, random trees with all zeroes on its leaves, or
+random lists showing a hight tendency to be ordered in decreasing order.
+%
+In addition, one can always obtain a trivial |Arbitrary| instance from a
+|BArbitrary| one by using QuickCheck's generation size both for the maximum
+recursive depth as well as for generating leaves:
+
+\begin{code}
+instance BArbitrary a => Arbitrary a where
+  arbitrary = sized bounded
+\end{code} %$
+
+
+Even though we have extended QuickCheck's generators to be depth-aware, here we
+also need to consider the parametric nature of our representations.
+%
+In the previous section, we defined each construction representation as being
+parametric on the type of the recursive sub-terms, as a manner to defer this
+choice until we have specified the overal shape of our target data.
+%
+Hence, each construction representation is of kind |* -> *|.
+%
+If we want to define our generators in a modular way, we also need to
+parametrize somehow the generation of the recursive subterms!
+%
+Fortunately, QuickCheck already defines a lifted type class |Arbitrary1| for
+types for parametric types of kind |*->*|:
 
 \begin{code}
 class Arbitrary1 (f :: * -> *) where
-  liftGen :: Gen a -> Gen (f a)
+  liftArbitrary :: Gen a -> Gen (f a)
 \end{code}
+
+This type class allows us to write modular generators, leaving unspecified the
+specific generator used to generate values of its type argument.
+%
+For instance, the default parametric generator for the data type |Maybe| looks
+like:
+
+\begin{code}
+instance Arbitrary1 Maybe where
+  liftArbitrary gen = frequency
+    [  (1,  pure Nothing),  (3,  Just <$> gen) ]
+\end{code} %$
+
+Then, we can use the same mechanism for our modular generators, extending it to
+be depth-aware as follows:
 
 \begin{code}
 class BArbitrary1 (f :: * -> *) where
   liftBGen :: BGen a -> BGen (f a)
 \end{code}
 
+Note the similarity between the |Arbitrary1| and |BArbitrary1| type classes.
+%
+We will use this type class to implement random generators for each construction
+we are considering.
+%
+Recalling our |Html| example, we can finally define modular random generator for
+the constructions representing data constructors as follows:
+
 \begin{code}
-data ((f :: * -> *) otimes (n :: Nat)) a = Freq (f a)
+instance BArbitrary1 Con_Text where
+  liftBGen gen d = Con_Text <$> arbitrary
+
+instance BArbitrary1 Con_Sing where
+  liftBGen gen d = Con_Sing <$> arbitrary
+
+instance BArbitrary1 Con_Tag where
+  liftBGen gen d = Con_Tag <$> arbitrary <*> gen (d - 1)
+
+instance BArbitrary1 Con_Join where
+  liftBGen gen d = Con_Join <$> gen (d - 1) <*> gen (d - 1)
+\end{code} %$
+
+Note in the previous definitions how each instance is defined to be independent
+of the maximum depth (paramtrized by the input variable |d|) and the random
+generator used for the recursive sub-terms (parametrized by the input variable
+|gen|).
+%
+Every other non-recursive sub-term can be generated using a normal |Arbitrary|
+instance---we use this to generate random |String|s in the previous definitions.
+
+
+The rest of our construction representations can be generated using the same
+idea.
+%
+For example, the |BArbitrary1| instances for |Fun_bold| and |Pat_simplify_2| are
+as follows:
+
+\begin{code}
+instance BArbitrary1 Fun_bold where
+  liftBGen gen d = Fun_bold <$> gen (d - 1)
+
+instance BArbitrary1 Pat_simplify_2 where
+  liftBGen gen d = Pat_simplify_2  <$> arbitrary
+                                   <*> gen (d - 1)
+                                   <*> gen (d - 1)
+\end{code} %$
+
+% \begin{code}
+% instance BArbitrary1 Fun_br where
+%   liftBGen gen d = pure Fun_br
+
+% instance BArbitrary1 Fun_bold where
+%   liftBGen gen d = Fun_bold <$> gen (d - 1)
+
+% instance BArbitrary1 Fun_cat where
+%   liftBGen gen d = Fun_cat <$> gen (d - 1) <*> gen (d - 1)
+
+% instance BArbitrary1 Fun_list where
+%   liftBGen gen d = Fun_list <$> liftArbitrary (gen (d - 1))
+% \end{code} %$
+
+% \begin{code}
+% instance BArbitrary1 Pat_simplify_1 where
+%   liftBGen gen d
+%     = Pat_simplify_1 <$> arbitrary <*> arbitrary
+
+% instance BArbitrary1 Pat_simplify_2 where
+%   liftBGen gen d
+%     = Pat_simplify_2 <$> gen (d - 1) <*> gen (d - 1)
+% \end{code}
+
+Having all the modular generators for each construction in place, we can finally
+obtain a concrete depth-aware generator (of kind |*|) for any final
+representation |f| as follows:
+
+\begin{code}
+instance BArbitrary1 f => BArbitrary (Fix f) where
+  bounded d = Fix <$> liftBGen bounded d
+\end{code} %$
+
+The previous instance uses the |BArbitrary1| of our final representation to
+generate sub-terms recursively using itself (|bounded d|) as the parametrized
+input generator, wrapping each recursive sub-term with a |Fix| data constructor.
+
+The machinery developed so far lets us generate single random constructions in a
+modular fashion.
+%
+However, we still need to develop our generation mechanism a bit further in
+order to generate composite representations built using the |oplus''| type-level
+operator.
+%
+This is the objective of the next sub-section.
+
+% --------------------------------------
+% Encoding Generation Instructions Using Types
+%
+\subsection{Encoding Generation Instructions Using Types}
+
+\begin{code}
+newtype ((f :: * -> *) otimes (n :: Nat)) a = Freq (f a)
 \end{code}
 
 \begin{code}
-data Term (f :: * -> *) a = Term (f a)
+newtype Term (f :: * -> *) a = Term (f a)
 \end{code}
 
 \begin{code}
@@ -46,6 +270,7 @@ instance BArbitrary1 f => BArbitrary1 (f otimes n) where
 instance BArbitrary1 f => BArbitrary1 (Term f) where
   liftBGen gen d = Term <$> liftBGen gen d
 \end{code}
+
 
 \begin{code}
 type family FreqOf (f :: * -> *) :: Nat where
@@ -81,50 +306,7 @@ instance (BArbitrary1 f, BArbitrary1 g)
 freqVal :: forall n dot KnownNat n => Int
 \end{code}
 
-\begin{code}
-instance BArbitrary1 Con_Text where
-  liftBGen gen d = Con_Text <$> arbitrary
 
-instance BArbitrary1 Con_Sing where
-  liftBGen gen d = Con_Sing <$> arbitrary
-
-instance BArbitrary1 Con_Tag where
-  liftBGen gen d = Con_Tag <$> arbitrary <*> gen (d - 1)
-
-instance BArbitrary1 Con_Join where
-  liftBGen gen d = Con_Join <$> gen (d - 1) <*> gen (d - 1)
-\end{code} %$
-
-
-\begin{code}
-instance BArbitrary1 Fun_br where
-  liftBGen gen d = pure Fun_br
-
-instance BArbitrary1 Fun_bold where
-  liftBGen gen d = Fun_bold <$> gen (d - 1)
-
-instance BArbitrary1 Fun_cat where
-  liftBGen gen d = Fun_cat <$> gen (d - 1) <*> gen (d - 1)
-
-instance BArbitrary1 Fun_list where
-  liftBGen gen d = Fun_list <$> liftGen (gen (d - 1))
-\end{code} %$
-
-\begin{code}
-instance BArbitrary1 Pat_simplify_1 where
-  liftBGen gen d
-    = Pat_simplify_1 <$> arbitrary <*> arbitrary
-
-instance BArbitrary1 Pat_simplify_2 where
-  liftBGen gen d
-    = Pat_simplify_2 <$> gen (d - 1) <*> gen (d - 1)
-\end{code}
-
-
-\begin{code}
-instance BArbitrary1 f => BArbitrary (Fix f) where
-  bounded d = Fix <$> liftBGen bounded d
-\end{code} %$
 
 \begin{code}
 genFix  ::  forall f dot BArbitrary1 f =>  BGen (Fix f)

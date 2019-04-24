@@ -395,7 +395,7 @@ simplify (Join (Text t1) (Text t2))   = dots
 simplify (Join (Join (Text t1) x) y)  = dots
 \end{code}
 
-Once again, we can extend our approach to represent these patterns as well.
+We can extend our approach further in order to represent these patterns as well.
 %
 We start defining single data types for each one of them, this time encoding in
 the fields of each single data constructor the free pattern variables (or
@@ -407,11 +407,11 @@ data Pat_simplify_2 r = Pat_simplify_2 String r r
 \end{code}
 %
 Where the number after the |#| simply distinguishes the different patterns from
-the function |simplify| using index of the clause they belong to.
+the function |simplify| using the index of the clause they belong to.
 %
-Once again, we abstracted away every recursive field (corresponding to a
-recursive pattern variable) using a type variable |r| until we have decided the
-overall shape of our target data.
+Once again, we abstracted away every recursive field (this time corresponding to
+a recursive pattern variable or wildcard) using a type variable |r| until we
+have decided the overall shape of our target data.
 
 
 Then, the task of our |Algebra| instances is to expand each pattern
@@ -426,6 +426,7 @@ instance Algebra Pat_simplify_1 Html where
 instance Algebra Pat_simplify_2 Html where
   alg (Pat_simplify_1 t x y) = Join (Join (Text t) x) y
 \end{code}
+
 
 %
 % Closing
@@ -470,5 +471,6 @@ type ValidHtml = Con_Text oplus'' Con_Join oplus'' Fun_br oplus'' Fun_bold
 
 
 The next section introduces a generic way to generate random values from our
-different representations, extending them with a set of type-level to encode
-information relevant to the generation process directly on their types.
+different representations, extending them with a set of type-level combinators
+to encode information relevant to the generation process directly on their
+types.
