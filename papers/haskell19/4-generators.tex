@@ -443,11 +443,11 @@ Then, for instance, the value |freqVal at (FreqOf (f otimes'' 5))| will evaluate
 to |5 :: Int|.
 
 The remaining part of our random generator works analogously, except that this
-time we only want to genrate terminal constructors, hence we use the |FreqOf'|
+time we only want to generate terminal constructions, hence we use the |FreqOf'|
 type family to compute the terminal generation frequency of each operand.
 %
 If any of |FreqOf' f| or |FreqOf' g| evaluates to zero, then it means that that
-operand does not contain any terminal construction, and |frequency| will not
+operand does not contain any terminal constructions, and |frequency| will not
 consider it when generating terminal values.
 
 If it happens that both |FreqOf' f| and |FreqOf' g| compute to zero when
@@ -455,10 +455,10 @@ genrating a composite value, then it will produce a runtime error triggered by
 the function |frequency|, as it does not have anything with a positive frequency
 to generate.
 %
-This kind of exceptions will arise if we forget to tag at least a single
-construction within a composite representation as terminal.
+This kind of exceptions will arise for examplke if we forget to tag at least a
+single construction within a composite representation as terminal.
 %
-Fortunately, such runtime exceptions can be catched in compile time by defining
+Fortunately, such runtime exceptions can be catched in compile-time by defining
 a type constraint that ensures we are trying to generate values using a
 representation with a strictly positive terminal generation frequency---thus
 containing at least a single terminal construction:
@@ -491,8 +491,25 @@ representation.
 %
 This allows us to use a visible type application to obtain values from the same
 target type but generated using a different underlying representations.
+%
+For instance, we can obtain two different concrete generators for our |Html|
+type simply by changing its representation type as follows:
+
+\begin{code}
+genHtmlPats :: BGen Html
+genHtmlPats = genEval at Html_simplify
+
+genValidHtml :: BGen Html
+genValidHtml = genEval  at ValidHtml
+\end{code}
+
+Where |Html_simplify| and |ValidHtml| are the types defined at the end of
+Section \ref{sec:representation}.
 
 
+% --------------------------------------
+% Closing
+%
 So far we have seen how to represent and generate values for a target data type
 by combining a wide selection of structural constructions, as well as a series
 of type-level combinators to encode the generation behavior.
