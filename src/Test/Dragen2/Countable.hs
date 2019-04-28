@@ -1,7 +1,14 @@
 {-# LANGUAGE KindSignatures  #-}
 {-# LANGUAGE DefaultSignatures  #-}
 
-module Test.Dragen2.Countable where
+module Test.Dragen2.Countable
+  ( ConsCount
+  , ConsAvg
+  , Countable(..)
+  , GCountable
+  , defaultCount
+  , consAvg
+  ) where
 
 import GHC.Generics
 import Data.Kind

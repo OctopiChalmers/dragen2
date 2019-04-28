@@ -1,6 +1,8 @@
 module Test.Dragen2.TH.Extract where
 
 import Data.List
+import Data.Maybe
+import Data.Foldable
 
 import Control.Monad.Extra
 import Control.Monad.IO.Class
@@ -49,30 +51,45 @@ defaultExts = parseExtension <$>
 extractVarNames :: Module SrcSpanInfo -> TH.Q [TH.Name]
 extractVarNames (Module _ mbModHead _ _ decs) = do
 
-  let srcNames = foldr extractBinds [] decs
+  let extractBinds (PatBind _ ps@(PVar {}) _ _) = patBindName ps
+      extractBinds (FunBind _ (ms : _)) = funBindName ms
+      extractBinds _ = return []
 
-      extractBinds (PatBind _ ps@(PVar {}) _ _) xs = patBindName ps : xs
-      extractBinds (FunBind _ ms) xs               = map funBindName ms ++ xs
-      extractBinds _ xs = xs
+      funBindName (Match _ n _ _ _) = do
+        dragenMsg "reifying name: " [rawName n]
+        maybeToList <$> TH.lookupValueName (rawName n)
+      funBindName (InfixMatch _ _ n _ _ _) = do
+        dragenMsg "reifying infix name: " [rawName n]
+        maybeToList <$> TH.lookupValueName (rawName n)
 
-      funBindName (Match _ n _ _ _)        = TH.mkName (qualify mbModName n)
-      funBindName (InfixMatch _ _ n _ _ _) = TH.mkName (qualify mbModName n)
+      patBindName (PVar _ n) = do
+        dragenMsg "reifying name: " [rawName n]
+        maybeToList <$> TH.lookupValueName (rawName n)
+      patBindName p
+        = unsupported 'extractVarNames p
 
-      patBindName (PVar _ n) = TH.mkName (qualify mbModName n)
-      patBindName p          = unsupported 'extractVarNames p
+      -- funBindName (Match _ n _ _ _)        = TH.mkName (qualify mbModName n)
+      -- funBindName (InfixMatch _ _ n _ _ _) = TH.mkName (qualify mbModName n)
+
+      -- patBindName (PVar _ n) = return [TH.mkName (qualify mbModName n)]
+      -- patBindName p          = unsupported 'extractVarNames p
+
+
+      -- qualify (Just modName) n = prettyPrint modName ++ "." ++ prettyPrint n
+      -- qualify _              n = prettyPrint n
 
       mbModName = case mbModHead of
         (Just (ModuleHead _ modName _ _)) -> Just modName
         _                                 -> Nothing
 
-      qualify (Just modName) n = prettyPrint modName ++ "." ++ prettyPrint n
-      qualify _              n = prettyPrint n
-
       printModName (Just modName) = prettyPrint modName
       printModName _              = "<unnamed module>"
 
+  srcNames <- concatMapM extractBinds decs
+
   when (null srcNames) $ do
     dragenError "couldn't find any variable names" [printModName mbModName]
+
 
   let varNames = nub srcNames
   dragenMsg
@@ -126,6 +143,8 @@ toTHDPat (PWildCard _)
   = pure THD.DWildPa
 toTHDPat (PParen _ pat)
   = toTHDPat pat
+toTHDPat (PAsPat _ _ pat)
+  = toTHDPat pat
 toTHDPat (PList _ pats)
   = go pats
   where
@@ -148,3 +167,7 @@ toTHLit l _ = unsupported 'toTHLit (prettyPrint l)
 
 toTHDataName :: Pretty a => a -> TH.Q TH.Name
 toTHDataName = THD.mkDataNameWithLocals . prettyPrint
+
+rawName :: Name l -> String
+rawName (Symbol _ xs) = xs
+rawName (Ident  _ xs) = xs

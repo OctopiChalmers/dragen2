@@ -3,6 +3,7 @@
 
 module Test.Dragen2.TH where
 
+import Data.Maybe
 import Data.Proxy
 
 import Control.Monad.Extra
@@ -32,29 +33,35 @@ data Target
   = TypeDef
     { typeName_  :: Name
     , blacklist_ :: Blacklist
-    , typeFam_   :: MutRecFam }
+    , typeFam_   :: MutRecFam
+    , branching_ :: Bool }
   | TypeInt
     { typeName_  :: Name
     , alias_     :: String
     , blacklist_ :: Blacklist
     , path_      :: Maybe FilePath
-    , typeFam_   :: MutRecFam }
+    , typeFam_   :: MutRecFam
+    , branching_ :: Bool }
   | FunPats
-    { funName_ :: Name
-    , argNum_  :: Int
-    , path_    :: Maybe FilePath
-    , typeFam_ :: MutRecFam }
+    { funName_   :: Name
+    , argNum_    :: Int
+    , path_      :: Maybe FilePath
+    , typeFam_   :: MutRecFam
+    , branching_ :: Bool }
 
 
 -- | Simple smart constructors
 constructors :: Name -> Target
-constructors tname = TypeDef tname [] []
+constructors tname
+  = TypeDef tname [] [] False
 
 interface :: Name -> Target
-interface tname = TypeInt tname ("(-> " ++ nameBase tname ++ ")") [] Nothing []
+interface tname
+  = TypeInt tname ("(-> " ++ nameBase tname ++ ")") [] Nothing [] False
 
 patterns :: Name -> Target
-patterns fname = FunPats fname 1 Nothing []
+patterns fname
+  = FunPats fname 1 Nothing [] False
 
 -- | Simple target modifiers
 (|>) :: Target -> (Target -> Target) -> Target
@@ -74,15 +81,17 @@ argNum n t = t { argNum_ = n }
 path :: FilePath -> Target -> Target
 path p t = t { path_ = Just p }
 
+branching :: Target -> Target
+branching t = t { branching_ = True }
 
 -- | TH target dispatcher
 deriveTarget :: Target -> Q [Dec]
-deriveTarget (TypeDef typeName _blacklist typeFam)
-  = sweeten <$> deriveTypeDef typeName _blacklist typeFam
-deriveTarget (TypeInt typeName _alias _blacklist _path typeFam)
-  = sweeten <$> deriveTypeInt typeName _alias _blacklist _path typeFam
-deriveTarget (FunPats funName _argNum _path typeFam)
-  = sweeten <$> deriveFunPats funName _argNum _path typeFam
+deriveTarget (TypeDef typeName _blacklist typeFam branching)
+  = sweeten <$> deriveTypeDef typeName _blacklist typeFam branching
+deriveTarget (TypeInt typeName _alias _blacklist _path typeFam branching)
+  = sweeten <$> deriveTypeInt typeName _alias _blacklist _path typeFam branching
+deriveTarget (FunPats funName _argNum _path typeFam branching)
+  = sweeten <$> deriveFunPats funName _argNum _path typeFam branching
 
 
 -- | Derive multiple target using the same family of mutually recursive types
@@ -94,20 +103,25 @@ derive fam targets
 ----------------------------------------
 -- | Derive BoundedArbitrary instances using a generation specification
 
-deriveBoundedArbitrary :: [Name] -> Name -> Q [Dec]
+deriveBoundedArbitrary :: [(Name, [Maybe Name])] -> Name -> Q [Dec]
 deriveBoundedArbitrary typeFam spec
   = concatMapM deriveInstance typeFam
   where
-    deriveInstance typeName = do
+    deriveInstance (typeName, typeCxt) = do
 
       -- Reify the original data definition
       (vs, _) <- getDataD (nameBase typeName) typeName
       freeTypeVars <- mapM desugar vs
 
+      -- Create the constraints from the user provided context
+      let extCxt = catMaybes (zipWith applyCxt typeCxt freeTypeVars)
+          applyCxt (Just c) v = Just (DAppPr (DConPr c) (dTyVarBndrToDType v))
+          applyCxt _ _        = Nothing
+
       -- Create the appropriate BoundedArbitrary instances based on the given
       -- generation specification
-      let arbIns = DInstanceD Nothing arbCxt arbTy [arbLetDec]
-          arbCxt = mkCxt <$> freeTypeVars
+      let arbIns = DInstanceD Nothing (arbCxt ++ extCxt) arbTy [arbLetDec]
+          arbCxt = mkArbCxt <$> freeTypeVars
           arbTy  = ''BoundedArbitrary <<# [typeName <<* freeTypeVars]
           arbTyApp = foldl (\t v -> DConT ''Apply `DAppT` v `DAppT` t)
                      arbTyAppBase
@@ -119,7 +133,7 @@ deriveBoundedArbitrary typeFam spec
           arbClause = DClause [] arbBody
           arbBody = DAppTypeE (DVarE 'genEval) arbTyApp
 
-          mkCxt v = DAppPr (DConPr ''Arbitrary) (dTyVarBndrToDType v)
+          mkArbCxt v = DAppPr (DConPr ''Arbitrary) (dTyVarBndrToDType v)
 
       -- Return all the stuff
       dragenMsg "derived BoundedArbitrary instance:" [arbIns]

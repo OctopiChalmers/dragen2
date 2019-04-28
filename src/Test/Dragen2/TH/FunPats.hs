@@ -18,15 +18,15 @@ import qualified Test.Dragen2.Branching as Branching
 ----------------------------------------
 -- | Derive the complete representation for a every pattern of a function, plus
 -- the function representation as a sum of each pattern.
-deriveFunPats :: Name -> Int -> Maybe FilePath -> [Name] -> Q [DDec]
-deriveFunPats funName argNum path typeFam = do
+deriveFunPats :: Name -> Int -> Maybe FilePath -> [Name] -> Bool -> Q [DDec]
+deriveFunPats funName argNum path typeFam branching = do
 
   -- Parse the appropriate file to obtain the target function pattern matching
   modulePath <- maybeM currentFile pure (pure path)
   funPats <- extractDPats funName =<< parseModule modulePath
 
   -- Extract the patterns from the function for the given argument
-  (funArgsTypes, _) <- reifyFunSig funName
+  (_, _, funArgsTypes, _) <- reifyFunSig funName
   let funArgType = funArgsTypes !! (argNum - 1)
       funArgPats = dropTrivialPats ((!! (argNum - 1))  <$> funPats)
 
@@ -51,7 +51,8 @@ deriveFunPats funName argNum path typeFam = do
   patsVarsTypes <- mapM collectPatTypes funArgPats
 
   -- Create the representation for each pattern matching of the function
-  let derivePatRep' = derivePatRep funName typeFam funArgType' funArgDefTypeVars
+  let derivePatRep'
+        = derivePatRep funName typeFam funArgType' funArgDefTypeVars branching
   patReps <- concatMapM (uncurry3 derivePatRep')
                         (zip3 patsVarsTypes [1..] funArgPats)
 
@@ -62,9 +63,9 @@ deriveFunPats funName argNum path typeFam = do
 
 ----------------------------------------
 -- | Derive the complete representation for a single pattern of a function.
-derivePatRep :: Name -> [Name] -> DType -> [DTyVarBndr]
+derivePatRep :: Name -> [Name] -> DType -> [DTyVarBndr] -> Bool
              -> [DType] -> Int -> DPat -> Q [DDec]
-derivePatRep funName typeFam funArgType funArgDefTypeVars
+derivePatRep funName typeFam funArgType funArgDefTypeVars branching
              funArgPatVarsTypes patNum targetPat = do
 
   -- Create the new names of the representation and single constructor
@@ -115,6 +116,33 @@ derivePatRep funName typeFam funArgType funArgDefTypeVars
       mkCxt v = DAppPr (DConPr ''QC.Arbitrary) (DVarT v)
 
   -- Create the representation BranchingType instance
+
+  -- Create the function Rep type instance
+  let repPatTyIns = DTySynInstD ''Rep.Pat repInsEqn
+      repInsEqn = DTySynEqn [thNameTyLit funName, thNumTyLit patNum] someTy
+      someTy
+        | null funArgDefTypeVars = DConT repTypeName
+        | otherwise = thSome (length funArgDefTypeVars) (DConT repTypeName)
+
+  -- Create the representation BranchingType instance
+  repBrIns <- deriveBranchingTypeIns typeFam funName patNum targetPat
+                funArgPatVarsTypes repTypeNoRv
+
+  -- Return all the stuff
+  let repDecs = [repDataDec, repAlgIns, repGenIns, repPatTyIns]
+  let conRep | branching = repBrIns : repDecs
+             | otherwise = repDecs
+
+  dragenMsg "derived function pattern representation:" [conRep]
+
+  return conRep
+
+----------------------------------------
+-- | Derive the `BranchingType` instance for a function pattern matching
+deriveBranchingTypeIns :: [Name] -> Name -> Int -> DPat -> [DType] -> DType -> Q DDec
+deriveBranchingTypeIns typeFam funName patNum targetPat
+  funArgPatVarsTypes repTypeNoRv = do
+
   typeFamCons <- getFamDConNames typeFam
   let targetPatCons = collectPatCons targetPat
 
@@ -144,19 +172,7 @@ derivePatRep funName typeFam funArgType funArgDefTypeVars
 
       eta cn = maybe 0 id (lookup cn targetPatCons)
 
-  -- Create the function Rep type instance
-  let repPatTyIns = DTySynInstD ''Rep.Pat repInsEqn
-      repInsEqn = DTySynEqn [thNameTyLit funName, thNumTyLit patNum] someTy
-      someTy
-        | null funArgDefTypeVars = DConT repTypeName
-        | otherwise = thSome (length funArgDefTypeVars) (DConT repTypeName)
-
-  -- Return all the stuff
-  let conRep = [repDataDec, repAlgIns, repGenIns, repBrIns, repPatTyIns]
-  dragenMsg "derived function pattern representation:" [conRep]
-
-  return conRep
-
+  return repBrIns
 
 ----------------------------------------
 -- | Derive a default `Rep` type instace for the target data type

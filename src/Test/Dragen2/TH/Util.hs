@@ -6,7 +6,6 @@ module Test.Dragen2.TH.Util where
 
 import System.FilePath
 import System.Directory
-import Data.Ratio
 import Data.List
 import Control.Arrow
 import Control.Monad.Extra
@@ -15,7 +14,6 @@ import System.Console.ANSI
 
 import Test.Dragen2.TH.Ppr
 import Language.Haskell.TH hiding (Ppr, ppr, pprint)
-import Language.Haskell.TH.PprLib
 import Language.Haskell.TH.Desugar
 
 import qualified Data.Vector as Vector
@@ -58,11 +56,12 @@ reifyName name = do
     Nothing -> dragenError "could not reify name" [name]
 
 -- | Retrieve a function type signature
-reifyFunSig :: Name -> Q ([DType], DType)
+reifyFunSig :: Name -> Q ([DTyVarBndr], [DPred], [DType], DType)
 reifyFunSig funName = do
   DVarI _ funTy _ <- reifyName funName
-  let funSig = splitSignature funTy
-  return (init funSig, last funSig)
+  -- let funSig = splitSignature funTy
+  -- return (init funSig, last funSig)
+  return (unravel funTy)
 
 -- | Reify the constructors of a given type name
 getDCons :: Name -> Q [DCon]
@@ -255,7 +254,7 @@ dropTrivialPats (p : ps) = p : dropTrivialPats ps
 -- | Transform a pattern into an expression using a list of variables names for
 -- the pattern variables
 dPatToDExpWithVars :: [Name] -> DPat -> DExp
-dPatToDExpWithVars vs = fst . go vs
+dPatToDExpWithVars vars = fst . go vars
   where
     go vs (DLitPa l) = (DLitE l, vs)
     go vs (DVarPa _) = (DVarE (head vs), tail vs)
@@ -517,13 +516,13 @@ dragenWarning msg inputs = runIO $ do
     forM_ inputs $ \i -> do
       mapM_ dragenLog' (lines (dump i))
 
-dragenError :: Ppr a => String -> [a] -> Q b
+dragenError :: Show a => String -> [a] -> Q b
 dragenError msg inputs = runIO $ do
   withColor Red $ do
     dragenLog "an error happened:"
     dragenLog msg
     dragenLog "input was:"
     forM_ inputs $ \i -> do
-      mapM_ dragenLog' (lines (dump i))
+      mapM_ dragenLog' (lines (show i))
 
   error "DRAGEN derivation error"

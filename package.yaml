@@ -83,7 +83,23 @@ library:
 
 tests:
   dragen2-tests:
-    source-dirs: test/
+    source-dirs:
+      - test
     main: Main.hs
-    dependencies: dragen2
+    dependencies:
+      - dragen2
+    cpp-options: -DDEBUG
+
+benchmarks:
+  dragen2-benchmarks:
+    source-dirs:
+      - bench
+    main: Main.hs
+    dependencies:
+      - dragen2
+      - criterion
+      - deepseq
+      - th-desugar
+      - template-haskell
+    ghc-options: -O2
     cpp-options: -DDEBUG

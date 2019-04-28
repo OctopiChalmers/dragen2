@@ -26,16 +26,10 @@ newtype DepthBounded (n :: Nat) (a :: Type)
 instance (KnownNat d, BoundedArbitrary a) => Arbitrary (DepthBounded d a) where
   arbitrary = MkDepthBounded <$> boundedArbitrary (max 0 (numVal @d))
 
-
 -- | This global instance exists as a workaround of TH's stage restriction.
 -- More info coming soon.
 instance {-# OVERLAPPABLE #-} BoundedArbitrary a where
   boundedArbitrary = error "BoundedArbitrary: default dummy instance called"
-
--- | This global orphan instance exists just for convenience.
--- It uses the same size for inner calls to arbitrary and depth limit.
-instance {-# OVERLAPPABLE #-} BoundedArbitrary a => Arbitrary a where
-  arbitrary = sized boundedArbitrary
 
 ----------------------------------------
 -- | Depth-bounded arbitrary generation of parametric types

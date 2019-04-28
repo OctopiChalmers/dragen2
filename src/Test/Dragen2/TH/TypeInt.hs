@@ -19,8 +19,9 @@ import qualified Test.Dragen2.Branching as Branching
 ----------------------------------------
 -- | Derive a complete representation for every function in a module returning
 -- the target type, plus the api representation as a sized sum of each function.
-deriveTypeInt :: Name -> String -> [Name] -> Maybe FilePath -> [Name] -> Q [DDec]
-deriveTypeInt typeName alias blacklist path typeFam = do
+deriveTypeInt :: Name -> String -> [Name] -> Maybe FilePath
+              -> [Name] -> Bool -> Q [DDec]
+deriveTypeInt typeName alias blacklist path typeFam branching = do
 
   -- Parse the appropriate file to obtain interface function names
   modulePath <- maybeM currentFile pure (pure path)
@@ -35,7 +36,7 @@ deriveTypeInt typeName alias blacklist path typeFam = do
     dragenMsg "ignored constructors:" [droppedFuncs]
 
   -- Derive all the stuff for each target interface function
-  funReps <- concatMapM (deriveFunRep typeName typeFam) targetFuncs
+  funReps <- concatMapM (deriveFunRep typeFam branching) targetFuncs
 
   -- Create the default `Rep` type instance
   repTypeIns <- deriveRepTypeIns typeFam alias targetFuncs
@@ -51,16 +52,16 @@ returnsTargetType typeName funName = do
 
 
 ----------------------------------------
--- | Derive the complete representation for a single constructor of a type
-deriveFunRep :: Name -> [Name] -> Name -> Q [DDec]
-deriveFunRep typeName typeFam funName = do
+-- | Derive the complete representation for a single abstract interface function
+deriveFunRep :: [Name] -> Bool -> Name -> Q [DDec]
+deriveFunRep typeFam branching funName = do
 
   -- Create the new names of the representation and single constructor
   repTypeName <- newName $ toValidIdent "Rep_Fun" (nameBase funName)
   repConName  <- newName $ toValidIdent "Mk_Fun"  (nameBase funName)
 
   -- Reify the type signature of the function
-  (funArgTypes, funReturnType) <- reifyFunSig funName
+  (_, funCxt, funArgTypes, funReturnType) <- reifyFunSig funName
   let funRetTypeInsVars = typeArgs funReturnType
 
   -- Reify the type variables of the target type
@@ -86,7 +87,7 @@ deriveFunRep typeName typeFam funName = do
 
   -- Create the representation Algebra instance
   patVars <- newPatVars (length funArgTypes)
-  let repAlgIns = DInstanceD Nothing [] repAlgTy [repAlgLetDec]
+  let repAlgIns = DInstanceD Nothing funCxt repAlgTy [repAlgLetDec]
       repAlgTy = ''Algebra.Algebra <<# [repTypeNoRv, funReturnType]
       repAlgLetDec = DLetDec (DFunD 'Algebra.alg [repAlgClause])
       repAlgClause = DClause [repAlgPat] repAlgRhs
@@ -109,7 +110,28 @@ deriveFunRep typeName typeFam funName = do
 
       mkCxt v = DAppPr (DConPr ''QC.Arbitrary) (DVarT v)
 
+  -- Create the function Rep type instance
+  let repFunTyIns = DTySynInstD ''Rep.Fun repInsEqn
+      repInsEqn = DTySynEqn [thNameTyLit funName] someTy
+      someTy | null funRetTypeFreeVars = DConT repTypeName
+             | otherwise = thSome (length funRetTypeFreeVars) (DConT repTypeName)
+
   -- Create the representation BranchingType instance
+  repBrIns <- deriveBranchingTypeIns typeFam funName funArgTypes repTypeNoRv
+
+  -- Return all the stuff
+  let repDecs = [repDataDec, repAlgIns, repGenIns, repFunTyIns]
+  let funRep | branching = repBrIns : repDecs
+             | otherwise = repDecs
+
+  dragenMsg "derived interface function representation:" [funRep]
+
+  return funRep
+
+----------------------------------------
+-- | Derive the `BranchingType` instance for an interface function
+deriveBranchingTypeIns :: [Name] -> Name -> [DType] -> DType -> Q DDec
+deriveBranchingTypeIns typeFam funName funArgTypes repTypeNoRv = do
   let repBrIns = DInstanceD Nothing [] repBrType repBrLetDecs
       repBrType = ''Branching.BranchingType <<# [repTypeNoRv]
       repBrLetDecs = mkBranchingDec <$> repBrBindings
@@ -135,18 +157,7 @@ deriveFunRep typeName typeFam funName = do
             (thString "cannot expand constructors for arbitrary functions"))
         ]
 
-  -- Create the function Rep type instance
-  let repFunTyIns = DTySynInstD ''Rep.Fun repInsEqn
-      repInsEqn = DTySynEqn [thNameTyLit funName] someTy
-      someTy | null funRetTypeFreeVars = DConT repTypeName
-             | otherwise = thSome (length funRetTypeFreeVars) (DConT repTypeName)
-
-  -- Return all the stuff
-  let funRep = [repDataDec, repAlgIns, repGenIns, repBrIns, repFunTyIns]
-  dragenMsg "derived interface function representation:" [funRep]
-
-  return funRep
-
+  return repBrIns
 
 ----------------------------------------
 -- | Derive a default `Rep` type instace for the abstract interface of the
@@ -155,7 +166,7 @@ deriveRepTypeIns :: [Name] -> String -> [Name] -> Q [DDec]
 deriveRepTypeIns typeFam alias funcsNames = do
 
   -- Reify the type signature of the function
-  (funcsArgsTypes, _) <- unzip <$> mapM reifyFunSig funcsNames
+  funcsArgsTypes <- fmap (\(_,_,t,_) -> t) <$> mapM reifyFunSig funcsNames
 
   let repTypeIns = DTySynInstD ''Rep.Rep (DTySynEqn [repTyLit] rhs)
       repTyLit = thStrTyLit alias

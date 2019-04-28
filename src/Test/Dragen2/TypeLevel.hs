@@ -20,7 +20,7 @@ type family
   Lookup ('(k, v) : m) k = v
   Lookup (_       : m) k = Lookup m k
   Lookup '[]           k
-    = TypeError (Text "Lookup: key not found" :<>: ShowType k)
+    = TypeError (Text "Lookup: key not found " :<>: ShowType k)
 
 type family
   Ix (map :: [(k, v)]) (key :: k) :: Nat where

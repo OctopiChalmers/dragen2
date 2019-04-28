@@ -21,8 +21,8 @@ import qualified Test.Dragen2.Branching as Branching
 ----------------------------------------
 -- | Derive a complete representation for every constructor of a type, plus
 -- the type representation as a sized sum of each constructor.
-deriveTypeDef :: Name -> [Name] -> [Name] -> Q [DDec]
-deriveTypeDef typeName blacklist typeFam = do
+deriveTypeDef :: Name -> [Name] -> [Name] -> Bool -> Q [DDec]
+deriveTypeDef typeName blacklist typeFam branching = do
 
   -- Reify the data constructors of the target data type
   allCons <- getDCons typeName
@@ -39,7 +39,7 @@ deriveTypeDef typeName blacklist typeFam = do
     dragenError "nothing to derive" [typeName]
 
   -- Derive all the stuff for each target data constructor
-  consReps <- concatMapM (deriveConRep typeFam) targetCons
+  consReps <- concatMapM (deriveConRep typeFam branching) targetCons
 
   -- Create the default `Rep` type instance
   repTypeIns <- deriveRepTypeIns typeFam typeName targetCons
@@ -50,8 +50,8 @@ deriveTypeDef typeName blacklist typeFam = do
 
 ----------------------------------------
 -- | Derive the complete representation for a single constructor of a type
-deriveConRep :: [Name] -> DCon -> Q [DDec]
-deriveConRep typeFam (DCon conTyVars conCxt conName conFields conType) = do
+deriveConRep :: [Name] -> Bool -> DCon -> Q [DDec]
+deriveConRep typeFam branching (DCon conTyVars conCxt conName conFields conType) = do
 
   -- Create the new names of the representation and single constructor
   repTypeName <- newName $ toValidIdent "Rep_Con" (nameBase conName)
@@ -101,7 +101,29 @@ deriveConRep typeFam (DCon conTyVars conCxt conName conFields conType) = do
 
       mkCxt v = DAppPr (DConPr ''QC.Arbitrary) (dTyVarBndrToDType v)
 
+  -- Create the function Rep type instance
+  let repConTyIns = DTySynInstD ''Rep.Con repInsEqn
+      repInsEqn = DTySynEqn [thNameTyLit conName] someTy
+      someTy | null conTyVars = DConT repTypeName
+             | otherwise      = thSome (length conTyVars) (DConT repTypeName)
+
   -- Create the representation BranchingType instance
+  repBrIns <- deriveBranchingTypeIns typeFam conName conFieldsTypes repTypeNoRv
+
+  -- Return all the stuff
+  let repDecs = [repDataDec, repAlgIns, repGenIns, repConTyIns]
+  let conRep | branching = repBrIns : repDecs
+             | otherwise = repDecs
+
+  dragenMsg "derived data constructor representation:" [conRep]
+
+  return conRep
+
+----------------------------------------
+-- | Derive the `BranchingType` instance for a data constructor
+deriveBranchingTypeIns :: [Name] -> Name -> [DType] -> DType -> Q DDec
+deriveBranchingTypeIns typeFam conName conFieldsTypes repTypeNoRv = do
+
   typeFamCons <- getFamDConNames typeFam
 
   let repBrIns = DInstanceD Nothing [] repBrType repBrLetDecs
@@ -128,17 +150,7 @@ deriveConRep typeFam (DCon conTyVars conCxt conName conFields conType) = do
           , thVector2 (thRational . bool 0 1 . (conName ==) <$$> typeFamCons))
         ]
 
-  -- Create the function Rep type instance
-  let repConTyIns = DTySynInstD ''Rep.Con repInsEqn
-      repInsEqn = DTySynEqn [thNameTyLit conName] someTy
-      someTy | null conTyVars = DConT repTypeName
-             | otherwise      = thSome (length conTyVars) (DConT repTypeName)
-
-  -- Return all the stuff
-  let conRep = [repDataDec, repAlgIns, repGenIns, repBrIns, repConTyIns]
-  dragenMsg "derived data constructor representation:" [conRep]
-
-  return conRep
+  return repBrIns
 
 ----------------------------------------
 -- | Derive a default `Rep` type instace for the target data type
