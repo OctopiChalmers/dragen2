@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7682e592d3ade1718813f73fa2740e22332b6c6e771bb6186500e7eb9834912e
+-- hash: 195d84cabc91c473e9557b1990797b242473708de0ef3c8094f1999796ba32f2
 
 name:           dragen2
 version:        0.1.0.0
@@ -103,10 +103,11 @@ benchmark dragen2-benchmarks
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      BlockTable
-      Html
-      RBT
-      RE
+      Html.BlockTable
+      Html.Html
+      Lisp.Lisp
+      RBT.RBT
+      RE.RE
       Paths_dragen2
   hs-source-dirs:
       bench

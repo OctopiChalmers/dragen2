@@ -1,4 +1,4 @@
-module RE where
+module RE.RE where
 
 import Control.Monad(liftM, liftM2)
 
@@ -195,5 +195,21 @@ type R_Spec
   :+ Fun  ".>."
   :+ Fun  "epsR"
 
+type R_Spec_Bal
+  =  (((Con' "Nil"
+  :+ Con' "Eps")
+  :+ (Con' "Atom"
+  :+ Con  ":+:"))
+  :+ ((Con  ":&:"
+  :+ Con  ":>:")
+  :+ (Con  "Star"
+  :+ Fun  ".&.")))
+  :+ (((Fun  ".+."
+  :+ Fun  ".>.")
+  :+ Fun  "epsR"))
+
 genR' :: forall a. (Ord a, Arbitrary a) => BoundedGen (R a)
 genR' = genEval @(R_Spec <| a)
+
+genR'' :: forall a. (Ord a, Arbitrary a) => BoundedGen (R a)
+genR'' = genEval @(R_Spec_Bal <| a)

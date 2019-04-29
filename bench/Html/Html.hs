@@ -28,8 +28,8 @@
 --
 -----------------------------------------------------------------------------
 
-module Html (
-      module Html,
+module Html.Html (
+      module Html.Html,
       ) where
 
 
@@ -39,7 +39,7 @@ import GHC.Generics hiding (Rep)
 import Test.QuickCheck hiding (Fun)
 import Test.Dragen2
 
-import qualified BlockTable as BT
+import qualified Html.BlockTable as BT
 
 infixr 3 `above`  -- combining table cells
 infixr 4 `beside`  -- combining table cells
@@ -1316,6 +1316,149 @@ derive
 
 type Html_S =
   '[ "Html"
+       := Con' "Html"
+       :+ Fun' "area"
+       :+ Fun' "basefont"
+       :+ Fun' "br"
+       :+ Fun' "hr"
+       :+ Fun' "image"
+       :+ Fun' "input"
+       :+ Fun' "meta"
+       :+ Fun' "param"
+       :+ Fun' "thebase"
+       :+ Fun  "address"
+       :+ Fun  "anchor"
+       :+ Fun  "applet"
+       :+ Fun  "big"
+       :+ Fun  "blockquote"
+       :+ Fun  "body"
+       :+ Fun  "bold"
+       :+ Fun  "caption"
+       :+ Fun  "center"
+       :+ Fun  "cite"
+       :+ Fun  "ddef"
+       :+ Fun  "define"
+       :+ Fun  "dlist"
+       :+ Fun  "dterm"
+       :+ Fun  "emphasize"
+       :+ Fun  "fieldset"
+       :+ Fun  "font"
+       :+ Fun  "form"
+       :+ Fun  "frame"
+       :+ Fun  "frameset"
+       :+ Fun  "h1"
+       :+ Fun  "h2"
+       :+ Fun  "h3"
+       :+ Fun  "h4"
+       :+ Fun  "h5"
+       :+ Fun  "h6"
+       :+ Fun  "header"
+       :+ Fun  "italics"
+       :+ Fun  "keyboard"
+       :+ Fun  "legend"
+       :+ Fun  "li"
+       :+ Fun  "noframes"
+       :+ Fun  "olist"
+       :+ Fun  "option"
+       :+ Fun  "paragraph"
+       :+ Fun  "pre"
+       :+ Fun  "samp"
+       :+ Fun  "select"
+       :+ Fun  "small"
+       :+ Fun  "strong"
+       :+ Fun  "style"
+       :+ Fun  "sub"
+       :+ Fun  "sup"
+       :+ Fun  "table"
+       :+ Fun  "td"
+       :+ Fun  "textarea"
+       :+ Fun  "th"
+       :+ Fun  "thecode"
+       :+ Fun  "thediv"
+       :+ Fun  "thehtml"
+       :+ Fun  "thelink"
+       :+ Fun  "themap"
+       :+ Fun  "thespan"
+       :+ Fun  "thetitle"
+       :+ Fun  "tr"
+       :+ Fun  "tt"
+       :+ Fun  "ulist"
+       :+ Fun  "underline"
+       :+ Fun  "variable"
+   , "HtmlElement"
+       := Con' "HtmlString"
+       :+ Con  "HtmlTag"
+   , "HtmlAttr"
+       := Con  "HtmlAttr"
+       :+ Fun' "action"
+       :+ Fun' "align"
+       :+ Fun' "alink"
+       :+ Fun' "altcode"
+       :+ Fun' "alt"
+       :+ Fun' "archive"
+       :+ Fun' "background"
+       :+ Fun' "base"
+       :+ Fun' "bgcolor"
+       :+ Fun' "border"
+       :+ Fun' "bordercolor"
+       :+ Fun' "cellpadding"
+       :+ Fun' "cellspacing"
+       :+ Fun' "clear"
+       :+ Fun' "code"
+       :+ Fun' "codebase"
+       :+ Fun' "color"
+       :+ Fun' "cols"
+       :+ Fun' "colspan"
+       :+ Fun' "content"
+       :+ Fun' "coords"
+       :+ Fun' "enctype"
+       :+ Fun' "face"
+       :+ Fun' "frameborder"
+       :+ Fun' "height"
+       :+ Fun' "href"
+       :+ Fun' "hspace"
+       :+ Fun' "httpequiv"
+       :+ Fun' "identifier"
+       :+ Fun' "lang"
+       :+ Fun' "link"
+       :+ Fun' "marginheight"
+       :+ Fun' "marginwidth"
+       :+ Fun' "maxlength"
+       :+ Fun' "method"
+       :+ Fun' "name"
+       :+ Fun' "rel"
+       :+ Fun' "rev"
+       :+ Fun' "rows"
+       :+ Fun' "rowspan"
+       :+ Fun' "rules"
+       :+ Fun' "scrolling"
+       :+ Fun' "shape"
+       :+ Fun' "size"
+       :+ Fun' "src"
+       :+ Fun' "start"
+       :+ Fun' "target"
+       :+ Fun' "text"
+       :+ Fun' "theclass"
+       :+ Fun' "thestyle"
+       :+ Fun' "thetype"
+       :+ Fun' "title"
+       :+ Fun' "usemap"
+       :+ Fun' "valign"
+       :+ Fun' "value"
+       :+ Fun' "version"
+       :+ Fun' "vlink"
+       :+ Fun' "vspace"
+       :+ Fun' "width"
+       :+ Fun' "checked"
+       :+ Fun' "compact"
+       :+ Fun' "ismap"
+       :+ Fun' "multiple"
+       :+ Fun' "selected"
+   ]
+
+
+type Html_S_Bal =
+  '[ "Html"
        := (((((Con' "Html"
        :+ Fun' "area")
        :+ (Fun' "basefont"
@@ -1460,7 +1603,7 @@ deriveBoundedArbitrary
   [ [] .=> ''Html
   , [] .=> ''HtmlElement
   , [] .=> ''HtmlAttr
-  ] ''Html_S
+  ] ''Html_S_Bal
 
 genHtml' :: BoundedGen Html
 genHtml' = boundedArbitrary

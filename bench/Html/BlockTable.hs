@@ -3,7 +3,7 @@
 -- Module      :  Text.Html.BlockTable
 -- Copyright   :  (c) Andy Gill and OGI, 1999-2001
 -- License     :  BSD-style (see the file libraries/base/LICENSE)
--- 
+--
 -- Maintainer  :  Andy Gill <andy@galconn.com>
 -- Stability   :  provisional
 -- Portability :  portable
@@ -12,20 +12,20 @@
 --
 -----------------------------------------------------------------------------
 
-module BlockTable (
+module Html.BlockTable (
 
 -- Datatypes:
 
       BlockTable,             -- abstract
 
--- Contruction Functions: 
+-- Contruction Functions:
 
       single,
       empty,
       above,
       beside,
 
--- Investigation Functions: 
+-- Investigation Functions:
 
       getMatrix,
       showsTable,
@@ -47,11 +47,11 @@ infixr 3 `above`
 					|Hello|
 	  This is a 1x1 cell		+-----+
 	  Note: single has type
-	 
+
 		single :: a -> BlockTable a
-	
+
 	  So the cells can contain anything.
-	
+
 	> table2 :: BlockTable String
 	> table2 = single "World"	+-----+
 					|World|
@@ -63,7 +63,7 @@ infixr 3 `above`
 					|Hello%World|
 	 % is used to indicate		+-----%-----+
 	 the join edge between
-	 the two Tables.  
+	 the two Tables.
 
 	> table4 :: BlockTable String
 	> table4 = table3 %/% table2	+-----+-----+
@@ -80,14 +80,14 @@ infixr 3 `above`
 	  leftmost cell, again to	|     %World      |
 	  force the table to be a	+-----%-----------+
 	  rectangle.
- 
+
    Now the table can be rendered with processTable, for example:
 	Main> processTable table5
 	[[("Hello",(1,2)),
 	  ("Hello",(1,1)),
 	  ("World",(1,1))],
 	 [("World",(2,1))]] :: [[([Char],(Int,Int))]]
-	Main> 
+	Main>
 -}
 
 -- ---------------------------------------------------------------------------
@@ -143,9 +143,9 @@ t1 `beside` t2 = combine t1 t2 (\ lst1 lst2 r ->
 trans :: BlockTable a -> BlockTable a
 trans (Table f1 x1 y1) = Table (flip f1) y1 x1
 
-combine :: BlockTable a 
-      -> BlockTable b 
-      -> (TableI a -> TableI b -> TableI c) 
+combine :: BlockTable a
+      -> BlockTable b
+      -> (TableI a -> TableI b -> TableI c)
       -> BlockTable c
 combine (Table f1 x1 y1) (Table f2 x2 y2) comb = Table new_fn (x1+x2) max_y
     where

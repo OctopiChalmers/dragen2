@@ -1,0 +1,103 @@
+Benchmark dragen2-benchmarks: RUNNING...
+benchmarking RBT/Manual      
+analysing with 1000 resamples
+bootstrapping with 13 of 13 samples (100%)
+time                 51.43 ms   (50.76 ms .. 51.82 ms)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 52.09 ms   (51.69 ms .. 52.48 ms)
+std dev              781.8 μs   (623.8 μs .. 977.1 μs)
+variance introduced by outliers: 7% (slightly inflated)
+                             
+benchmarking RBT/Dragen      
+analysing with 1000 resamples
+bootstrapping with 7 of 7 samples (100%)
+time                 151.0 ms   (144.8 ms .. 159.1 ms)
+                     0.998 R²   (0.995 R² .. 1.000 R²)
+mean                 156.6 ms   (154.0 ms .. 159.1 ms)
+std dev              3.768 ms   (2.736 ms .. 5.059 ms)
+variance introduced by outliers: 12% (moderately inflated)
+                             
+benchmarking RBT/Dragen/Bal  
+analysing with 1000 resamples
+bootstrapping with 8 of 8 samples (100%)
+time                 119.0 ms   (118.1 ms .. 119.9 ms)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 120.6 ms   (119.7 ms .. 123.8 ms)
+std dev              2.242 ms   (865.5 μs .. 3.382 ms)
+found 2 outliers among 8 samples (25.0%)
+  1 (12.5%) high mild        
+  1 (12.5%) high severe      
+variance introduced by outliers: 11% (moderately inflated)
+                             
+benchmarking Html/Manual     
+analysing with 1000 resamples
+bootstrapping with 24 of 26 samples (92%)
+time                 13.45 ms   (13.20 ms .. 13.75 ms)
+                     0.997 R²   (0.996 R² .. 0.999 R²)
+mean                 13.64 ms   (13.42 ms .. 14.10 ms)
+std dev              781.5 μs   (394.7 μs .. 1.191 ms)
+found 3 outliers among 24 samples (12.5%)
+  1 (4.2%) low mild          
+  1 (4.2%) high mild         
+  1 (4.2%) high severe       
+variance introduced by outliers: 26% (moderately inflated)
+                             
+benchmarking Html/Dragen     
+analysing with 1000 resamples
+bootstrapping with 11 of 11 samples (100%)
+time                 71.30 ms   (70.35 ms .. 72.15 ms)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 66.62 ms   (63.36 ms .. 68.43 ms)
+std dev              4.117 ms   (1.799 ms .. 5.556 ms)
+found 2 outliers among 11 samples (18.2%)
+  2 (18.2%) low mild         
+variance introduced by outliers: 17% (moderately inflated)
+
+benchmarking Html/Dragen/Bal 
+analysing with 1000 resamples
+bootstrapping with 20 of 20 samples (100%)
+time                 22.53 ms   (22.06 ms .. 23.02 ms)
+                     0.998 R²   (0.996 R² .. 0.999 R²)
+mean                 23.27 ms   (22.60 ms .. 24.80 ms)
+std dev              2.397 ms   (678.5 μs .. 4.314 ms)
+found 2 outliers among 20 samples (10.0%)
+  1 (5.0%) low severe        
+  1 (5.0%) high severe       
+variance introduced by outliers: 48% (moderately inflated)
+
+benchmarking Lisp/Manual     
+analysing with 1000 resamples
+bootstrapping with 31 of 34 samples (91%)
+time                 7.394 ms   (7.323 ms .. 7.464 ms)
+                     0.999 R²   (0.999 R² .. 1.000 R²)
+mean                 7.711 ms   (7.625 ms .. 7.857 ms)
+std dev              324.0 μs   (192.6 μs .. 557.6 μs)
+found 1 outliers among 31 samples (3.2%)
+  1 (3.2%) high severe       
+variance introduced by outliers: 19% (moderately inflated)
+                             
+benchmarking Lisp/Dragen     
+analysing with 1000 resamples
+bootstrapping with 22 of 23 samples (95%)
+time                 17.81 ms   (17.68 ms .. 17.93 ms)
+                     0.999 R²   (0.999 R² .. 1.000 R²)
+mean                 17.86 ms   (17.73 ms .. 17.99 ms)
+std dev              303.6 μs   (219.8 μs .. 446.5 μs)
+found 3 outliers among 22 samples (13.6%)
+  1 (4.5%) low mild          
+  2 (9.1%) high mild         
+variance introduced by outliers: 4% (slightly inflated)
+                             
+benchmarking Lisp/Dragen/Bal 
+analysing with 1000 resamples
+bootstrapping with 25 of 27 samples (92%)
+time                 12.25 ms   (12.05 ms .. 12.42 ms)
+                     0.999 R²   (0.997 R² .. 1.000 R²)
+mean                 12.53 ms   (12.43 ms .. 12.67 ms)
+std dev              305.0 μs   (208.4 μs .. 474.8 μs)
+found 2 outliers among 25 samples (8.0%)
+  2 (8.0%) high mild         
+variance introduced by outliers: 6% (slightly inflated)
+                             
+Benchmark dragen2-benchmarks: FINISH
+

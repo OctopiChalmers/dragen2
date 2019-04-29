@@ -1,4 +1,4 @@
-module RBT where
+module RBT.RBT where
 
 import GHC.Generics hiding (Rep)
 import Control.DeepSeq
@@ -134,9 +134,6 @@ treeSize (T _ l _ r) = 2 + treeSize l + treeSize r
 ----------------------------------------
 -- Manual generator
 
-genColor :: Gen Color
-genColor = elements [B, R]
-
 genTree :: (Arbitrary a, Ord a) => BoundedGen (Tree a)
 genTree depth = go depth
   where
@@ -148,7 +145,7 @@ genTree depth = go depth
       [ -- Con "E"
         (1, pure E)
         -- Con "T"
-      , (1, T <$> genColor <*> go (n-1) <*> arbitrary <*> go (n-1))
+      , (1, T <$> arbitrary <*> go (n-1) <*> arbitrary <*> go (n-1))
         -- Fun' "empty"
       , (1, pure empty)
         -- Fun  "insert"
@@ -222,37 +219,49 @@ genTree depth = go depth
 ----------------------------------------
 -- Dragen2
 
-genTree' :: (Ord a, Arbitrary a) => BoundedGen (Tree a)
-genTree' = boundedArbitrary
+instance Arbitrary Color where
+  arbitrary = elements [R, B]
 
-derive [''Color, ''Tree]
-  [ constructors ''Color
-  , constructors ''Tree
-  , interface    ''Tree  |> blacklist ['balance]
+derive [''Tree]
+  [ constructors ''Tree
+  , interface    ''Tree |> blacklist ['balance]
   , patterns     'balL
   , patterns     'balR
   ]
 
-type RBT_Spec =
-  '[ "Color"
-       := Rep "Color"
-   , "Tree"
-       := (((Con' "E"
-       :+ Con  "T")
-       :+ (Fun' "empty"
-       :+ Fun  "insert"))
-       :+ ((Fun  "balance'"
-       :+ Fun  "delete")
-       :+ (Fun  "fuse"
-       :+ Pat  "balL" 1)))
-       :+ (((Pat  "balL" 2
-       :+ Pat  "balL" 3)
-       :+ (Pat  "balR" 1
-       :+ Pat  "balR" 2))
-       :+ Pat  "balR" 3)
-   ]
+type RBT_Spec
+  =  Con' "E"
+  :+ Con  "T"
+  :+ Fun' "empty"
+  :+ Fun  "insert"
+  :+ Fun  "balance'"
+  :+ Fun  "delete"
+  :+ Fun  "fuse"
+  :+ Pat  "balL" 1
+  :+ Pat  "balL" 2
+  :+ Pat  "balL" 3
+  :+ Pat  "balR" 1
+  :+ Pat  "balR" 2
+  :+ Pat  "balR" 3
 
-deriveBoundedArbitrary
-  [ [Just ''Ord] .=> ''Tree
-  , []           .=> ''Color
-  ] ''RBT_Spec
+type RBT_Spec_Bal
+  =  (((Con' "E"
+  :+ Con  "T")
+  :+ (Fun' "empty"
+  :+ Fun  "insert"))
+  :+ ((Fun  "balance'"
+  :+ Fun  "delete")
+  :+ Fun  "fuse"))
+  :+ (((Pat  "balL" 1
+  :+ Pat  "balL" 2)
+  :+ Pat  "balL" 3)
+  :+ ((Pat  "balR" 1
+  :+ Pat  "balR" 2)
+  :+ Pat  "balR" 3))
+
+
+genTree' :: forall a. (Ord a, Arbitrary a) => BoundedGen (Tree a)
+genTree' = genEval @(RBT_Spec <| a)
+
+genTree'' :: forall a. (Ord a, Arbitrary a) => BoundedGen (Tree a)
+genTree'' = genEval @(RBT_Spec_Bal <| a)
