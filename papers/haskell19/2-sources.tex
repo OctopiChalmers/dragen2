@@ -1,16 +1,11 @@
 \section{Random Testing with Source Hints}
 \label{sec:sources}
 
-Pellentesque dapibus suscipit ligula. Donec posuere augue in quam. Etiam vel
-tortor sodales tellus ultricies commodo. Suspendisse potenti. Aenean in sem ac
-leo mollis blandit. Donec neque quam, dignissim in, mollis nec, sagittis eu,
-wisi. Phasellus lacus. Etiam laoreet quam sed arcu. Phasellus at dui in ligula
-mollis ultricies. Integer placerat tristique nisl. Praesent augue. Fusce
-commodo. Vestibulum convallis, lorem a tempus semper, dui dui euismod elit,
-vitae placerat urna tortor vitae lacus. Nullam libero mauris, consequat quis,
-varius et, dictum id, arcu. Mauris mollis tincidunt felis. Aliquam feugiat
-tellus ut neque. Nulla facilisis, risus a rhoncus fermentum, tellus tellus
-lacinia purus, et dictum nunc justo sit amet elit.
+This section introduces the common workflow for generating random values using
+automatically derived QuickCheck generators, along with its common limitations.
+%
+To illustrate this, let us consider the following data type definition encoding
+basic HTML pages:
 
 \begin{code}
 data Html
@@ -20,9 +15,33 @@ data Html
   |  Join  Html Html
 \end{code}
 
-A value of type |Html| represents either plain text strings, via the |Text| data
-constructor; single and paired HTML tags using the |Sing| and |Tag| data
-constructors, respectively; and concatenation of ...
+This type allows us to build HTML pages via four possible data constructors:
+|Text| is used for plain text values; |Sing| and |Tag| represent singular and
+paired HTML tags, respectively; and |Join| to simply concatenate two HTML pages
+one after another.
+%
+Note that the constructors |Tag| and |Join| are recursive, as they have at least
+one field of their own type.
+%
+In this paper, and in the scope of random generation in general, we will refer
+to any non-recursive data constructor as \emph{terminal}, and
+\emph{non-terminal} in any other case.
+
+
+Then, using this representation the example page\linebreak
+%
+\texttt{<html>hello<hr><b>world!</b></html>}
+%
+can be encoded simply as:
+%
+\begin{code}
+Tag "html" $  Text "hello"
+              iJoin Single "hr"
+              iJoin Tag "b" $ Text "world!"
+\end{code} %$
+
+Then, in order to generate random values of type |Html|, QuickCheck requires us
+to provide a random data generator for it.
 
 \begin{code}
 class Arbitrary (a :: *) where
@@ -58,21 +77,43 @@ bold = Tag "b"
 
 list :: [Html] -> Html
 list []  = Text "empty list"
-list xs  = Tag "ul" (foldl1 Join (Tag "li" <$> xs)
+list xs  = Tag "ul" $ foldl1 Join (Tag "li" <$> xs)
 
 (<+>) :: Html -> Html -> Html
 (<+>) x y = Join x (Join br y)
 \end{code} %$
 
 \begin{code}
+  gen d = frequency
+    [ ...
+    , (1, pure br)
+    , (5, bold   <$> gen (d-1))
+    , (2, list   <$> listOf (gen (d-1)))
+    , (3, (<+>)  <$> gen (d-1) <*> gen (d-1)) ]
+\end{code}%$
+
+
+\begin{code}
 simplify :: Html -> Html
-simplify (Join (Text t1) (Text t2))
+simplify (Text t1 iJoin Text t2)
   = Text (t1 ++ t2)
-simplify (Join (Join (Text t1) x) y)
-  = simplify (Join (Text t1) (simplify (Join x y)))
-simplify (Join x y)
-  = Join (simplify x) (simplify y)
+simplify ((Text t1 iJoin x) iJoin y)
+  = simplify (Text t1 iJoin simplify (x iJoin y))
+simplify (x iJoin y)
+  = simplify x iJoin simplify y
 simplify (Tag t x)
   = Tag t (simplify x)
 simplify x = x
 \end{code}
+
+\begin{code}
+  gen d = frequency
+    [ ...
+    , (2, do  t1  <- arbitrary
+              t2  <- arbitrary
+              return (Text t1 iJoin Text t2))
+    , (4, do  t2  <- arbitrary
+              x   <- go (d-1)
+              y   <- go (d-1)
+              return ((Text t1 iJoin x) iJoin y))]
+\end{code}%$

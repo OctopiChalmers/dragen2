@@ -2,6 +2,7 @@
 %% Syntax Highlighting
 
 \definecolor{darkred}{HTML}{600018}
+\definecolor{darkpink}{HTML}{ac70ac}
 \definecolor{darkblue}{HTML}{1D2F73}
 \definecolor{darkgreen}{HTML}{417505}
 \definecolor{lightblue}{HTML}{76E9BB}
@@ -12,6 +13,7 @@
 \newcommand{\variable}[1]{{\color{darkblue}    \mathtt{ #1 } }}
 \newcommand{\constructor}[1]{{\color{darkred}  \mathtt{ #1 } }}
 \newcommand{\constructorp}[1]{{\color{darkred} \mathtt{ #1 }\texttt{'} }}
+\newcommand{\constructori}[1]{{\color{darkpink} \mathtt{ #1 } }}
 
 %subst varsym  a	= "{\color{darkblue}  \texttt{" a "}}"
 %subst numeral a 	= "{\color{darkgreen} \texttt{" a "}}"
@@ -59,6 +61,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Construction names
 
+%format iJoin = "\constructori{{`}Join{`}}"
 
 %format Html_Spec = "\constructor{Html_{Spec}}"
 %format Html_simplify = "\constructor{Html_{simplify}}"

@@ -22,14 +22,14 @@ The main contribution of this paper are:
   testing with automatically derived generators using state-of-the-art tools
   (Section \ref{sec:sources}).
 \item We present an extensible mechanism for representing random values built
-  upon different source constructions using the Data Types \`a la Carte approach
-  (Section \ref{sec:representation}).
-\item We develop a modular generation schema, exploiting the extensible nature
+  upon different source constructions using Data Types \`a la Carte (Section
+  \ref{sec:representation}).
+\item We develop a modular generation schema, exploiting the composable nature
   of our representations, which are extended to encode information relevant to
-  the generation process at the type level (Section \ref{sec:generation}).
+  the generation process at the type level (Section \ref{sec:generators}).
 \item We present a very simple yet powerful domain specific language for
-  describing extensible generators solely based on the types we used to
-  represent the desired shape of our random data (Section \ref{sec:type-level}).
+  describing extensible generators solely based on the types used to represent
+  the desired shape of our random data (Section \ref{sec:typelevel}).
 \item We provide a Template Haskell tool for automatically deriving all the
   required machinery presented throughout this paper, and evaluate its
   generation performance using three real-world case studies (Section
