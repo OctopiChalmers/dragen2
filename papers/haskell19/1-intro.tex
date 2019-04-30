@@ -10,4 +10,32 @@ commodo. Vestibulum convallis, lorem a tempus semper, dui dui euismod elit,
 vitae placerat urna tortor vitae lacus. Nullam libero mauris, consequat quis,
 varius et, dictum id, arcu. Mauris mollis tincidunt felis. Aliquam feugiat
 tellus ut neque. Nulla facilisis, risus a rhoncus fermentum, tellus tellus
-lacinia purus, et dictum nunc justo sit amet elit. \cite{bendkowski2018}
+lacinia purus, et dictum nunc justo sit amet elit.
+
+
+
+
+The main contribution of this paper are:
+%
+\begin{itemize}
+\item We identify some of the most important limitations of performing random
+  testing with automatically derived generators using state-of-the-art tools
+  (Section \ref{sec:sources}).
+\item We present an extensible mechanism for representing random values built
+  upon different source constructions using the Data Types \`a la Carte approach
+  (Section \ref{sec:representation}).
+\item We develop a modular generation schema, exploiting the extensible nature
+  of our representations, which are extended to encode information relevant to
+  the generation process at the type level (Section \ref{sec:generation}).
+\item We present a very simple yet powerful domain specific language for
+  describing extensible generators solely based on the types we used to
+  represent the desired shape of our random data (Section \ref{sec:type-level}).
+\item We provide a Template Haskell tool for automatically deriving all the
+  required machinery presented throughout this paper, and evaluate its
+  generation performance using three real-world case studies (Section
+  \ref{sec:casestudies}).
+\end{itemize}
+
+Overall, we present a novel technique for reusing automatically derived
+generators in a composable fashion, in contrast with the usual paradigm of
+automatically deriving ``closed'' monolithic generators.
