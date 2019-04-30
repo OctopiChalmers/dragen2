@@ -38,10 +38,6 @@ associate constructions as |((f oplus'' g) oplus'' (h oplus'' i))|, thus
 reducing the depth of our representation from four to three levels and, in
 general, from a $\mathcal{O}(n)$ to a $\mathcal{O}(log(n))$ complexity in the
 runtime overhead, where $n$ is the amount of constructions under consideration.
-%
-To apply this optimization automatically, and relying on more sophisticated
-techniques like prefix-free encodings to obtain optimal representations, is a
-undergoing path of our future work.
 
 
 
@@ -63,13 +59,16 @@ The expanse of each case study can be summarized as follows:
     \hline
     RBT        & 2      & 6      & 5      & 13                  \\ \hline
     SExp       & 6      & 9      & -      & 15                  \\ \hline
-    Html       & 4      & -      & 132    & 136                 \\ \hline
+    HTML       & 4      & -      & 132    & 136                 \\ \hline
   \end{tabular}
 \end{table}
 
-For each case study, we benchmarked the execution time required to generate 1000
-random values using both manually-written concrete generators, and modular
-generators obtained using our approach.
+We benchmarked the execution time required to generate and fully evaluate 1000
+random values corresponding to each case study, comparing both manually-written
+concrete generators and modular generators obtained using our approach.
+%
+For this purpose, we used the \emph{Criterion} benchmarking tool for Haskell,
+and limited the maximum depth of the generated values to five levels.
 %
 Additionally, our modular generators were tested using both linear and balanced
 generation specifications.
@@ -87,6 +86,7 @@ reader to obtain a colored version of this work.
       , ybar
       , ymajorgrids=true
       , ytick={0,1,...,5}
+      , ymax=4.5
       , enlargelimits=0.25
       , enlarge x limits=0.25
       , /pgf/bar width=17pt
@@ -96,17 +96,40 @@ reader to obtain a colored version of this work.
       , legend image code/.code={%
         \draw[#1, draw=none] (0cm,-0.1cm) rectangle (0.3cm,0.2cm); }
       , ylabel={Relative Generation Time}
-      , symbolic x coords={RBT, SExp, Html}
+      , symbolic x coords={RBT, SExp, HTML}
       , xtick=data
       % , nodes near coords
       , nodes near coords align={vertical}
       ]
-      \addplot[fill, red!30]   coordinates {(SExp,1)    (RBT,1)    (Html,1)};
-      \addplot[fill, green!30] coordinates {(SExp,2.31) (RBT,3)    (Html,4.88)};
-      \addplot[fill, blue!30]  coordinates {(SExp,1.62) (RBT,2.28) (Html,1.70)};
+      \addplot[fill, red!30]   coordinates {(SExp,1)    (RBT,1)    (HTML,1)};
+      \addplot[fill, green!30] coordinates {(SExp,2.31) (RBT,3)    (HTML,4.88)};
+      \addplot[fill, blue!30]  coordinates {(SExp,1.62) (RBT,2.28) (HTML,1.70)};
       \legend{Manual, Modular/Linear, Modular/Balanced}
     \end{axis}
   \end{tikzpicture}
   \caption{Generation time comparison between concrete and modular generators.}
   \label{fig:times}
 \end{figure}
+
+As it can be observed, our approach suffers from a noticeable runtime overhead,
+specially when considering the HTML case study with a large amount of
+construction involved at the generation process.
+%
+However, by balancing our representation types we found that the generation
+performance gets dramatically improved.
+%
+To apply this optimization automatically, and relying on more sophisticated
+techniques like prefix-free encodings to obtain optimal representations, is a
+undergoing path of our future work.
+
+
+On the other hand, it has been argued that the generation time is often not
+substantial with respect to the rest of the testing process, especially when
+testing complex properties over monadic code, as well as using randomly
+generated values for penetration testing.
+
+
+Nonetheless, we consider that these results are in turn very encouraging, given
+that the flexibility obtained from using our approach does not produce severe
+slowdowns in practice, nor explodes more than linearly as we increase the
+complexity of our random generators.
