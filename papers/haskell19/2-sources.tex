@@ -1,6 +1,9 @@
 \section{Random Testing with Source Hints}
 \label{sec:sources}
 
+% --------------------------------------
+% Motivating Example
+%
 This section introduces the common workflow for generating random values using
 automatically derived QuickCheck generators, along with its common limitations.
 %
@@ -40,18 +43,25 @@ Tag "html" $  Text "hello"
               iJoin Tag "b" $ Text "world!"
 \end{code} %$
 
+% --------------------------------------
+% Random Generators
+%
 Then, in order to generate random values of type |Html|, QuickCheck requires us
 to provide a random data generator for it.
+%
+For this purpose, QuickCheck defines the |Arbitrary| type-class for default
+defining random generators as:
 
 \begin{code}
 class Arbitrary (a :: *) where
   arbitrary :: Gen a
 \end{code}
-
-\begin{code}
-class Arbitrary (a :: *) where
-  arbitrary :: Gen a
-\end{code}
+%
+where the overloaded symbol |arbitrary :: Gen a| denotes a monadic generator for
+values of type |a|.
+%
+Using this mechanism, we can define a sensible random generator for our |Html|
+data type as follows:
 
 \begin{code}
 instance Arbitrary Html where
@@ -67,6 +77,87 @@ instance Arbitrary Html where
         ,  (3,  Join    <$> gen (d-1)  <*> gen (d-1)) ]
 \end{code} %$
 
+At the top level, this definition parametrizes the generation process using
+QuickCheck's |sized| combinator, which lets us build our generator using an
+auxliary local function |gen :: Int -> Gen Html|.
+%
+The |Int| passed to |gen| is known as the \emph{generation size}, and is
+threaded seamlessly by QuickCheck on each call to arbitrary.
+%
+Then, we use this parameter to limit the maximum amount of recursive calls that
+our generator can perform, and thus the maximum depth of the generated values.
+%
+If the generation size is positive (case |gen d|), our random generator picks a
+random constructor from our |Html| data type with a given generation frequency
+(using QuickCheck's |frequency| combinator), and proceeds to fill its fields
+using randomly generated sub-terms---here using Haskell's applicative notation
+and the default |Arbitrary| instance for |String|s.
+%
+For the case of the recursive sub-terms, this generator simply calls itself
+recursively with a smaller generation size (|gen (d-1)|).
+%
+This process repeats until we reach the base case (|gen 0|) on each recursive
+sub-term.
+%
+At this point, our random generator is limited to only pick among the |Html|
+terminal constructors, hence terminating the generation process.
+
+
+% --------------------------------------
+% Automatic derivation tools
+%
+As one can observe, the previous definition is quite mechanical, and depends
+only on the generation frequencies we choose for each constructor.
+%
+Fortunately, there exists a variety of meta-programming tools for obtaining
+random generators automatically based on their types.
+%
+Tools like \emph{MegaDeTH} or \emph{DRAGEN} will synthesize random generators
+using the same procedure as the one shown above.
+%
+\emph{MegaDeTH} simply picks among data constructors uniformingly, whereas
+\emph{DRAGEN} analyzes the type definitions and tunes the generation frequencies
+based on a simulation-based optimization approach, in order to obtain random
+distributions of values based on the users' desires.
+
+
+% --------------------------------------
+% Limitation
+%
+These tools provide a useful mechanism for automating the boring and error-prone
+task of writing random generators by hand.
+%
+However, this simple derivation procedure which only considers the structural
+information encoded on data type definitions, and generates one single
+constructor at a time; is often too generic to synthesize useful generators in
+some practical scenarios.
+%
+For instance, because of the types we use for deriving our random generators are
+too lax or, alternatively, because our properties need to be tested against very
+specific patterns of input cases in order to trigger bugs.
+
+
+This problem, however, can be alleviated by considering additional sources of
+structural information from our codebase other than just data constructors.
+%
+We proceed to illustrate this idea for consideting the structural information
+found on abstract interfaces and functions' pattern matchings.
+
+
+% --------------------------------------
+% Abstract interfaces
+%
+\paragraph{Extracting Information From Interfaces}
+
+A common choice when implementing abstract data types is to transfer the
+resposiblity of preserving their invariants to the functions on their abstract
+interface.
+%
+Take for example our |Html| data type.
+%
+Instead of defining a different data constructor for each possible HTML tag, we
+opted for a very small generic representation that can be extended via a set of
+combinators making use of this generic interface:
 
 \begin{code}
 br :: Html
@@ -83,6 +174,21 @@ list xs  = Tag "ul" $ foldl1 Join (Tag "li" <$> xs)
 (<+>) x y = Join x (Join br y)
 \end{code} %$
 
+These functions let us create interesting structured values representing HTML
+constructions like linebreaks (|br|), bold blocks (|bold|), unordered lists
+(|list|) and concatenation of values one below another (|<+>|).
+
+Note how difficult would be to generate random values containing, for example,
+structurally valid HTML lists if we only consider the structural information
+encoded in our |Html| data type definion.
+%
+After all, much of the valid structure of HTML has been encoded on its abstract
+interface.
+
+An automatically derived random generator could integrate this structural
+information into the generation process by simply creating random values arising
+from applying such functions using randomly generated inputs:
+
 \begin{code}
   gen d = frequency
     [ ...
@@ -92,19 +198,59 @@ list xs  = Tag "ul" $ foldl1 Join (Tag "li" <$> xs)
     , (3, (<+>)  <$> gen (d-1) <*> gen (d-1)) ]
 \end{code}%$
 
+where the symbol (|...|) represents the rest of the possible sub-generators for
+each data constructor seen before.
+%
+From now on, we will refer to each possible choice given to |frequency| as a
+different \emph{random construction}, as we are not considering only generating
+only single data constructors anymore.
+
+% --------------------------------------
+% Functions' pattern matchings
+%
+\paragraph{Extracting Information From Patterns}
+
+A different challenge appears when we try to test functions comprising complex
+pattern matchings. Consider for instance the following function for simplifying
+|Html| values:
 
 \begin{code}
 simplify :: Html -> Html
-simplify (Text t1 iJoin Text t2)
-  = Text (t1 ++ t2)
+simplify (Text t1 iJoin Text t2) = Text (t1 ++ t2)
 simplify ((Text t1 iJoin x) iJoin y)
   = simplify (Text t1 iJoin simplify (x iJoin y))
-simplify (x iJoin y)
-  = simplify x iJoin simplify y
-simplify (Tag t x)
-  = Tag t (simplify x)
+simplify (x iJoin y) = simplify x iJoin simplify y
+simplify (Tag t x) = Tag t (simplify x)
 simplify x = x
 \end{code}
+
+This function simply traverses |Html| values, joining together every contiguous
+pair of |Text| constructors.
+%
+Ideally, we would like to put approximately the same testing effort info each
+clause of |simplify|, or perhaps even more to first two ones, since those are
+the ones performing actual simplifications.
+%
+However, these two clauses are the most difficult ones to test in practice.
+%
+The probabilty of generating a random value satisfying nested patterns decreases
+multiplicatively with the number of constructors we match against to
+simultaneously.
+%
+In our tests, we were not able to exercise any of these two patterns more than
+6\% of the overall testing time (and considering recursive sub-calls), using
+random generators derived using either \emph{MegaDeTH} and \emph{DRAGEN}.
+%
+As expected, most of the random test cases were exercising the simplest (an
+rather uninteresting) patterns of this function.
+
+
+To solve this issue, we could opt to consider each complex pattern as a new kind
+of random construction.
+%
+In this light, we can simply generate values satisfying pattern directly by
+returning its corresponding expression, where each variable or wildcard pattern
+is filled using a random sub-expression:
 
 \begin{code}
   gen d = frequency
@@ -117,3 +263,24 @@ simplify x = x
               y   <- go (d-1)
               return ((Text t1 iJoin x) iJoin y))]
 \end{code}%$
+
+
+
+% --------------------------------------
+% Wrapping up
+%
+In general, we think the solution we is far from ideal, as in many cases we
+would like to select which random constructions are of our interest when testing
+different properties or sub-systems.
+%
+In this light, having ``monolithic'' random generators derived automatically
+would complicate our desired workflow.
+%
+We would need to derive different concrete random generators for each use case
+instead of having a single |Arbitrary| instance that can be used everywhere.
+%
+In contrast, in this work we opted for developing an extensible fashion, where
+the generation machinery is automatically derived only once, and every variant
+of our random generators is expressed at the type-level.
+%
+The following sections of this paper cover our alternative approach in depth.
