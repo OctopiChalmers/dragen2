@@ -14,15 +14,15 @@ This modularity allows us to derive each different construction independently,
 as well to specify the shape of our target data with with a fine granularity.
 
 
-In this section we introduce the machinery required to randomly generate the
+In this section, we introduce the machinery required to randomly generate the
 values encoded using our representations.
 %
-For this purpose, this step also follows the modular, fine-grained fashion,
-resulting in a generation process entirely compositional.
+This step also follows the modular, fine-grained fashion, resulting in a
+generation process entirely compositional.
 %
 In this light, our random generators are built from smaller ones (each one
-representing a single construction), and they are based solely on the types we
-use to represent the shape of our random data.
+representing a single random construction), and they are based solely on the
+types we use to represent the shape of our random data.
 
 Ideally, our aim is to be able to obtain random generators with a behavior
 similar to the one presented for |Html| in Section \ref{sec:sources}.
@@ -37,13 +37,12 @@ happening simultaneously:
 \item We differentiate between \emph{terminal} and \emph{non-terminal
     constructors}, limiting our generator to pick only among terminal ones when
   we have reached the maximum depth (case |gen 0|).
-\item We generate different constructions in a (possibly) different frequency
-  that is fixed over time.
+\item We generate different constructions in a (possibly) different frequency.
 \end{itemize}
 %
-Then, in order to achieve the desired generation behavior, we will need to model
-these previous aspects in our modular framework, and in such a way that we do
-not compromise the compositionality obtained so far.
+For the rest of this section, we will focus on modelling these previous aspects
+in our modular framework, and in such a way that we do not compromise the
+compositionality obtained so far.
 
 
 % --------------------------------------
@@ -56,7 +55,7 @@ limited depth using our approach is related to modularity.
 %
 If we recall the random generator for |Html| from Section \ref{sec:sources}, we
 can observe that the depth parameter |d| is threaded to the different recursive
-call of our generator, but always within the scope of the |gen| local function.
+call of our generator, but always within the scope of the local function |gen|.
 %
 Since each construction will have an specialized random generator, we cannot
 group them as we did before using an internal |gen| function.
@@ -69,15 +68,15 @@ maximum recursive depth:
 type BGen a = Int -> Gen a
 \end{code}
 
-A |BGen| is essentially a normal |Gen| with the maximum recursive depth as an
-input parameter.
+A |BGen| is essentially a normal QuickCheck |Gen| with the maximum recursive
+depth as an input parameter.
 %
 Using this previous definition, we can generalize QuickCheck's |Arbitrary| class
 to work with depth-bounded generators simply as follows:
 
 \begin{code}
 class BArbitrary (a :: *) where
-  bounded :: BGen a
+  barbitrary :: BGen a
 \end{code}
 
 From now on, we will use this type class as a more flexibe substitute of
@@ -101,8 +100,8 @@ In addition, one can always obtain a trivial |Arbitrary| instance from a
 recursive depth as well as for generating leaves:
 
 \begin{code}
-instance BArbitrary a => Arbitrary a where
-  arbitrary = sized bounded
+instance BArbitrary MyType => Arbitrary MyType where
+  arbitrary = sized barbitrary
 \end{code} %$
 
 
@@ -126,20 +125,20 @@ class Arbitrary1 (f :: * -> *) where
   liftArbitrary :: Gen a -> Gen (f a)
 \end{code}
 
-This type class allows us to write modular generators, leaving unspecified the
-specific generator used when generating values of its type argument.
-%
-For instance, the default parametric generator for the data type |Maybe| looks
-like:
+% This type class allows us to write modular generators, leaving unspecified the
+% specific generator used when generating values of its type argument.
+% %
+% For instance, the default parametric generator for the data type |Maybe| looks
+% like:
 
-\begin{code}
-instance Arbitrary1 Maybe where
-  liftArbitrary gen = frequency
-    [  (1,  pure Nothing),  (3,  Just <$> gen) ]
-\end{code} %$
+% \begin{code}
+% instance Arbitrary1 Maybe where
+%   liftArbitrary gen = frequency
+%     [  (1,  pure Nothing),  (3,  Just <$> gen) ]
+% \end{code} %$
 
-Where the random generator use to generate the value stored in a |Just|
-constructor is parametrized by the |gen| input variable.
+% Where the random generator use to generate the value stored in a |Just|
+% constructor is parametrized by the |gen| input variable.
 %
 We can use this same mechanism for our modular generators, first extending it to
 be depth-aware as follows:
@@ -159,22 +158,21 @@ constructions representing data constructors as follows:
 
 \begin{code}
 instance BArbitrary1 Con_Text where
-  liftBGen gen d = Con_Text <$> arbitrary
+  liftBGen bgen d = Mk_Text <$> arbitrary
 
 instance BArbitrary1 Con_Sing where
-  liftBGen gen d = Con_Sing <$> arbitrary
+  liftBGen bgen d = Mk_Sing <$> arbitrary
 
 instance BArbitrary1 Con_Tag where
-  liftBGen gen d = Con_Tag <$> arbitrary <*> gen (d - 1)
+  liftBGen bgen d = Mk_Tag <$> arbitrary <*> bgen (d - 1)
 
 instance BArbitrary1 Con_Join where
-  liftBGen gen d = Con_Join <$> gen (d - 1) <*> gen (d - 1)
+  liftBGen bgen d = Mk_Join <$> bgen (d - 1) <*> bgen (d - 1)
 \end{code} %$
 
-Note in the previous definitions how each instance is defined to be independent
-of the maximum depth (paramtrized by the input variable |d|) and the random
-generator used for the recursive sub-terms (parametrized by the input variable
-|gen|).
+Note in the previous definitions how each instance is defined to be parametric
+of the maximum depth (using the input integer |d|) and the random generator used
+for the recursive sub-terms (using input bounded generators |bgen|).
 %
 Every other non-recursive sub-term can be generated using a normal |Arbitrary|
 instance---we use this to generate random |String|s in the previous definitions.
@@ -187,12 +185,11 @@ as follows:
 
 \begin{code}
 instance BArbitrary1 Fun_bold where
-  liftBGen gen d = Fun_bold <$> gen (d - 1)
+  liftBGen bgen d = Mk_bold <$> bgen (d - 1)
 
 instance BArbitrary1 Pat_simplify_2 where
-  liftBGen gen d = Pat_simplify_2  <$> arbitrary
-                                   <*> gen (d - 1)
-                                   <*> gen (d - 1)
+  liftBGen bgen d = Mk_simplify_2
+    <$> arbitrary <*> bgen (d - 1) <*> bgen (d - 1)
 \end{code} %$
 
 % \begin{code}
@@ -225,12 +222,13 @@ representation |f| as follows:
 
 \begin{code}
 instance BArbitrary1 f => BArbitrary (Fix f) where
-  bounded d = Fix <$> liftBGen bounded d
+  barbitrary d = FixC <$> liftBGen barbitrary d
 \end{code} %$
 
-The previous instance employs the |BArbitrary1| of our final representation to
-generate sub-terms recursively using itself (|bounded d|) as the parametrized
-input generator, wrapping each recursive sub-term with a |Fix| data constructor.
+Here we used the |BArbitrary1| instance of our final representation |f| to
+generate sub-terms recursively by lifting itself (|liftBGen barbitrary|) as the
+parametrized input generator, wrapping each recursive sub-term with a |FixC|
+data constructor.
 
 %
 % Wrapping this subsection
@@ -269,7 +267,7 @@ In order to model this behavior in our framework, we can start by defining a
 data type |Term| to ``tag'' every terminal construction explicitly:
 
 \begin{code}
-newtype Term (f :: * -> *) a = Term (f a)
+newtype Term (f :: * -> *) a = TermC (f a)
 \end{code}
 
 Then, if |f| is a non-recursive construction, the type |Term f oplus' g| can be
@@ -282,10 +280,10 @@ simply by delegating the work to the inner type:
 
 \begin{code}
 instance Algebra f a => Algebra (Term f) a where
-  alg (Term f) = alg f
+  alg (TermC f) = alg f
 
 instance BArbitrary1 f => BArbitrary1 (Term f) where
-  liftBGen gen d = Term <$> liftBGen gen d
+  liftBGen bgen d = TermC <$> liftBGen bgen d
 \end{code} %$
 
 
@@ -297,7 +295,7 @@ type-level operator |otimes| to explicitly tag the generation frequency of a
 given representation:
 
 \begin{code}
-newtype ((f :: * -> *) otimes'' (n :: Nat)) a = Freq (f a)
+newtype ((f :: * -> *) otimes'' (n :: Nat)) a = FreqC (f a)
 \end{code}
 
 In the definition above, the operator |otimes| is parametrized by a type-level
@@ -317,10 +315,10 @@ information to the values it represents, so we can define its |Algebra| and
 
 \begin{code}
 instance Algebra f a => Algebra (f otimes'' n) a where
-  alg (Freq f) = alg f
+  alg (FreqC f) = alg f
 
 instance BArbitrary1 f => BArbitrary1 (f otimes'' n) where
-  liftBGen gen d = Freq <$> liftBGen gen d
+  liftBGen bgen d = FreqC <$> liftBGen bgen d
 \end{code} %$
 
 
@@ -332,10 +330,10 @@ In addition to these combinators, we will need to perform some type-level
 computations based on them in order to define our random generator for composite
 representations.
 %
-Consider for instance the following type defined using parenthesis for clarity:
+Consider for instance the following type---defined using parenthesis for clarity:
 
 \begin{code}
-(f otimes'' 2) oplus'' ((g otimes'' 3) oplus'' (Term h))
+(f otimes'' 2) oplus'' ((g otimes'' 3) oplus'' (Term h otimes'' 5))
 \end{code}
 
 Our generation process will traverse this type one combinator at a time,
@@ -371,13 +369,12 @@ Moreover, if a type does have an explicit frequency then its frequency is simply
 defaulted to one.
 
 
-On the other hand, the last step of our generation process which only generates
-terminal constructions could be seen as generating values considering all the
-available constructions, but instead treating the non-terminal ones as having
-generation frequency zero.
+On the other hand, the last step of our generation process, which only generates
+terminal constructions, could be seen as treating the non-terminal ones as
+having generation frequency zero.
 %
-This way we can reuse our previous type level computation to calculate the
-\emph{terminal generation frequency} |FreqOf'| of a given representation type as
+This way we can introduce antoher type-level computation to calculate the
+\emph{terminal generation frequency} |FreqOf'| of a given representation as
 follows:
 
 \begin{code}
@@ -404,14 +401,14 @@ representations:
 \begin{code}
 instance (BArbitrary1 f, BArbitrary1 g)
   => BArbitrary1 (f oplus g) where
-  liftBGen gen d =
+  liftBGen bgen d =
     if d > 0
     then frequency
-      [ (freqVal  at(FreqOf f) ,  InL <$> liftBGen gen d)
-      , (freqVal  at(FreqOf g) ,  InR <$> liftBGen gen d) ]
+      [ (freqVal  at(FreqOf f) ,  InL <$> liftBGen bgen d)
+      , (freqVal  at(FreqOf g) ,  InR <$> liftBGen bgen d) ]
     else frequency
-      [ (freqVal  at(FreqOf' f) ,  InL <$> liftBGen gen d)
-      , (freqVal  at(FreqOf' g) ,  InR <$> liftBGen gen d) ]
+      [ (freqVal  at(FreqOf' f) ,  InL <$> liftBGen bgen d)
+      , (freqVal  at(FreqOf' g) ,  InR <$> liftBGen bgen d) ]
 \end{code}
 
 Like the generator introduced in Section \ref{sec:sources} for |Html|, this
@@ -437,7 +434,7 @@ Note that the type of |freqVal| is ambiguous, since it quantifies over every
 possible known type-level natural value |n|.
 %
 We need to use a \emph{visible type application} (employing the |at (...)|
-syntax) to desambiguate which type-level natural value we are refering to.
+syntax) to desambiguate to which natural value we are actually refering to.
 %
 Then, for instance, the value |freqVal at (FreqOf (f otimes'' 5))| will evaluate
 to |5 :: Int|.
@@ -455,7 +452,7 @@ genrating a composite value, then it will produce a runtime error triggered by
 the function |frequency|, as it does not have anything with a positive frequency
 to generate.
 %
-This kind of exceptions will arise for examplke if we forget to tag at least a
+This kind of exceptions will arise, for example, if we forget to tag at least a
 single construction within a composite representation as terminal.
 %
 Fortunately, such runtime exceptions can be catched in compile-time by defining
@@ -471,18 +468,20 @@ type family IsPositive (n :: Nat) :: Constraint where
   IsPositive 0 = TypeError "No terminals"
   IsPositive _ = ()
 \end{code}
-%
+
 The previous type families compute the terminal generation frequency of a
 representation type |f|, returning a type error if its result is zero, or an
 empty constraint |()| that is always trivially satisfied in any other case.
+
 %
 Finally, we can use this constraint to define a safe generation primitive
-|genEval| to obtain a random depth-bounded generator for every target type |a|
+|genEval| to obtain a concrete depth-bounded generator for every target type |a|
 specified using a safe generation representation |f|:
 
 \begin{code}
-genEval  :: forall f a dot
-  (BArbitrary1 f, HasTerminals f, Algebra f a) => BGen a
+genEval  :: forall f a dot  ( BArbitrary1 f
+                            , HasTerminals f
+                            , Algebra f a) => BGen a
 genEval d = eval <$> bounded at (Fix f) d
 \end{code} %$
 
@@ -503,8 +502,8 @@ genValidHtml :: BGen Html
 genValidHtml = genEval  at ValidHtml
 \end{code}
 
-Where |Html_simplify| and |ValidHtml| are the types defined at the end of
-Section \ref{sec:representation}.
+Where |Html_simplify| and |ValidHtml| are the representations defined at the end
+of Section \ref{sec:representation}.
 
 
 % --------------------------------------

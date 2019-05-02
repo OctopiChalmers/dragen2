@@ -4,7 +4,8 @@
 The random generation framework presented throughout this work allows us to
 write extensible generators in a very concise way.
 %
-However, this expresiveness comes attached to a perceptible runtime overhead.
+However, this expresiveness comes attached to a perceptible runtime overhead,
+primarly inherited from the using the \`a la Carte technique.
 %
 In this section we evaluate the implicit cost of composing generators using
 three real-world case studies.
@@ -41,12 +42,13 @@ runtime overhead, where $n$ is the amount of constructions under consideration.
 
 
 
-To evaluate our approach, we analyzed the performance of generating random
-values using three real-world case studies:
+In this work, we analyzed the performance of generating random values using
+three case studies:
+%
 \begin{inparaenum}[(i)]
 \item Red-Black Trees, inspired by Okasaki's formulation,
 \item Lisp S-expressions, inspired by the package \emph{hs-zuramaru}, and
-\item HTML expressions, inspired by the \emph{html} package, and following the
+\item HTML expressions, inspired by the \emph{html} package, which follows the
   same structure as our motivating |Html| example.
 \end{inparaenum}
 %
@@ -55,7 +57,7 @@ The expanse of each case study can be summarized as follows:
 \begin{table}[H]
   \begin{tabular}{||c||c||c||c||c||}
     \hline
-    Case Study & |Con|s & |Pat|s & |Fun|s & Total Constructions \\ \hline
+    Case Study & \#|Con| & \#|Pat| & \#|Fun| & Total Constructions \\ \hline
     \hline
     RBT        & 2      & 6      & 5      & 13                  \\ \hline
     SExp       & 6      & 9      & -      & 15                  \\ \hline
