@@ -26,7 +26,8 @@ type family
   Ix (map :: [(k, v)]) (key :: k) :: Nat where
   Ix ('(k,  _) : m) k = 0
   Ix ('(k', _) : m) k = 1 + Ix m k
-  Ix '[]            k = TypeError (Text "Ix: key not found" :<>: ShowType k)
+  Ix '[]            k
+    = TypeError (Text "Ix: key not found" :<>: ShowType k)
 
 type family
   Keys (map :: [(k, v)]) :: [k] where
@@ -47,6 +48,27 @@ type family
   (==) (f :: k) (g :: k) :: Bool where
   (==) t t = True
   (==) _ _ = False
+
+type family
+  FirstHalf (xs :: [k]) :: [k] where
+  FirstHalf xs = Take (Length xs `Div` 2) xs
+
+type family
+  SecondHalf (xs :: [k]) :: [k] where
+  SecondHalf xs = Drop (Length xs `Div` 2) xs
+
+
+type family
+  Take (n :: Nat) (xs :: [k]) where
+  Take 0  _  = '[]
+  Take _ '[] = '[]
+  Take n  (x ': xs) = x ': Take (n-1) xs
+
+type family
+  Drop (n :: Nat) (xs :: [k]) where
+  Drop 0  xs  = xs
+  Drop _ '[] = '[]
+  Drop n  (x ': xs) = Drop (n-1) xs
 
 type family
   FailWhen (n :: Bool) (f :: Type -> Type) (msg :: Symbol) :: Constraint where

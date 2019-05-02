@@ -244,24 +244,9 @@ type RBT_Spec
   :+ Pat  "balR" 2
   :+ Pat  "balR" 3
 
-type RBT_Spec_Bal
-  =  (((Con' "E"
-  :+ Con  "T")
-  :+ (Fun' "empty"
-  :+ Fun  "insert"))
-  :+ ((Fun  "balance'"
-  :+ Fun  "delete")
-  :+ Fun  "fuse"))
-  :+ (((Pat  "balL" 1
-  :+ Pat  "balL" 2)
-  :+ Pat  "balL" 3)
-  :+ ((Pat  "balR" 1
-  :+ Pat  "balR" 2)
-  :+ Pat  "balR" 3))
-
 
 genTree' :: forall a. (Ord a, Arbitrary a) => BoundedGen (Tree a)
 genTree' = genEval @(RBT_Spec <| a)
 
 genTree'' :: forall a. (Ord a, Arbitrary a) => BoundedGen (Tree a)
-genTree'' = genEval @(RBT_Spec_Bal <| a)
+genTree'' = genRep @(RBT_Spec <| a)

@@ -209,7 +209,7 @@ type R_Spec_Bal
   :+ Fun  "epsR"))
 
 genR' :: forall a. (Ord a, Arbitrary a) => BoundedGen (R a)
-genR' = genEval @(R_Spec <| a)
+genR' = genRep @(R_Spec <| a)
 
 genR'' :: forall a. (Ord a, Arbitrary a) => BoundedGen (R a)
-genR'' = genEval @(R_Spec_Bal <| a)
+genR'' = genRep @(R_Spec_Bal <| a)

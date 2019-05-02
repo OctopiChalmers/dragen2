@@ -28,8 +28,8 @@
 --
 -----------------------------------------------------------------------------
 
-module Html.Html (
-      module Html.Html,
+module Html.HtmlUnbal (
+      module Html.HtmlUnbal,
       ) where
 
 
@@ -1456,11 +1456,12 @@ type Html_S =
        :+ Fun' "selected"
    ]
 
-deriveBoundedArbitrary
-  [ [] .=> ''Html
-  , [] .=> ''HtmlElement
-  , [] .=> ''HtmlAttr
-  ] ''Html_S
+instance BoundedArbitrary HtmlElement where
+  boundedArbitrary = genEval @(Lookup Html_S "HtmlElement")
+instance BoundedArbitrary Html where
+  boundedArbitrary = genEval @(Lookup Html_S "Html")
+instance BoundedArbitrary HtmlAttr where
+  boundedArbitrary = genEval @(Lookup Html_S "HtmlAttr")
 
 genHtml'' :: BoundedGen Html
 genHtml'' = boundedArbitrary

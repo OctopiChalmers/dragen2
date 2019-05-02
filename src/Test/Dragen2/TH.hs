@@ -131,7 +131,7 @@ deriveBoundedArbitrary typeFam spec
                          `DAppT` thNameTyLit typeName
           arbLetDec = DLetDec (DFunD 'boundedArbitrary [arbClause])
           arbClause = DClause [] arbBody
-          arbBody = DAppTypeE (DVarE 'genEval) arbTyApp
+          arbBody = DAppTypeE (DVarE 'genRep) arbTyApp
 
           mkArbCxt v = DAppPr (DConPr ''Arbitrary) (dTyVarBndrToDType v)
 

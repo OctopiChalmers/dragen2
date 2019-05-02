@@ -41,7 +41,6 @@ general, from a $\mathcal{O}(n)$ to a $\mathcal{O}(log(n))$ complexity in the
 runtime overhead, where $n$ is the amount of constructions under consideration.
 
 
-
 In this work, we analyzed the performance of generating random values using
 three case studies:
 %
@@ -65,7 +64,7 @@ The expanse of each case study can be summarized as follows:
   \end{tabular}
 \end{table}
 
-We benchmarked the execution time required to generate and fully evaluate 1000
+We benchmarked the execution time required to generate and fully evaluate 10000
 random values corresponding to each case study, comparing both manually-written
 concrete generators and modular generators obtained using our approach.
 %
@@ -87,8 +86,9 @@ reader to obtain a colored version of this work.
       , width=9cm
       , ybar
       , ymajorgrids=true
-      , ytick={0,1,...,5}
-      , ymax=4.5
+      , ytick={0,1,...,4}
+      , ymax=4
+      , ymin=0.5
       , enlargelimits=0.25
       , enlarge x limits=0.25
       , /pgf/bar width=17pt
@@ -104,26 +104,29 @@ reader to obtain a colored version of this work.
       , nodes near coords align={vertical}
       ]
       \addplot[fill, red!30]   coordinates {(SExp,1)    (RBT,1)    (HTML,1)};
-      \addplot[fill, green!30] coordinates {(SExp,2.31) (RBT,3)    (HTML,4.88)};
-      \addplot[fill, blue!30]  coordinates {(SExp,1.62) (RBT,2.28) (HTML,1.70)};
-      \legend{Manual, Modular/Linear, Modular/Balanced}
+      \addplot[fill, green!30] coordinates {(SExp,2.40) (RBT,3.57) (HTML,4.27)};
+      \addplot[fill, blue!30]  coordinates {(SExp,1.60) (RBT,2.52) (HTML,1.55)};
+      \legend{Manual, Modular (lin), Modular (bal)}
     \end{axis}
   \end{tikzpicture}
   \caption{Generation time comparison between concrete and modular generators.}
   \label{fig:times}
 \end{figure}
 
-As it can be observed, our approach suffers from a noticeable runtime overhead,
-specially when considering the HTML case study with a large amount of
-construction involved at the generation process.
+As it can be observed, our approach suffers from a noticeable runtime overhead
+when using linearly defined representations, specially when considering the HTML
+case study with a large amount of construction involved at the generation
+process.
 %
-However, by balancing our representation types we found that the generation
-performance gets dramatically improved.
+However, we found that, by balancing our representation types the generation
+performance improves dramatically.
 %
-To apply this optimization automatically, and relying on more sophisticated
-techniques like prefix-free encodings to obtain optimal representations, is a
-undergoing path of our future work.
+At the light of these improvements in the performance, we included in our tool
+an additional type-level computation that automatically balances our
+representations in order to reduce the generation overhead.
 
+% and relying on more sophisticated techniques like prefix-free encodings to
+% obtain optimal representations, is a undergoing path of our future work.
 
 On the other hand, it has been argued that the generation time is often not
 substantial with respect to the rest of the testing process, especially when
@@ -131,7 +134,9 @@ testing complex properties over monadic code, as well as using randomly
 generated values for penetration testing.
 
 
-Nonetheless, we consider that these results are in turn very encouraging, given
-that the flexibility obtained from using our approach does not produce severe
-slowdowns in practice, nor explodes more than linearly as we increase the
-complexity of our random generators.
+All in all, we consider that these results are fairly encouraging, given that
+the flexibility obtained from using our compositional approach does not produce
+severe slowdowns in whem generating random values in practice.
+
+% , nor explodes more than linearly as we increase the complexity of our random
+% generators.

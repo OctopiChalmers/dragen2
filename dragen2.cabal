@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 195d84cabc91c473e9557b1990797b242473708de0ef3c8094f1999796ba32f2
+-- hash: 5e2c711b9c8a23b00a1ef59429abfdfc6d79b286994f4c7373be8a4d3a920091
 
 name:           dragen2
 version:        0.1.0.0
@@ -105,6 +105,7 @@ benchmark dragen2-benchmarks
   other-modules:
       Html.BlockTable
       Html.Html
+      Html.HtmlUnbal
       Lisp.Lisp
       RBT.RBT
       RE.RE

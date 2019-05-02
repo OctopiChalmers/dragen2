@@ -75,7 +75,7 @@ type family
 type family
   Flatten (spec :: Spec) :: Spec where
   Flatten '[] = '[]
-  Flatten ('(k, t) : ts) = '(k, List2Rep (Rep2List t)) : Flatten ts
+  Flatten ('(k, t) : ts) = '(k, Balance (List2Rep (Rep2List t))) : Flatten ts
 
 type family
   Rep2List (rep :: Type -> Type) :: [Type -> Type] where

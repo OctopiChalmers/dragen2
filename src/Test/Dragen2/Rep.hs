@@ -167,6 +167,42 @@ instance
     typeEta
       = typeEta  @f <> typeEta  @g
 
+----------------------------------------
+-- | Balancing representations
+
+type family
+  Multiply (n :: Nat) (fs :: [(Type -> Type,Nat)]) :: [(Type -> Type,Nat)] where
+  Multiply _ '[] = '[]
+  Multiply x ('(f, n) ': fs) = '(f, x * n) ': Multiply x fs
+
+type family
+  SetTerm (fs :: [(Type -> Type, Nat)]) :: [(Type -> Type, Nat)] where
+  SetTerm '[] = '[]
+  SetTerm ('(f, n) ': fs) = '(Term f, n) : SetTerm fs
+
+type family
+  ToFreqList (rep :: Type -> Type) :: [(Type -> Type, Nat)] where
+  ToFreqList (Sum f g) = ToFreqList f ++ ToFreqList g
+  ToFreqList (Freq f n) = Multiply n (ToFreqList f)
+  ToFreqList (Term f) = SetTerm (ToFreqList f)
+  ToFreqList f = '[ '(f, 1)]
+
+type family
+  BuildTree (fs :: [(Type -> Type, Nat)]) :: Type -> Type where
+  BuildTree '[ '(Term f, n)] = Term (BuildTree '[ '(f, n)])
+  BuildTree '[ '(f, 1)] = f
+  BuildTree '[ '(f, n)] = Freq f n
+  BuildTree xs = Sum (BuildTree (FirstHalf xs)) (BuildTree (SecondHalf xs))
+
+type family
+  Balance (rep :: Type -> Type) :: Type -> Type where
+  Balance f = BuildTree (ToFreqList f)
+
+genRep :: forall f a.
+  ( BoundedArbitrary1 (Balance f)
+  , Algebra (Balance f) a
+  ) => BoundedGen a
+genRep depth = genEval @(Balance f) depth
 
 ----------------------------------------
 -- | Existential types to hide type parameters
