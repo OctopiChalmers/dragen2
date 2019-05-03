@@ -31,7 +31,7 @@ to any non-recursive data constructor as \emph{terminal}, and
 \emph{non-terminal} in any other case.
 
 
-Then, using this representation the example page\linebreak
+Then, using this representation, the example page\linebreak
 %
 \texttt{<html>hello<hr><b>world!</b></html>}
 %
@@ -39,7 +39,7 @@ can be encoded simply as:
 %
 \begin{code}
 Tag "html" $  Text "hello"
-              iJoin Single "hr"
+              iJoin Sing "hr"
               iJoin Tag "b" $ Text "world!"
 \end{code} %$
 

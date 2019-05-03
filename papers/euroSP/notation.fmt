@@ -9,17 +9,17 @@
 \definecolor{lightblue}{HTML}{76E9BB}
 
 \renewcommand{\Varid}[1]{{\color{darkblue} \texttt{#1}}}
-\renewcommand{\Conid}[1]{{\color{darkred}  \texttt{#1}}}
+\renewcommand{\Conid}[1]{{\color{darkorange}  \texttt{#1}}}
 
 \newcommand{\variable}[1]{{\color{darkblue}    \mathtt{ #1 } }}
-\newcommand{\type}[1]{{\color{darkred}  \mathtt{ #1 } }}
-\newcommand{\typeT}[1]{{\color{darkred} \mathtt{ #1 }^\texttt{T} }}
+\newcommand{\type}[1]{{\color{darkorange}  \mathtt{ #1 } }}
+\newcommand{\typeT}[1]{{\color{darkorange} \mathtt{ #1 }^\texttt{T} }}
 \newcommand{\constructor}[1]{{\color{darkgreen}  \mathtt{ #1 } }}
 \newcommand{\constructori}[1]{{\color{darkpink} \mathtt{ #1 } }}
 
 %subst varsym  a	= "{\color{darkblue}  \texttt{" a "}}"
-%subst numeral a 	= "{\color{darkorange} \texttt{" a "}}"
-%subst string  a 	= "{\color{darkorange} \texttt{\char34" a "\char34}}"
+%subst numeral a 	= "{\color{darkred} \texttt{" a "}}"
+%subst string  a 	= "{\color{darkred} \texttt{\char34" a "\char34}}"
 
 %format family = "\mathbf{family}"
 %format forall = "\forall\!"

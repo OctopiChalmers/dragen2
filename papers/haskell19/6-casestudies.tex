@@ -5,9 +5,10 @@ The random generation framework presented throughout this work allows us to
 write extensible generators in a very concise way.
 %
 However, this expresiveness comes attached to a perceptible runtime overhead,
-primarly inherited from the using the \`a la Carte technique.
+primarly inherited from the using the Data Types \`a la Carte---a technique
+which is not often scrutinized for performance.
 %
-In this section we evaluate the implicit cost of composing generators using
+In this section, we evaluate the implicit cost of composing generators using
 three real-world case studies.
 
 
@@ -22,7 +23,7 @@ In particular, the tranformation step is expected to pattern match repeatedly
 against the |InL| and |InR| constructors of the |oplus| operators when
 traversing each construction injection.
 %
-Because of this, in general we expect a performance impact with respect to
+Because of this, in general, we expect a performance impact with respect to
 manually-written concrete generators.
 
 
@@ -30,8 +31,8 @@ As recently analyzed by \citeauthor{KiriyamaOptimizingDTC}, this slowdown is
 expected to be linear in the depth of our representation type
 \cite{KiriyamaOptimizingDTC}.
 %
-Hence, one can drastically reduce the runtime overhead by associating each
-|oplus| operator in a balanced fashion.
+In this light, one can drastically reduce the runtime overhead by associating
+each |oplus| operator in a balanced fashion.
 %
 So, for instance, instead of writing |(f oplus'' g oplus'' h oplus'' i)|, which
 is implicitly parsed as |(f oplus'' (g oplus'' (h oplus'' i)))|; we can
@@ -41,14 +42,18 @@ general, from a $\mathcal{O}(n)$ to a $\mathcal{O}(log(n))$ complexity in the
 runtime overhead, where $n$ is the amount of constructions under consideration.
 
 
-In this work, we analyzed the performance of generating random values using
-three case studies:
+Then, we analyzed the performance of generating random values using three case
+studies:
 %
 \begin{inparaenum}[(i)]
-\item Red-Black Trees, inspired by Okasaki's formulation,
-\item Lisp S-expressions, inspired by the package \emph{hs-zuramaru}, and
-\item HTML expressions, inspired by the \emph{html} package, which follows the
-  same structure as our motivating |Html| example.
+\item Red-Black Trees (RBT), inspired by Okasaki's formulation
+  \cite{okasaki1999red},
+\item Lisp S-expressions (SExp), inspired by the package
+  \emph{hs-zuramaru}\footnote{\url{http://hackage.haskell.org/package/zuramaru}},
+  and
+\item HTML expressions (HTML), inspired by the \emph{html}
+  package\footnote{\url{http://hackage.haskell.org/package/html}}, which follows
+  the same structure as our motivating |Html| example.
 \end{inparaenum}
 %
 The expanse of each case study can be summarized as follows:
@@ -56,29 +61,35 @@ The expanse of each case study can be summarized as follows:
 \begin{table}[H]
   \begin{tabular}{||c||c||c||c||c||}
     \hline
-    Case Study & \#|Con| & \#|Pat| & \#|Fun| & Total Constructions \\ \hline
+    Case Study & \#|Con| & \#|Fun| & \#|Pat| & Total Constructions \\ \hline
     \hline
-    RBT        & 2      & 6      & 5      & 13                  \\ \hline
-    SExp       & 6      & 9      & -      & 15                  \\ \hline
-    HTML       & 4      & -      & 132    & 136                 \\ \hline
+    RBT        & 2       & 5       & 6       & 13                  \\ \hline
+    SExp       & 6       & -       & 9       & 15                  \\ \hline
+    HTML       & 4       & 132     & -       & 136                 \\ \hline
   \end{tabular}
 \end{table}
 
+These case studies provide a good combination of constructions, interface
+functions and patterns, and cover from smaller to larger numbers of
+constructions.
+
+
 We benchmarked the execution time required to generate and fully evaluate 10000
 random values corresponding to each case study, comparing both manually-written
-concrete generators and modular generators obtained using our approach.
+concrete generators and those obtained using our modular approach.
 %
-For this purpose, we used the \emph{Criterion} benchmarking tool for Haskell,
-and limited the maximum depth of the generated values to five levels.
+For this purpose, we used the \emph{Criterion} \cite{criterion} benchmarking
+tool for Haskell, and limited the maximum depth of the generated values to five
+levels.
 %
 Additionally, our modular generators were tested using both linear and balanced
 generation specifications.
 %
 Figure \ref{fig:times} illustrates the relative execution time of each case
-study, with respect to each manually-written random generator---we encourage the
-reader to obtain a colored version of this work.
+study, normalized to their corresponding manually-written counterparts---we
+encourage the reader to obtain a colored version of this work.
 
-\begin{figure}[b]
+\begin{figure}[t]
   \centering
   \begin{tikzpicture}
     \begin{axis}
@@ -115,15 +126,15 @@ reader to obtain a colored version of this work.
 
 As it can be observed, our approach suffers from a noticeable runtime overhead
 when using linearly defined representations, specially when considering the HTML
-case study with a large amount of construction involved at the generation
+case study, which spans a large amount of constructions in the generation
 process.
 %
 However, we found that, by balancing our representation types the generation
 performance improves dramatically.
 %
-At the light of these improvements in the performance, we included in our tool
-an additional type-level computation that automatically balances our
-representations in order to reduce the generation overhead.
+At the light of these improvements, our tool includes an additional type-level
+computation that automatically balances our representations in order to reduce
+the generation overhead.
 
 % and relying on more sophisticated techniques like prefix-free encodings to
 % obtain optimal representations, is a undergoing path of our future work.
@@ -131,12 +142,13 @@ representations in order to reduce the generation overhead.
 On the other hand, it has been argued that the generation time is often not
 substantial with respect to the rest of the testing process, especially when
 testing complex properties over monadic code, as well as using randomly
-generated values for penetration testing.
+generated values for penetration testing
+\cite{DBLP:conf/haskell/MistaRH18,grieco2017}.
 
 
 All in all, we consider that these results are fairly encouraging, given that
 the flexibility obtained from using our compositional approach does not produce
-severe slowdowns in whem generating random values in practice.
+severe slowdowns in when generating random values in practice.
 
 % , nor explodes more than linearly as we increase the complexity of our random
 % generators.

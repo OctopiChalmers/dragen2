@@ -8,14 +8,14 @@ solution for the expression problem coined by \citeauthor{wadler1998expression}
 %
 In this work, we take ideas from this approach and extend them to work in the
 scope of random data generation, where other parameters come into play apart
-from just combining construction, like generation frequency and terminal
+from just combining construction, e.g., generation frequency and terminal
 constructions.
 
 
 From the practical point of view, \citeauthor{KiriyamaOptimizingDTC} propose an
-optimization mechanism for Data Types \`a Carte, where a concrete data type is
-derived for each different variant of the compositional data types we use in our
-codebase \cite{KiriyamaOptimizingDTC}.
+optimization mechanism for Data Types \`a Carte, where a concrete data type has
+to be derived for each different composition of constructions defined by the
+user \cite{KiriyamaOptimizingDTC}.
 %
 This solution avoids much of the runtime overhead introduced when internally
 pattern matching against sequencies of |InL| and |InR| data constructors.
@@ -25,17 +25,32 @@ to rely on Template Haskell to derive the machinery for each specialized data
 type.
 %
 In our particular setting, we found that our solution has a fairly acceptable
-overhead when the representation types are balanced.
+overhead by automatically balancing our representation types.
+
+
+In the past few years, there has been a bloom of derivation tools for
+synthesizing random generators.
 %
-Hence, our aim in the future is to keep our fully extensible approach, but
-automatically computing the best arrangement of constructions in order to reduce
-the overhead as much as possible.
+\emph{Feat} provides a mechanism to uniformly generate values from a given data
+type \cite{DuregardJW12}.
+%
+It works by enumerating all the possible values of such type, so that sampling
+uniformly from it simply becomes sampling uniformly from the a finite preffix of
+natural numbers.
 
 
-\emph{DRAGEN} is a random testing derivation tool that synthesizes random
-generators for our target data types, tuning their generation frequencies using
-a simulation-based optimization process parametrized by the distribution of
-values desired by the user \cite{DBLP:conf/haskell/MistaRH18}.
+\emph{MegaDeTH} is a simple derivation tool that derives generators solely based
+on their types, and paying no attention whatsoever on the generation frequency
+of each data constructor.
+%
+As a result, its automatically derived generators has been shown to be skewed to
+generating small values\cite{DBLP:conf/haskell/MistaRH18}.
+
+
+On the other hand, \emph{DRAGEN} is a tool that synthesizes optimized
+generators, tuning their generation frequencies using a simulation-based
+optimization process parametrized by the distribution of values desired by the
+user \cite{DBLP:conf/haskell/MistaRH18}.
 %
 This simulation is based on the theory of \emph{branching processes}, which
 models the growth and extinction of populations across succesive generations.
@@ -46,16 +61,26 @@ where generations correspond to each level of the generated values.
 This tool has shown to improve the code coverage obtained over our codebase,
 with respect to other fully-automated generators derivation mechanism.
 %
-Recently, \citeauthor{Mista2019GeneratingRS} extended this approach to generate
-random values considering also the other sources of structural information
-covered here, namely abstract interfaces and function pattern machings.
+In a recent work, \citeauthor{Mista2019GeneratingRS} extend this approach to
+generate random values considering also the other sources of structural
+information covered here, namely abstract interfaces and function pattern
+machings.
 %
-Using this extension, the authors show how the usage of extra information when
-generating random values is extremely valuable, particularly in situations like
-the ones described in Section \ref{sec:sources}, where the usual derivation
+The authors of this work focus on the generation model problem, extending the
+theory of branching processes in order to obtain sound predictions about
+distributions of random values considering these new kinds of constructions.
+%
+Using this extension, they show that using extra information when generating
+random values is extremely valuable, in particular under situations like the
+ones described in Section \ref{sec:sources}, where the usual derivation
 approaches fail to synthesize useful generators due to a lack of structural
 information.
+
+
+This paper tackles the representation problem, demonstrating how a compositional
+generation process can be effectively implemented and automated in Haskell using
+advanced type-level features.
 %
-Our work is inspired by the same general idea. In constrast, this paper tackles
-the representation problem, showing how these ideas can be effectively
-implemented in Haskell using advanced type-level features.
+Since none of the aforementioned tools are designed for composability, we
+consider that our ideas could perhaps be applied to improve these tools in the
+future.

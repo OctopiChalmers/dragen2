@@ -479,10 +479,10 @@ Finally, we can use this constraint to define a safe generation primitive
 specified using a safe generation representation |f|:
 
 \begin{code}
-genEval  :: forall f a dot  ( BArbitrary1 f
-                            , HasTerminals f
-                            , Algebra f a) => BGen a
-genEval d = eval <$> bounded at (Fix f) d
+genRep  :: forall f a dot  ( BArbitrary1 f
+                           , HasTerminals f
+                           , Algebra f a) => BGen a
+genRep d = eval <$> bounded at (Fix f) d
 \end{code} %$
 
 Note how this primitive is also ambiguous in the type used for the
@@ -496,10 +496,10 @@ type simply by changing its representation type as follows:
 
 \begin{code}
 genHtmlPats :: BGen Html
-genHtmlPats = genEval at Html_simplify
+genHtmlPats = genRep at Html_simplify
 
 genValidHtml :: BGen Html
-genValidHtml = genEval  at ValidHtml
+genValidHtml = genRep  at ValidHtml
 \end{code}
 
 Where |Html_simplify| and |ValidHtml| are the representations defined at the end

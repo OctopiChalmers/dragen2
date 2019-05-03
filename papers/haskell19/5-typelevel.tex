@@ -95,11 +95,11 @@ type Html_Spec
 \end{code}
 
 And simply obtain a concrete generator by refering to |Html_Spec| when using
-|genEval|:
+|genRep|:
 
 \begin{code}
 genHtml :: BGen Html
-genHtml = genEval at Html_Spec
+genHtml = genRep at Html_Spec
 \end{code}
 
 
@@ -184,7 +184,7 @@ For instance, we can write a concrete generator of |Tree Int| as follows:
 
 \begin{code}
 genIntTree :: BGen (Tree Int)
-genIntTree = genEval at (Tree_Spec apply' Int)
+genIntTree = genRep at (Tree_Spec apply' Int)
 \end{code}
 
 Where |apply| is a closed type family that simply traverses our generation
