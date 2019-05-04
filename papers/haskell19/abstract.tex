@@ -1,15 +1,25 @@
-Pellentesque dapibus suscipit ligula. Donec posuere augue in quam. Etiam vel
-tortor sodales tellus ultricies commodo. Suspendisse potenti. Aenean in sem ac
-leo mollis blandit. Donec neque quam, dignissim in, mollis nec, sagittis eu,
-wisi. Phasellus lacus. Etiam laoreet quam sed arcu. Phasellus at dui in ligula
-mollis ultricies. Integer placerat tristique nisl. Praesent augue. Fusce
-commodo. Vestibulum convallis, lorem a tempus semper, dui dui euismod elit,
-tellus ut neque. Nulla facilisis, risus a rhoncus fermentum, tellus tellus
-lacinia purus, et dictum nunc justo sit amet elit.
+Generating ``good'' random values described by algebraic data types is often
+quite intricate.
+%
+State-of-the-art tools for synthesizing random generators serve the valuable
+purpose of helping with this task, while providing different level of invariants
+imposed over the generated values.
+%
+However, none of them are built neither for composability nor extendability, a
+useful feature when the shape of our random data makes a difference while
+testing different properties or sub-systems.
+%
+% Instead, users are forced to decide wether to manually write their random
+% generators or to use rigid automatically derived ones.
 
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor
-tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis
-eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis
-parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor.
-Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum.
-Nam vestibulum accumsan nisl.
+
+In this work, we develop an extensible framework for deriving compositional
+generators, which can be easily combined in diferent ways in order to fit the
+developers' demands, using a simple type-level domain-specific language.
+%
+Our framework is based on familiar ideas from the \`a la Carte technique for
+writing composable interpreters in Haskell, and extended with the required
+machinery for it to work in the scope of random generation of values.
+%
+Additonally, we provide an implementation of our ideas, and evaluate its
+performance using real-world examples.

@@ -1,25 +1,189 @@
 \section{Introduction}
 \label{sec:intro}
 
-Pellentesque dapibus suscipit ligula. Donec posuere augue in quam. Etiam vel
-tortor sodales tellus ultricies commodo. Suspendisse potenti. Aenean in sem ac
-leo mollis blandit. Donec neque quam, dignissim in, mollis nec, sagittis eu,
-wisi. Phasellus lacus. Etiam laoreet quam sed arcu. Phasellus at dui in ligula
-mollis ultricies. Integer placerat tristique nisl. Praesent augue. Fusce
-commodo. Vestibulum convallis, lorem a tempus semper, dui dui euismod elit,
-vitae placerat urna tortor vitae lacus. Nullam libero mauris, consequat quis,
-varius et, dictum id, arcu. Mauris mollis tincidunt felis. Aliquam feugiat
-tellus ut neque. Nulla facilisis, risus a rhoncus fermentum, tellus tellus
-lacinia purus, et dictum nunc justo sit amet elit.
+% --------------------------------------
+% Intro
+%
+Random property-based testing is a quite powerful technique for finding bugs
+\cite{ArtsHNS15, HughesPAN16, HughesNSA16}.
+%
+In the Haskell comunity, QuickCheck is the predominant tool of this such.
+%
+The developers specify
+%
+\begin{inparaenum}
+\item the testing properties their systems must fullfil, and
+\item random data generators for the data types involved at their properties.
+\end{inparaenum}
+%
+Then, QuickCheck generates random seeds using these generators, and uses them to
+evaluate the system's properties in search of possible counterexamples, which
+often indicate bugs in our system.
 
 
+% --------------------------------------
+% Motivating Example
+%
+Although QuickCheck provides default random generators for the common base types
+like |Int| or |String|, it requires implementing random generators for any
+user-derined data type we want to randomly generate.
+%
+% This section introduces the common workflow for generating random values using
+% automatically derived QuickCheck generators, along with its common limitations.
+%
+To illustrate this, let us consider the following data type definition encoding
+basic HTML pages:
 
+\begin{code}
+data Html
+  =  Text  String
+  |  Sing  String
+  |  Tag   String Html
+  |  Join  Html Html
+\end{code}
+
+This type allows us to build HTML pages via four possible data constructors:
+|Text| is used for plain text values; |Sing| and |Tag| represent singular and
+paired HTML tags, respectively; and |Join| to simply concatenate two HTML pages
+one after another.
+%
+Note that the constructors |Tag| and |Join| are recursive, as they have at least
+one field of their own type.
+%
+In this paper, and in the scope of random generation in general, we will refer
+to any non-recursive data constructor as \emph{terminal}, and
+\emph{non-terminal} in any other case.
+
+
+Then, using this representation, the example page\linebreak
+%
+\texttt{<html><b>hello<br>world!</b></html>}
+%
+can be encoded simply as:
+%
+\begin{code}
+Tag "html" $ Tag "b" $
+  Text "hello" iJoin Sing "br" iJoin Text "world!"
+\end{code} %$
+
+% --------------------------------------
+% Random Generators
+%
+Then, in order to generate random values of type |Html|, we need to provide a
+random data generator for it.
+%
+For this purpose, QuickCheck defines the |Arbitrary| type-class for default
+defining random generators as:
+
+\begin{code}
+class Arbitrary (a :: *) where
+  arbitrary :: Gen a
+\end{code}
+%
+where the overloaded symbol |arbitrary :: Gen a| denotes a monadic generator for
+values of type |a|.
+%
+Using this mechanism, we can define a sensible random generator for our |Html|
+data type as follows:
+
+\begin{code}
+instance Arbitrary Html where
+  arbitrary = sized gen
+    where  gen 0 = frequency
+             [  (2,  Text    <$> arbitrary)
+             ,  (1,  Sing    <$> arbitrary) ]
+           gen d = frequency
+             [  (2,  Text    <$> arbitrary)
+             ,  (1,  Sing    <$> arbitrary)
+             ,  (4,  Tag     <$> arbitrary  <*> gen (d-1))
+             ,  (3,  Join    <$> gen (d-1)  <*> gen (d-1)) ]
+\end{code} %$
+%
+At the top level, this definition parametrizes the generation process using
+QuickCheck's |sized| combinator, which lets us build our generator using an
+auxliary local function |gen :: Int -> Gen Html|.
+%
+The |Int| passed to |gen| is known as the \emph{generation size}, and is
+threaded seamlessly by QuickCheck on each call to arbitrary.
+%
+Then, we use this parameter to limit the maximum amount of recursive calls that
+our generator can perform, and thus the maximum depth of the generated values.
+%
+If the generation size is positive (case |gen d|), our random generator picks a
+random constructor from our |Html| data type with a given generation frequency
+(using QuickCheck's |frequency| combinator), and proceeds to fill its fields
+using randomly generated sub-terms---here using Haskell's applicative notation
+\cite{Mcbride2008} and the default |Arbitrary| instance for |String|s.
+%
+For the case of the recursive sub-terms, this generator simply calls itself
+recursively with a smaller generation size (|gen (d-1)|).
+%
+This process repeats until we reach the base case (|gen 0|) on each recursive
+sub-term.
+%
+At this point, our random generator is limited to only pick among the |Html|
+terminal constructors, hence terminating the generation process.
+
+
+% --------------------------------------
+% Automatic derivation tools
+%
+As one can observe, the previous definition is quite mechanical, and depends
+only on the generation frequencies we choose for each constructor.
+%
+Fortunately, there exists a variety of meta-programming tools for obtaining
+random generators automatically based on their types.
+%
+Tools like \emph{MegaDeTH} or \emph{DRAGEN} will synthesize random generators
+using the same procedure as the one shown above.
+%
+\emph{MegaDeTH} simply picks among data constructors uniformingly, whereas
+\emph{DRAGEN} analyzes the type definitions and tunes the generation frequencies
+based on a simulation-based optimization approach, in order to obtain random
+distributions of values based on the users' desires.
+
+
+% --------------------------------------
+% Limitation
+%
+Such tools provide a useful mechanism for automating the boring and error-prone
+task of writing random generators by hand.
+%
+However, this simple derivation procedure, which only considers the structural
+information encoded in data type definitions, and generates one single
+constructor at a time; is often too generic to synthesize useful generators in
+some practical scenarios.
+%
+For instance, because of the types we use for deriving our random generators are
+too general, leaving a large room for ill-formed values, e.g., invalid HTML
+pages; or alternatively, because our properties need to be tested against very
+specific patterns of input cases in order to trigger bugs.
+
+This problem, however, can be alleviated by considering additional sources of
+structural information from our codebase other than just data constructors.
+%
+For instance, having a set of high-level combinators, defining an abstract
+interface of our data types, e.g., |hr :: Html| or |bold :: Html -> Html|; it is
+possible to include them into the generation process, thus obtaining more
+complex and structed values.
+%
+In the same way, having functions defined using pattern matching over the data
+types of our interest, e.g. |f (Join (Text t) (Tag s x)) = dots|, it is also
+possible to include this rich structure which exposes a relationship among
+different data constructors into our random generators.
+%
+This idea is addressed in depth in the next section, while the rest of this work
+focuses on implementing it in a compositional way.
+
+%
+% Contributions
+%
 The main contribution of this paper are:
 %
 \begin{itemize}
-\item We identify some of the most important limitations of performing random
-  testing with automatically derived generators using state-of-the-art tools
-  (Section \ref{sec:sources}).
+\item We identify some important limitations of performing random testing with
+  automatically derived generators using state-of-the-art tools (Section
+  \ref{sec:sources}).
 \item We present an extensible mechanism for representing random values built
   upon different source constructions using Data Types \`a la Carte (Section
   \ref{sec:representation}).
@@ -37,4 +201,4 @@ The main contribution of this paper are:
 
 Overall, we present a novel technique for reusing automatically derived
 generators in a composable fashion, in contrast with the usual paradigm of
-automatically deriving ``closed'' monolithic generators.
+automatically deriving ``rigid'', monolithic generators.

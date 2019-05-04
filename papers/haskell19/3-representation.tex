@@ -187,7 +187,7 @@ instance (Algebra f a, Algebra g a) => Algebra (f oplus'' g) a
   where  alg (InL fa) = alg fa
          alg (InR ga) = alg ga
 \end{code}
-
+%
 where we simply use the appropriate |Algebra| instance for the inner
 representation, based on which injection was used to construct the composite
 value.
@@ -202,12 +202,12 @@ Additionally, the order in which we associate each operand of |oplus| results
 semantically irrelevant, thus we can omit parentheses when describing composite
 representations.
 %
-However, we found that in practice, the way in which we decide to associate our
-constructions affects the generation speed dramatically.
+However, in practice, the way in which we associate our constructions affects
+the generation speed dramatically.
 %
 This phenomena is addressed in detail in Section \ref{sec:casestudies}.
 %
-For simplicity here, we will assume |oplus| as having rigth associativity, i.e.,
+For simplicity here, we will assume |oplus| as having right associativity, i.e.,
 |f oplus'' g oplus'' h == f oplus'' (g oplus'' h)|.
 
 
@@ -281,7 +281,7 @@ can be represented with |Html'| as:
                (FixC (InR (InL (Mk_Sing "hr"))))))))
 \end{code}
 %
-Where the sequences of |InL| and |InR| data constructors inject each value from
+where the sequences of |InL| and |InR| data constructors inject each value from
 an individual representation into the appropriate position of our composite
 representation |Html'|.
 
@@ -424,7 +424,7 @@ data Pat_simplify_1 r = Mk_simplify_1 String String
 data Pat_simplify_2 r = Mk_simplify_2 String r r
 \end{code}
 %
-Where the number after the |#| simply distinguishes the different patterns from
+where the number after the |#| simply distinguishes the different patterns from
 the function |simplify| using the index of the clause they belong to.
 %
 Once again, we abstracted away every recursive field (this time corresponding to
