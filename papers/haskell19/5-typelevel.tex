@@ -5,8 +5,8 @@
 % Intro
 %
 This section introduces refinements to our basic language for describing random
-generators, making them more flexible and robust in order to fit real-world
-usage scenarios.
+generators, making it more flexible and robust in order to fit real-world usage
+scenarios.
 
 
 % --------------------------------------
@@ -21,14 +21,13 @@ usage scenarios.
 The first problem we face is that of naming conventions.
 %
 In practice, the actual names used when deriving construction representations
-need to be generated in a way that they are compliant with Haskell syntax and
-are \emph{unique within our namespace}.
+need to be generated in such a way that they are compliant with Haskell's
+syntax, and also that they are \emph{unique within our namespace}.
 %
-This means that, type names like |Fun_cat| or |Pat_simplify_1| are technically
+This means that, type names like |Fun_cat| or |Pat_simplify_1| are, technically,
 not valid Haskell data type names, thus they will have to be synthesized as
 something like |Fun_lt_plus_gt_543| and |Pat_simplify_1_325|, where the last
-sequence of numbers is automatically inserted by Template Haskell to ensure
-uniqueness.
+sequence of numbers is inserted by Template Haskell to ensure uniqueness.
 
 
 This naming convention results hard to use, specially if we consider that we do
@@ -37,20 +36,19 @@ to their unique suffixes.
 %
 Fortunately, it is easy to solve this problem using some type-level machinery.
 %
-Instead of imposing a naming convention in our tool, we can define a set of open
-type families to hide each kind of construction using meaningful names:
+Instead of imposing a naming convention in our derivation tool, we define a set
+of open type families to hide each kind of construction behind meaningful names:
 
 \begin{code}
 type family Con (c :: Symbol)             :: * -> *
 type family Fun (f :: Symbol)             :: * -> *
 type family Pat (p :: Symbol) (n :: Nat)  :: * -> *
 \end{code}
-
+%
 where |Symbol| is the kind of type-level strings in Haskell.
 %
 Then, our derivation process will synthesize each representation using unique
-names, along with a type instance of the corresponding type family for the end
-user to manipulate it.
+names, along with a type instance of the corresponding type family.
 %
 For instance, along with the representations of |Con_Text|, |Fun_cat| and
 |Pat_simplify_1|, we will automatically derive the following type instances:
@@ -60,10 +58,13 @@ type instance Con "Text"        = Con_Text_123
 type instance Fun "<+>"         = Fun_lt_plus_gt_543
 type instance Pat "simplify" 1  = Pat_simplify_1_325
 \end{code}
-
+%
 As a result, the end user can simply refer to each particular construction by
 using these synonyms, e.g., with representation types like |Con "Text" oplus'
 Fun "<+>"|.
+%
+The additional |Nat| type parameter on |Pat| simply identifies each pattern
+number uniquely.
 
 
 Moreover, we can define a \emph{terminal} version of each kind of construction
@@ -74,10 +75,11 @@ type Con' a    = Term  (Con a)
 type Pat' a n  = Term  (Pat a n)
 type Fun' a    = Term  (Fun a)
 \end{code}
-
+%
 This way, any construction with the supra-index |T| will considered to be
 terminal.
-%
+
+
 With these type-level manipulations, we are now able to write generation
 specifications in a clear and concise way.
 %
@@ -145,38 +147,37 @@ instance Arbitrary a => BArbitrary1 (Con_Node a) where dots
 % The biggest different appears when deriving the required type instances for the
 % |Con|, |Fun| and |Pat| synonyms.
 %
-Instead of carrying this type parameter in our generation specifications, we can
-avoid it by hiding them using an existential type:
+However, instead of carrying this type parameter in our generation
+specifications, we can avoid it by hiding it using an existential type:
 
 \begin{code}
 data Some (f :: * -> * -> *) (r :: *) = forall (a :: *) dot SomeC (f a r)
 \end{code}
-
+%
 The type constructor |Some| is a wrapper for a 2-parametric type that hides the
-first type variable using an explicit existential quantificator.
+first type variable using an explicit existential quantifier.
 %
-Note thus that the type parameter |a| does not appear at the left hand side of
-|Some| in its defition.
+Note thus that the type parameter |a| does not appears at the left hand side of
+|Some| on its defition.
 %
-Then, when deriving any |Con|, |Fun| or |Pat| type synonym, we will wrap each
-construction representations using a |Some|:
+Then, when deriving any |Con|, |Fun| or |Pat| type instance, we will wrap each
+construction representation using a |Some|:
 
 \begin{code}
 type instance Con "Leaf" = Some Con_Leaf
 type instance Con "Node" = Some Con_Node
 \end{code}
 
-We can therefore write generation specification for our |Tree| data type without
-having to refer to its type parameter anywhere.
+And we can therefore write generation specifications for our |Tree| data type
+without having to refer to its type parameter anywhere.
 %
 For instance:
 
 \begin{code}
-type Tree_Spec
-  =      Con'  "Leaf"  otimes 2
-  oplus  Con   "Node"  otimes 3
+type Tree_Spec  =      Con'  "Leaf"  otimes 2
+                oplus  Con   "Node"  otimes 3
 \end{code}
-
+%
 Instead, we defer handling this type parameter until we actually use it to
 define a concrete generator.
 %
@@ -186,8 +187,8 @@ For instance, we can write a concrete generator of |Tree Int| as follows:
 genIntTree :: BGen (Tree Int)
 genIntTree = genRep at (Tree_Spec apply' Int)
 \end{code}
-
-Where |apply| is a closed type family that simply traverses our generation
+%
+Where |apply| is a closed type family that traverses our generation
 specification, applying the |Int| type to every occurrence of |Some|:
 
 \begin{code}
@@ -206,10 +207,13 @@ As a result, in |genIntTree|, the |apply| operator will reduce the type
 (Term (Con_Leaf Int) otimes' 2) oplus' ((Con_Node Int) otimes' 3)
 \end{code}
 
+It is worth mentioning that this approach for handling parametric types can be
+extended to multi-parametric data types with minor effort.
+
 
 Along with our automated constructions derivation mechanism, the machinery
 introduced in this section allows us to specify random generators using a
-concise and flexible type-level domain specific language.
+concise and flexible type-level combinators language.
 %
 The next section evaluates our approach in terms of performance using a set of
 case studies extracted from real-world Haskell implementations.
