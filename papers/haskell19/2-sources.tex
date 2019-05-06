@@ -82,7 +82,7 @@ simplify :: Html -> Html
 simplify (Join (Text t1) (Text t2)) = Text (t1 ++ t2)
 simplify (Join (Join (Text t) x) y)
   = simplify (Text t1 iJoin simplify (x iJoin y))
-simplify (x iJoin y) = simplify x iJoin simplify y
+simplify (Join x y) = simplify x iJoin simplify y
 simplify (Tag t x) = Tag t (simplify x)
 simplify x = x
 \end{code}
