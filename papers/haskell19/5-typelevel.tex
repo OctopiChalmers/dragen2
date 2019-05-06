@@ -96,7 +96,7 @@ type Html_Spec
   oplus  Pat   "simplify"  2  otimes 5
 \end{code}
 
-And simply obtain a concrete generator by refering to |Html_Spec| when using
+And simply obtain a concrete generator by referring to |Html_Spec| when using
 |genRep|:
 
 \begin{code}
@@ -124,7 +124,7 @@ data Tree a = Leaf a | Node (Tree a) (Tree a)
 \end{code}
 
 In order to represent its data constructors, we can follow the same recipe
-presented in Section \ref{sec:representation}, but also parametrizing our
+presented in Section \ref{sec:representation}, but also parameterizing our
 representations over the type variable |a| as well:
 
 \begin{code}
@@ -158,7 +158,7 @@ The type constructor |Some| is a wrapper for a 2-parametric type that hides the
 first type variable using an explicit existential quantifier.
 %
 Note thus that the type parameter |a| does not appears at the left hand side of
-|Some| on its defition.
+|Some| on its definition.
 %
 Then, when deriving any |Con|, |Fun| or |Pat| type instance, we will wrap each
 construction representation using a |Some|:

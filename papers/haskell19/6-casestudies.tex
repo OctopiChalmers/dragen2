@@ -1,12 +1,12 @@
 \section{Case Studies}
 \label{sec:casestudies}
 
-The random generation framework presented throughout this work allows us to
+The random generation framework presented throughout this paper allows us to
 write extensible generators in a very concise way.
 %
-However, this expresiveness comes attached to a perceptible runtime overhead,
-primarly inherited from the using the Data Types \`a la Carte---a technique
-which is not often scrutinized for performance.
+However, this expressiveness comes attached to a perceptible runtime overhead,
+primarily inherited from the use of Data Types \`a la Carte---a technique which
+is not often scrutinized for performance.
 %
 In this section, we evaluate the implicit cost of composing generators using
 three real-world case studies.
@@ -15,11 +15,11 @@ three real-world case studies.
 As we have shown in Section \ref{sec:generators}, the random generation
 process we propose in this paper can be seen as having two phases.
 %
-First, generate random values from the representation types used to specify the
-shape of our data; and then we use their algebras to translate them to the
+First, we generate random values from the representation types used to specify
+the shape of our data; and then we use their algebras to translate them to the
 corresponding values of our target data types.
 %
-In particular, the tranformation step is expected to pattern match repeatedly
+In particular, the transformation step is expected to pattern match repeatedly
 against the |InL| and |InR| constructors of the |oplus| operators when
 traversing each construction injection.
 %
@@ -42,7 +42,7 @@ general, from a $\mathcal{O}(n)$ to a $\mathcal{O}(log(n))$ complexity in the
 runtime overhead, where $n$ is the amount of constructions under consideration.
 
 
-Then, we analyzed the performance of generating random values using three case
+Later, we analyzed the performance of generating random values using three case
 studies:
 %
 \begin{inparaenum}[(i)]
@@ -56,7 +56,7 @@ studies:
   the same structure as our motivating |Html| example.
 \end{inparaenum}
 %
-The expanse of each case study can be summarized as follows:
+The magnitude of each case study can be outlined as follows:
 
 \begin{table}[H]
   \begin{tabular}{||c||c||c||c||c||}
@@ -69,14 +69,15 @@ The expanse of each case study can be summarized as follows:
   \end{tabular}
 \end{table}
 
-These case studies provide a good combination of constructions, interface
+These case studies provide a good combination of data constructors, interface
 functions and patterns, and cover from smaller to larger numbers of
 constructions.
 
 
-We benchmarked the execution time required to generate and fully evaluate 10000
-random values corresponding to each case study, comparing both manually-written
-concrete generators and those obtained using our modular approach.
+Then, we benchmarked the execution time required to generate and fully evaluate
+10000 random values corresponding to each case study, comparing both
+manually-written concrete generators, and those obtained using our modular
+approach.
 %
 For this purpose, we used the \emph{Criterion} \cite{criterion} benchmarking
 tool for Haskell, and limited the maximum depth of the generated values to five
@@ -86,7 +87,7 @@ Additionally, our modular generators were tested using both linear and balanced
 generation specifications.
 %
 Figure \ref{fig:times} illustrates the relative execution time of each case
-study, normalized to their corresponding manually-written counterparts---we
+study, normalized to their corresponding manually-written counterpart---we
 encourage the reader to obtain a colored version of this work.
 
 \begin{figure}[t]
@@ -123,13 +124,12 @@ encourage the reader to obtain a colored version of this work.
   \caption{Generation time comparison between concrete and modular generators.}
   \label{fig:times}
 \end{figure}
-
+%
 As it can be observed, our approach suffers from a noticeable runtime overhead
 when using linearly defined representations, specially when considering the HTML
-case study, which spans a large amount of constructions in the generation
-process.
+case study, involving a large number of constructions in the generation process.
 %
-However, we found that, by balancing our representation types the generation
+However, we found that, by balancing our representation types, the generation
 performance improves dramatically.
 %
 At the light of these improvements, our tool includes an additional type-level
@@ -148,7 +148,7 @@ generated values for penetration testing
 
 All in all, we consider that these results are fairly encouraging, given that
 the flexibility obtained from using our compositional approach does not produce
-severe slowdowns in when generating random values in practice.
+severe slowdowns when generating random values in practice.
 
 % , nor explodes more than linearly as we increase the complexity of our random
 % generators.
