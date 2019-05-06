@@ -79,8 +79,8 @@ pattern matchings. Consider for instance the following function for simplifying
 
 \begin{code}
 simplify :: Html -> Html
-simplify (Text t1 iJoin Text t2) = Text (t1 ++ t2)
-simplify ((Text t1 iJoin x) iJoin y)
+simplify (Join (Text t1) (Text t2)) = Text (t1 ++ t2)
+simplify (Join (Join (Text t) x) y)
   = simplify (Text t1 iJoin simplify (x iJoin y))
 simplify (x iJoin y) = simplify x iJoin simplify y
 simplify (Tag t x) = Tag t (simplify x)

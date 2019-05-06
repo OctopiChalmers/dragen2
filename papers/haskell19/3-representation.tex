@@ -12,17 +12,19 @@ information at the type level.
 %
 In this light, the ``shape'' of our random data is determined entirely by the
 type we use to represent it during the generation process.
-%
+
+
 For this, we will define a set of different simple ``open'' types, each one in
-charge of representing a single construction of our target data type.
+charge of representing a single construction of our \emph{target} data type,
+i.e., the actual data type we want to randomly generate.
 %
 These types can be later
 %
 \begin{inparaenum}[(i)]
 \item combined in several ways depending on the desired shape of our test data,
-  applying the familiar technique of Data Types \`a la Carte;
-\item randomly generated (see Section \ref{sec:generators}), and finally,
-\item transformed back into the corresponding values of the target data type
+  applying the familiar \`a la Carte technique;
+\item randomly generated (see Section \ref{sec:generators}); and finally,
+\item transformed back to the corresponding values of the target data type
   automatically.
 \end{inparaenum}
 %
@@ -42,11 +44,12 @@ constructors.
 %
 \footnote{We explicitly avoid considering $\bot$ when generating random values.}
 %
-In this light, each individual data constructor of the target data type can be
-represented simply by a new data type with a single constructor.
+In this light, each data constructor of the target data type can be represented
+using a single-constructor data type.
 %
-Recalling our |Html| example, its data constructors can be represented as
-follows:
+Recalling our |Html| example, its data constructors can be represented as:
+%
+\looseness=-1 % I hate having to use this!
 
 \begin{code}
 data Con_Text   r = Mk_Text  String
@@ -55,9 +58,9 @@ data Con_Tag    r = Mk_Tag   String r
 data Con_Join   r = Mk_Join  r r
 \end{code}
 %
-In the previous definitions, each representation has the same fields as its
-corresponding constructor, except for the recursive ones which are abstracted
-away using a type parameter |r|.
+Note that each representation has the same fields as its corresponding
+constructor, except for the recursive ones which are abstracted away using a
+type parameter |r|.
 %
 This parametricity lets us leave the type of each recursive sub-term unspecified
 until we have decided the overall shape of our random data.
@@ -66,13 +69,12 @@ Then, for instance, the value |Mk_Tag "div" x :: Con_Tag r| represents the
 |Html| value |Tag "div" x|, for some sub-term |x :: r| that can be transformed
 back to |Html| as well.
 %
-It is easy to note how each one of these simple representations encode the
-minimal amount of information they need, leaving everything else unspecified.
+It is easy to note how each of these simple representations encode the minimal
+amount of information they need, leaving everything else unspecified.
 
 An important property of these parametric representations is that, in most
 cases, they form a functor over its type parameter, and thus we can use
-Haskell's |deriving| mechanism to obtain a suitable |Functor| instances for
-free:
+Haskell's |deriving| mechanism to obtain suitable |Functor| instances for free:
 
 \begin{code}
 deriving instance Functor Con_Text
@@ -101,11 +103,12 @@ class Functor f => Algebra f a | f -> a where
   alg :: f a -> a
 \end{code}
 %
-In the previous definition, |f| is the functor type used to represent a
-construction of the target type |a|.
+where |f| is the functor type used to represent a construction of the target
+type |a|.
 %
-Note the functional dependency |f -> a|, helping the type checker to solve the
-free type variable |a| at the right hand side of the |=>|.
+Note the functional dependency |f -> a|, helping the type checker to solve
+uniquely the free type variable |a| at the right hand side of the |=>|, based on
+the type |f| used to represent it.
 %
 % In practical terms, it ensures that each representation type |f| will be
 % translated to a unique target type |a|.
@@ -114,9 +117,8 @@ Then, we need to instantiate this type class for each data constructor
 representation we are considering, providing an appropriate implementation for
 the overloaded |alg| function.
 %
-To do so we can simply transform each representation into its corresponding
-value by picking its corresponding data constructor, and piping its fields
-unchanged:
+To do so, we can simply transform each constructor representation by picking its
+corresponding data constructor, and piping its fields unchanged:
 
 \begin{code}
 instance Algebra Con_Text Html where
@@ -131,7 +133,8 @@ instance Algebra Con_Tag Html where
 instance Algebra Con_Join Html where
   alg (Mk_Join x y) = Join x y
 \end{code}
-%
+
+
 Note how every definition regarding each different constructor so far was
 obtained rather mechanically.
 %
@@ -221,10 +224,10 @@ representations for our target data types, there is as piece of machinery still
 missing: our representations are not recursive, but parametric on its recursive
 fields.
 %
-We can think of them as a encoding a single ``layer'' of our target data.
+We can think of them as a encoding a `'single layer'' of our target data.
 %
 In order to represent recursive values, we need to close them ``tying the knot''
-recusively, i.e., once we have decided the final representation of our target
+recursively, i.e., once we have fixed a suitable representation for our target
 data, we want each one of its recursive fields to be instantiated with itself.
 %
 This can be easily achieved by using a type-level fixed point operator:
@@ -281,9 +284,9 @@ can be represented with |Html'| as:
                (FixC (InR (InL (Mk_Sing "hr"))))))))
 \end{code}
 %
-where the sequences of |InL| and |InR| data constructors inject each value from
-an individual representation into the appropriate position of our composite
-representation |Html'|.
+where the sequences of |InL| and |InR| data constructors \emph{inject} each
+value from an individual representation into the appropriate position of our
+composite representation |Html'|.
 
 
 Finally, given the value |x' :: Fix Html'|, we can evaluate it back to its
@@ -299,7 +302,7 @@ unwrapping the fixed points and mapping their algebras to the result of
 evaluating recursively each recursive sub-term.
 %
 This recusion schema using functors and F-Algebras to fold data generically has
-been well studied and is known categorically a \emph{catamorphism}.
+been well studied and is known categorically a \emph{catamorphism} \tocite.
 
 In our particular example, this function satisfies the equation |eval x' == x|.
 %
@@ -328,20 +331,20 @@ approach becomes particularly appealing.
 %
 \subsubsection{Abstract Interfaces}
 
-Fistly, let us consider the case of generating values obtained by abstract
+Firstly, let us consider the case of generating values obtained by abstract
 interface functions.
 %
-If we recall our |Html| example, we can observe that it is possible to use the
+If we recall our |Html| example, we note that it is possible to use the
 functions on its abstract interface to obtain |Html| values based on different
 input arguments:
 
 \begin{code}
-br     ::                        Html
-bold   ::     Html   ->          Html
-list   ::  [  Html]  ->          Html
-(<+>)  ::     Html   -> Html ->  Html
+br     ::                      Html
+bold   ::  Html    ->          Html
+list   ::  [Html]  ->          Html
+(<+>)  ::  Html    -> Html ->  Html
 \end{code}
-
+%
 Fortunately, it is easy to extend our approach to incorporate the interesting
 structure arising from these functions into our representations.
 %
@@ -356,12 +359,12 @@ data Fun_cat    r = Mk_cat  r r
 \end{code}
 %
 Each one of these data types represents a value resulting from evaluating its
-corresponding function, using as input arguments the values encoded in its
+corresponding function, using as input arguments the values encoded on its
 fields.
 %
 Once again, we replace each recursive field (representing a recursive input
 argument) with a type parameter |r| in order to leave the type of the recursive
-sub-terms unspecified until we have decided the overall shape of our data.
+sub-terms unspecified until we have decided the final shape of our data.
 
 
 Note that, by representing values obtained from function application this way,
@@ -369,7 +372,7 @@ we are not performing any actual computation---we simply store the functions'
 input arguments.
 %
 Instead, the actual functions are evaluated when transforming our
-representations back to their target type, again by the means of an |Algebra|:
+representations back to their target type, by the means of an |Algebra|:
 
 \begin{code}
 instance Algebra Fun_br Html where
@@ -385,8 +388,8 @@ instance Algebra Fun_cat Html where
   alg (Mk_cat x y) = x <+> y
 \end{code}
 %
-There, we simply return the result of evaluating the appropriate functions,
-using each representation field as an input argument.
+There, we simply return the result of evaluating each function, using its
+representation fields as an input arguments.
 
 
 It is important to remark that this approach inherits any possible downside from
@@ -412,30 +415,29 @@ generating random values:
 simplify (Join (Text t1) (Text t2))   = dots
 simplify (Join (Join (Text t1) x) y)  = dots
 \end{code}
-
-We can extend our approach further in order to represent these patterns as well.
+%
+We can extend our approach in order to represent these patterns as well.
 %
 We start defining single data types for each one of them, this time encoding in
 the fields of each single data constructor the free pattern variables (or
-wildcards) appearing in corresponding patterns from left to right:
+wildcards) appearing in its corresponding pattern, from left to right:
 
 \begin{code}
 data Pat_simplify_1 r = Mk_simplify_1 String String
 data Pat_simplify_2 r = Mk_simplify_2 String r r
 \end{code}
 %
-where the number after the |#| simply distinguishes the different patterns from
-the function |simplify| using the index of the clause they belong to.
+where the number after the |#| distinguishes the different patterns from the
+function |simplify| by the index of the clause they belong to.
 %
 Once again, we abstracted away every recursive field (this time corresponding to
 a recursive pattern variable or wildcard) using a type variable |r| until we
-have decided the overall shape of our target data.
+have decided the final shape of our target data.
 
 
-Then, the task of our |Algebra| instances is to expand each pattern
-representation into the corresponding target value resembling such pattern,
-where each pattern variable gets instantiated using the values stored in its
-representation field:
+Then, each |Algebra| instance will expand pattern representations into the
+corresponding target values resembling such patterns, where each pattern
+variable gets instantiated using the values stored in its representation field:
 
 \begin{code}
 instance Algebra Pat_simplify_1 Html where
@@ -451,8 +453,8 @@ instance Algebra Pat_simplify_2 Html where
 %
 \subsubsection{Ensambling Altogether}
 
-Using this extensions, we are now able to represent values of our target data
-using a higher abstraction level.
+Using the constructions presented so far, we are now able to represent values of
+our target data using a higher level of abstraction.
 %
 Instead of constructing values solely by combining different data constructors,
 this mechanism lets us also consider complex constructions like abstract
@@ -463,7 +465,7 @@ fine grained fashion.
 As we have introduced in the Section \ref{sec:sources}, having an extensible,
 fine-grained framework for generating random data might be of great advantage,
 as we would like to generate random test cases following different strategies
-when testing different properties.
+when testing different properties or sub-systems.
 %
 For instance, generating values satisfying the pattern matchings of the function
 |simplify| could be relevant only when testing properties involving such
@@ -480,17 +482,17 @@ type Html_simplify  =      Con_Text oplus'' Con_Sing oplus'' Con_Tag oplus'' Con
 
 Furthermore, if we want to test properties expecting valid |Html| values as
 inputs, we could avoid generating random |Sing| and |Tag| data constructors, as
-they might represent invalid tags.
+they might introduce invalid HTML tags.
 %
-Instead, we could specify that our random data can be constructed using only
+Instead, we could specify that our random data can be constructed only via
 ``safe'' constructions, using perhaps a representation type like follows:
 
 \begin{code}
-type ValidHtml = Con_Text oplus'' Con_Join oplus'' Fun_br oplus'' Fun_bold
+type ValidHtml  =      Con_Text oplus'' Con_Join
+                oplus  Fun_br oplus'' Fun_bold oplus'' Fun_list oplus'' Fun_cat
 \end{code}
 
 
 The next section introduces a generic way to generate random values from our
-different representations, extending them with a set of type-level combinators
-to encode information relevant to the generation process directly on their
-types.
+different representations, extending them with a set of combinators to encode
+information relevant to the generation process directly at the type level.
