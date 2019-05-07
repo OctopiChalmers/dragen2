@@ -5,9 +5,10 @@
 % Intro
 %
 Random property-based testing is a powerful technique for finding bugs
-\cite{ArtsHNS15, HughesPAN16, HughesNSA16}.
+\cite{ArtsHNS15, HughesPAN16, HughesNSA16, MidtgaardJKNN17}.
 %
-In the Haskell community, QuickCheck is the predominant tool of this such.
+In the Haskell community, QuickCheck is the predominant tool of this such
+\cite{ClaessenH00}.
 %
 The developers specify
 %
@@ -130,12 +131,15 @@ constructors, hence ending the generation process.
 As one can observe, the previous definition is quite mechanical, and depends
 only on the generation frequencies we choose for each constructor.
 %
-Fortunately, there exists a variety of meta-programming tools for obtaining
-random generators automatically, based on the information encoded on the
-definition of the types we want to generate.
+Fortunately, there exists a variety of tools for obtaining random generators
+automatically, based on the information encoded on the definition of the types
+we want to generate.
 %
-Tools like \emph{MegaDeTH} or \emph{DRAGEN} will synthesize random generators
-using roughly the same procedure as the one shown above.
+Most of them implemented using Haskell's meta-programming framework named
+Template Haskell \cite{SheardJ02}.
+%
+For instance, tools like \emph{MegaDeTH} or \emph{DRAGEN} will synthesize random
+generators using roughly the same procedure as the one shown above.
 %
 On one hand, \emph{MegaDeTH} derives generators which simply pick among data
 constructors with uniform probabilities, whereas \emph{DRAGEN} analyzes type
@@ -203,10 +207,10 @@ The main contribution of this paper are:
 \item We propose a simple type-level idiom for describing extensible generators,
   based on the types used to represent the desired shape of our random data
   (Section \ref{sec:typelevel}).\looseness=-1
-\item We provide a Template Haskell tool for automatically deriving all the
-  required machinery presented throughout this paper, and evaluate its
-  generation performance using three real-world case studies (Section
-  \ref{sec:casestudies}).
+\item We provide a Template Haskell tool for automatically
+  deriving all the required machinery presented throughout this paper, and
+  evaluate its generation performance using three real-world case studies
+  (Section \ref{sec:casestudies}).
 \end{itemize}
 
 Overall, we present a novel technique for reusing automatically derived

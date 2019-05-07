@@ -113,9 +113,9 @@ clauses.
 To solve this issue, we could opt to consider each complex pattern as a new kind
 of random construction.
 %
-In this light, we can simply generate values satisfying pattern directly by
-returning its corresponding expression, where each variable or wildcard pattern
-is filled using a random sub-expression:
+In this light, we can simply generate values satisfying patterns directly by
+returning their corresponding expressions, where each variable or wildcard
+pattern is filled using a random sub-expression:
 
 \begin{code}
   gen d = frequency
