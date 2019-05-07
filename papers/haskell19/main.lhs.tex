@@ -80,11 +80,18 @@
 \usepackage{paralist}
 \usepackage{tikz}
 \usepackage{pgfplots}
+\usepackage{balance}
 
 \usetikzlibrary{bending,patterns,matrix,fadings,positioning,shapes}
 \pgfplotsset{compat=1.12}
 
 \newcommand{\tocite}{\textbf{[Citation needed]}}
+
+\newenvironment{CompactItemize}%
+  {\begin{list}{$\, \  \blacktriangleright$}%
+   {\leftmargin=10pt \itemsep=0pt \topsep=0pt
+     \parsep=0pt \partopsep=0pt}}%
+  {\end{list}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% The document
@@ -201,6 +208,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Bibliography
 \newpage
+\balance
 \bibliography{references}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

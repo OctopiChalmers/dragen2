@@ -192,9 +192,8 @@ focuses on implementing it in a compositional way.
 %
 The main contribution of this paper are:
 %
-% \vspace{-10pt}
 %
-\begin{itemize}
+\begin{CompactItemize}
 \item We identify some important limitations of performing random testing with
   automatically derived generators using state-of-the-art tools (Section
   \ref{sec:sources}).
@@ -207,12 +206,15 @@ The main contribution of this paper are:
 \item We propose a simple type-level idiom for describing extensible generators,
   based on the types used to represent the desired shape of our random data
   (Section \ref{sec:typelevel}).\looseness=-1
-\item We provide a Template Haskell tool for automatically
-  deriving all the required machinery presented throughout this paper, and
-  evaluate its generation performance using three real-world case studies
-  (Section \ref{sec:casestudies}).
-\end{itemize}
-
+\item We provide a Template Haskell tool%
+  %
+  \footnote{Link will be made available for the final version of this paper.}
+  %
+  for automatically deriving all the required machinery presented throughout
+  this paper, and evaluate its generation performance using three real-world
+  case studies (Section \ref{sec:casestudies}).
+\end{CompactItemize}
+%
 Overall, we present a novel technique for reusing automatically derived
 generators in a composable fashion, in contrast with the usual paradigm of
 automatically deriving ``rigid'', monolithic generators.

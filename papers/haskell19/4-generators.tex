@@ -31,7 +31,8 @@ similar to the one presented for |Html| in Section \ref{sec:intro}.
 If we take a closer look at its definition, we can observe three factors
 happening simultaneously:
 %
-\begin{itemize}
+\vspace{2pt}
+\begin{CompactItemize}
 \item We use QuickCheck's generation size to limit the depth of the generated
   values, reducing it by one on each recursive call of the local auxiliary
   function |gen|.
@@ -39,7 +40,7 @@ happening simultaneously:
     constructors}, limiting our generator to pick only among terminal ones when
   we have reached the maximum depth (case |gen 0|).
 \item We generate different constructions in a (possibly) different frequency.
-\end{itemize}
+\end{CompactItemize}
 %
 For the rest of this section, we will focus on modeling these aspects in our
 modular framework, in such a way that does not compromise the compositionality

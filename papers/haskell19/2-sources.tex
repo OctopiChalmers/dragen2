@@ -36,9 +36,11 @@ list xs  = Tag "ul" $ foldl1 Join (Tag "li" <$> xs)
 (<+>) x y = Join x (Join br y)
 \end{code} %$
 %
-These functions let us create interesting structured values representing HTML
-constructions like line-breaks (|br|), bold blocks (|bold|), unordered lists
-(|list|) and concatenation of values one below another (|<+>|).
+These functions let us encode structured HTML constructions like line-breaks
+(|br|), bold blocks (|bold|), unordered lists (|list|) and concatenation of
+values one below another (|<+>|).
+%
+\looseness=-1
 
 Note how difficult would it be to generate random values containing, for
 example, structurally valid HTML lists if we only consider the structural
