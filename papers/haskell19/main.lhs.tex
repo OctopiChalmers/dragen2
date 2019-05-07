@@ -81,16 +81,19 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \usepackage{balance}
+% \usepackage[subtle]{savetrees}
 
 \usetikzlibrary{bending,patterns,matrix,fadings,positioning,shapes}
 \pgfplotsset{compat=1.12}
 
+\widowpenalty10000
+\clubpenalty10000
+
 \newcommand{\tocite}{\textbf{[Citation needed]}}
 
 \newenvironment{CompactItemize}%
-  {\begin{list}{$\, \  \blacktriangleright$}%
-   {\leftmargin=10pt \itemsep=0pt \topsep=0pt
-     \parsep=0pt \partopsep=0pt}}%
+{\begin{list}{$\, \ \bullet$}%
+    {\leftmargin=10pt \itemsep=1pt \topsep=2pt \parsep=0pt \partopsep=0pt}}%
   {\end{list}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

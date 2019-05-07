@@ -1,10 +1,15 @@
 \section{Related Work}
 \label{sec:related}
 
-\citeauthor{SwierstraDTC} \cite{SwierstraDTC} proposed Data Types \`a la Carte,
-technique for building extensible data types and unified interpreters, as a
-solution for the expression problem coined by \citeauthor{wadler1998expression}
+\citeauthor{SwierstraDTC} proposed Data Types \`a la Carte \cite{SwierstraDTC},
+a technique for building extensible data types, as a solution for the
+\emph{expression problem}, coined by \citeauthor{wadler1998expression}
 \cite{wadler1998expression}.
+%
+This technique has been successfully applied in a variety of scenarios, from
+extensible compilers, to composable machine-mechanized proofs
+\cite{Day:2013:CAL:2620678.2620680, persson2011generic, wu2014effect,
+  delaware2013meta}.
 %
 In this work, we take ideas from this approach and extend them to work in the
 scope of random data generation, where other parameters come into play apart
@@ -44,7 +49,8 @@ on their types, paying no attention whatsoever to the generation frequency of
 each data constructor.
 %
 As a result, its automatically derived generators has been shown to be skewed
-towards generating very small values\cite{DBLP:conf/haskell/MistaRH18}.
+towards generating very small values
+\cite{DBLP:conf/haskell/MistaRH18}.\looseness=-1
 
 
 On the other hand, \emph{DRAGEN} is a tool that synthesizes optimized

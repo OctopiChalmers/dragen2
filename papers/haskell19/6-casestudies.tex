@@ -19,9 +19,9 @@ First, we generate random values from the representation types used to specify
 the shape of our data; and then we use their algebras to translate them to the
 corresponding values of our target data types.
 %
-In particular, the transformation step is expected to pattern match repeatedly
-against the |InL| and |InR| constructors of the |oplus| operators when
-traversing each construction injection.
+In particular, this last step is expected to pattern match repeatedly against
+the |InL| and |InR| constructors of the |oplus| operators when traversing each
+construction injection.
 %
 Because of this, in general, we expect a performance impact with respect to
 manually-written concrete generators.
@@ -58,6 +58,7 @@ studies:
 %
 The magnitude of each case study can be outlined as follows:
 
+\vspace{-5pt}
 \begin{table}[H]
   \begin{tabular}{||c||c||c||c||c||}
     \hline
@@ -68,6 +69,7 @@ The magnitude of each case study can be outlined as follows:
     HTML       & 4       & 132     & -       & 136                 \\ \hline
   \end{tabular}
 \end{table}
+\vspace{-5pt}
 
 These case studies provide a good combination of data constructors, interface
 functions and patterns, and cover from smaller to larger numbers of
@@ -94,18 +96,18 @@ encourage the reader to obtain a colored version of this work.
   \centering
   \begin{tikzpicture}
     \begin{axis}
-      [ height=6cm
+      [ height=4.5cm
       , width=9cm
       , ybar
       , ymajorgrids=true
       , ytick={0,1,...,4}
-      , ymax=4
-      , ymin=0.5
-      , enlargelimits=0.25
+      , ymax=3.7
+      , ymin=0.7
+      , enlargelimits=0.3
       , enlarge x limits=0.25
       , /pgf/bar width=17pt
       , legend style={
-        at={(0.5,-0.15)},
+        at={(0.5,-0.2)},
         anchor=north,legend columns=3}
       , legend image code/.code={%
         \draw[#1, draw=none] (0cm,-0.1cm) rectangle (0.3cm,0.2cm); }
@@ -121,10 +123,12 @@ encourage the reader to obtain a colored version of this work.
       \legend{Manual, Modular (lin), Modular (bal)}
     \end{axis}
   \end{tikzpicture}
+  \vspace{-7pt}
   \caption{Generation time comparison between concrete and modular generators.}
   \label{fig:times}
+  \vspace{-18pt}
 \end{figure}
-%
+
 As it can be observed, our approach suffers from a noticeable runtime overhead
 when using linearly defined representations, specially when considering the HTML
 case study, involving a large number of constructions in the generation process.

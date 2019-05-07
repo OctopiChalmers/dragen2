@@ -130,6 +130,8 @@
 
 %format Tree_Spec = "\type{Tree_{Spec}}"
 
+%format ExampleHTML = "\texttt{<html><b>hello<br>world!</b></html>}"
+
 % Local Variables:
 % TeX-mbigstarer: "main.lhs.tex"
 % TeX-command-default: "Make"

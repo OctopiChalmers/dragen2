@@ -21,8 +21,8 @@ i.e., the actual data type we want to randomly generate.
 These types can be later
 %
 \begin{inparaenum}[(i)]
-\item combined in several ways depending on the desired shape of our test data,
-  applying the familiar \`a la Carte technique;
+\item combined in several ways depending on the desired shape of our test data
+  (applying the familiar \`a la Carte technique);
 \item randomly generated (see Section \ref{sec:generators}); and finally,
 \item transformed back to the corresponding values of the target data type
   automatically.
@@ -301,8 +301,8 @@ This function exploits the |Functor| structure of our representations,
 unwrapping the fixed points and mapping their algebras to the result of
 evaluating recursively each recursive sub-term.
 %
-This recusion schema using functors and F-Algebras to fold data generically has
-been well studied and is known categorically a \emph{catamorphism} \tocite.
+This recursion schema using functors and F-Algebras to fold data generically has
+been well studied and is known a \emph{catamorphism} \cite{Meijer91}.
 
 In our particular example, this function satisfies the equation |eval x' == x|.
 %

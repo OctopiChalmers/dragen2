@@ -1,4 +1,4 @@
-\section{Random Testing with Source Hints}
+\section{Additional Sources of Structural Information}
 \label{sec:sources}
 
 In this section, we briefly introduce the motivation for including extra
@@ -9,7 +9,7 @@ implemented in practice.
 % --------------------------------------
 % Abstract interfaces
 %
-\subsection{Extracting Information From Interfaces}
+\subsection{Abstract Interfaces}
 
 A common choice when implementing abstract data types is to transfer the
 responsibility of preserving their invariants to the functions on their abstract
@@ -42,7 +42,7 @@ values one below another (|<+>|).
 %
 \looseness=-1
 
-Note how difficult would it be to generate random values containing, for
+Note how difficult it would be to generate random values containing, for
 example, structurally valid HTML lists if we only consider the structural
 information encoded in our |Html| type definition.
 %
@@ -70,10 +70,11 @@ From now on, we will refer to each possible choice given to |frequency| as a
 different \emph{random construction}, as we are not considering generating only
 single data constructors anymore.
 
+
 % --------------------------------------
 % Functions' pattern matchings
 %
-\subsection{Extracting Information From Patterns}
+\subsection{Pattern Matchings}
 
 A different challenge appears when we try to test functions comprising complex
 pattern matchings. Consider for instance the following function for simplifying

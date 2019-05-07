@@ -7,7 +7,7 @@
 Random property-based testing is a powerful technique for finding bugs
 \cite{ArtsHNS15, HughesPAN16, HughesNSA16, MidtgaardJKNN17}.
 %
-In the Haskell community, QuickCheck is the predominant tool of this such
+In the Haskell community, QuickCheck is the predominant tool for that task
 \cite{ClaessenH00}.
 %
 The developers specify
@@ -18,7 +18,7 @@ The developers specify
   involved at their properties.
 \end{inparaenum}
 %
-Then, QuickCheck generates random seeds using these generators, which are used
+Then, QuickCheck generates random values using these generators, which are used
 to evaluate the system's properties in search of possible counterexamples, which
 often indicate the presence of bugs.
 
@@ -55,11 +55,13 @@ In this paper, we will refer to any non-recursive data constructor as
 \emph{terminal}, and \emph{non-terminal} in any other case.
 
 
-Using this representation, the example page \linebreak
+Using this representation, the example page:
+
+\begin{code}
+ExampleHTML
+\end{code}
 %
-\texttt{<html><b>hello<br>world!</b></html>}
-%
-is encoded as:
+can be encoded as:
 %
 \begin{code}
 Tag "html" $ Tag "b" $
@@ -115,8 +117,8 @@ random |Html| constructor with a given generation frequency (using QuickCheck's
 generated sub-terms---here using Haskell's applicative notation
 \cite{Mcbride2008} and the default |Arbitrary| instance for |String|s.
 %
-For the case of the recursive sub-terms, this generator simply calls |gen|
-recursively with a smaller generation size (|gen (d-1)|).
+For the case of the recursive sub-terms, this generator simply calls the
+function |gen| recursively with a smaller generation size (|gen (d-1)|).
 %
 This process repeats until we reach the base case (|gen 0|) on each recursive
 sub-term.
@@ -138,7 +140,8 @@ we want to generate.
 Most of them implemented using Haskell's meta-programming framework named
 Template Haskell \cite{SheardJ02}.
 %
-For instance, tools like \emph{MegaDeTH} or \emph{DRAGEN} will synthesize random
+For instance, tools like \emph{MegaDeTH} \cite{GriecoCB16, grieco2017} or
+\emph{DRAGEN} \cite{DBLP:conf/haskell/MistaRH18} will synthesize random
 generators using roughly the same procedure as the one shown above.
 %
 On one hand, \emph{MegaDeTH} derives generators which simply pick among data
@@ -147,7 +150,8 @@ definitions, tuning the generation frequencies based on a predictive mechanism.
 %
 This allows the users to specify the desired distribution of values of the
 derived generators.
-
+%
+\looseness=-1
 
 % --------------------------------------
 % Limitation
@@ -165,41 +169,62 @@ However, this simple derivation procedure, which
 is often too generic to synthesize useful generators in practical scenarios.
 %
 For instance, because of the types we use for deriving our generators are too
-general, leaving a large room for ill-formed values, e.g., invalid HTML pages;
-or alternatively, because our properties need to be tested against very specific
-input patterns in order to trigger bugs.
+general, the generation process leaves a large room for ill-formed values, e.g.,
+invalid HTML pages; or alternatively, because it fails at generating very
+specific patterns of values which might be needed to trigger bugs.
+%
+% because our properties need to be tested against very specific input patterns in
+% order to trigger bugs.
 
 
 This problem, however, can be alleviated by considering additional sources of
 structural information from our codebase other than just type definitions
 \cite{Mista2019GeneratingRS}.
 %
-For instance, having a set of high-level combinators, defining an abstract
-interface of our data types, e.g., |hr :: Html| or |bold :: Html -> Html|; it is
-possible to include them into the generation process, thus obtaining more
-complex and structured values.
+% For instance, having a set of high-level combinators, defining an abstract
+% interface of our data types, e.g., |hr :: Html| or |bold :: Html -> Html|; it is
+% possible to include them into the generation process, thus obtaining more
+% complex and structured values.
 %
-In the same way, having functions defined using pattern matching over the data
-types of our interest, e.g. |f (Join (Text t) (Tag s x)) = dots|, it is also
-possible to include this rich structure which exposes a relationship among
-different data constructors into our random generators.
+For instance, it is possible to include into the generation process a set of
+high-level combinators of our data types, e.g., |hr :: Html| or |bold :: Html ->
+Html|---thus obtaining more complex and structured values.
 %
-This idea is addressed in depth in the next section, while the rest of this work
-focuses on implementing it in a compositional way.
+This methodology of generating random data using high-level combinators has
+shown to be particulary useful in the presence of monadic code
+\cite{Claessen:2002, grieco2017}.
+%
+% In the same way, having functions defined using pattern matching over the data
+% types of our interest, e.g. |f (Join (Text t) (Tag s x)) = dots|, it is also
+% possible to include this rich structure which exposes a relationship among
+% different data constructors into our random generators.
+%
+In the same way, it is possible to include into the generation process the
+pattern matchings that different functions perform over the data types of our
+interest, e.g. |f (Join (Text t) (Tag s x)) = dots|.
+%
+Such patterns often expose interesting relationships between multiple data
+constructors, a valuable asset for testing complex systems expecting highly
+structured inputs \cite{klein2009randomized}.
+%
+% This idea is addressed in depth in the next section, while the rest of this work
+% focuses on implementing it in a compositional way.
+%
+This work shows how to modularly include these extra sources of structural
+information into our automatically derived generators in a compositional manner.
 
 %
 % Contributions
 %
 The main contribution of this paper are:
 %
-%
 \begin{CompactItemize}
 \item We identify some important limitations of performing random testing with
   automatically derived generators using state-of-the-art tools (Section
   \ref{sec:sources}).
 \item We present an extensible mechanism for representing random values built
-  upon different source constructions using Data Types \`a la Carte (Section
-  \ref{sec:representation}).
+  upon different sources of structural information using Data Types \`a la Carte
+  (Section \ref{sec:representation}).
 \item We develop a modular generation schema, exploiting the composable nature
   of our representations, which are extended to encode information relevant to
   the generation process at the type level (Section \ref{sec:generators}).
