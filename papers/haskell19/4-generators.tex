@@ -487,7 +487,7 @@ specified using a safe representation |f|:
 genRep  :: forall f a dot  ( BArbitrary1 f
                            , HasTerminals f
                            , Algebra f a) => BGen a
-genRep d = eval <$> bounded at (Fix f) d
+genRep d = eval <$> barbitrary at (Fix f) d
 \end{code} %$
 %
 Note how this primitive is also ambiguous in the type used for the
