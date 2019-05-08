@@ -33,7 +33,7 @@ list []  = Text "empty list"
 list xs  = Tag "ul" $ foldl1 Join (Tag "li" <$> xs)
 
 (<+>) :: Html -> Html -> Html
-(<+>) x y = Join x (Join br y)
+(<+>) x y = x iJoin br iJoin y
 \end{code} %$
 %
 These functions let us encode structured HTML constructions like line-breaks
@@ -106,7 +106,7 @@ pattern match against to.
 
 In our tests, we were not able to exercise any of these two patterns more than
 6\% of the overall testing time (and considering recursive sub-calls), using
-random generators derived using either \emph{MegaDeTH} and \emph{DRAGEN}.
+random generators derived using both \emph{MegaDeTH} and \emph{DRAGEN}.
 %
 As expected, most of the random test cases were exercising the simplest (an
 rather uninteresting) patterns of this function, corresponding to its last three

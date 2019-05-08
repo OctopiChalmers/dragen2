@@ -40,13 +40,13 @@ synthesizing random generators.
 data type \cite{DuregardJW12}.
 %
 It works by enumerating all the possible values of such type, so that sampling
-uniformly from it simply becomes sampling uniformly from the a finite prefix of
+uniformly from it simply becomes sampling uniformly from a finite prefix of
 natural numbers---something easy to do.
 
 
-\emph{MegaDeTH} is a simple derivation tool that derives generators solely based
-on their types, paying no attention whatsoever to the generation frequency of
-each data constructor.
+\emph{MegaDeTH} is a simple derivation tool that synthesizes generators solely
+based on their types, paying no attention whatsoever to the generation frequency
+of each data constructor.
 %
 As a result, its automatically derived generators has been shown to be skewed
 towards generating very small values

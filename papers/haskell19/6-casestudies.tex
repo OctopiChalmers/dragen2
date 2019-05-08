@@ -92,11 +92,12 @@ Figure \ref{fig:times} illustrates the relative execution time of each case
 study, normalized to their corresponding manually-written counterpart---we
 encourage the reader to obtain a colored version of this work.
 
-\begin{figure}[t]
+\begin{figure}[b]
+  \vspace{-10pt}
   \centering
   \begin{tikzpicture}
     \begin{axis}
-      [ height=4.5cm
+      [ height=5cm
       , width=9cm
       , ybar
       , ymajorgrids=true
@@ -107,7 +108,7 @@ encourage the reader to obtain a colored version of this work.
       , enlarge x limits=0.25
       , /pgf/bar width=17pt
       , legend style={
-        at={(0.5,-0.2)},
+        at={(0.5,-0.25)},
         anchor=north,legend columns=3}
       , legend image code/.code={%
         \draw[#1, draw=none] (0cm,-0.1cm) rectangle (0.3cm,0.2cm); }
@@ -126,7 +127,7 @@ encourage the reader to obtain a colored version of this work.
   \vspace{-7pt}
   \caption{Generation time comparison between concrete and modular generators.}
   \label{fig:times}
-  \vspace{-18pt}
+  \vspace{-5pt}
 \end{figure}
 
 As it can be observed, our approach suffers from a noticeable runtime overhead

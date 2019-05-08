@@ -20,9 +20,9 @@ scenarios.
 %
 The first problem we face is that of naming conventions.
 %
-In practice, the actual names used when deriving construction representations
-need to be generated in such a way that they are compliant with Haskell's
-syntax, and also that they are \emph{unique within our namespace}.
+In practice, the actual name used when deriving the representation for each
+random construction needs to be generated in such a way that is complies with
+Haskell's syntax, and also that it is \emph{unique within our namespace}.
 %
 This means that, type names like |Fun_cat| or |Pat_simplify_1| are, technically,
 not valid Haskell data type names, thus they will have to be synthesized as
@@ -50,8 +50,8 @@ where |Symbol| is the kind of type-level strings in Haskell.
 Then, our derivation process will synthesize each representation using unique
 names, along with a type instance of the corresponding type family.
 %
-For instance, along with the representations of |Con_Text|, |Fun_cat| and
-|Pat_simplify_1|, we will automatically derive the following type instances:
+For instance, along with the constructions representations |Con_Text|, |Fun_cat|
+and |Pat_simplify_1|, we will automatically derive the following type instances:
 
 \begin{code}
 type instance Con "Text"        = Con_Text_123
@@ -147,7 +147,7 @@ instance Arbitrary a => BArbitrary1 (Con_Node a) where dots
 % |Con|, |Fun| and |Pat| synonyms.
 %
 However, instead of carrying this type parameter in our generation
-specifications, we can avoid it by hiding it using an existential type:
+specifications, we can avoid it by hiding it behind an existential type:
 
 \begin{code}
 data Some (f :: * -> * -> *) (r :: *) = forall (a :: *) dot SomeC (f a r)
@@ -187,8 +187,10 @@ genIntTree :: BGen (Tree Int)
 genIntTree = genRep at (Tree_Spec apply' Int)
 \end{code}
 %
-Where |apply| is a closed type family that traverses our generation
-specification, applying the |Int| type to every occurrence of |Some|:
+Where |apply| is a type family that traverses our generation specification,
+applying the |Int| type to each occurrence of |Some|:
+%
+\looseness=-1
 
 \begin{code}
 type family (f :: * -> *) apply' (a :: *) :: * -> * space where
@@ -211,8 +213,8 @@ extended to multi-parametric data types with minor effort.
 
 
 Along with our automated constructions derivation mechanism, the machinery
-introduced in this section allows us to specify random generators using a
-concise and flexible type-level combinators language.
+introduced in this section allows us to specify random generators using a simple
+and flexible type-level specification language.
 %
 The next section evaluates our approach in terms of performance using a set of
 case studies extracted from real-world Haskell implementations.

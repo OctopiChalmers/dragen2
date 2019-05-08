@@ -18,8 +18,8 @@ The developers specify
   involved at their properties.
 \end{inparaenum}
 %
-Then, QuickCheck generates random values using these generators, which are used
-to evaluate the system's properties in search of possible counterexamples, which
+Then, QuickCheck generates random values using these generators, and uses them
+to evaluate the testing properties in search of possible counterexamples, which
 often indicate the presence of bugs.
 
 
@@ -51,8 +51,8 @@ one after another.
 Note that the constructors |Tag| and |Join| are recursive, as they have at least
 one field of their own type.
 %
-In this paper, we will refer to any non-recursive data constructor as
-\emph{terminal}, and \emph{non-terminal} in any other case.
+In this paper, we will refer to any recursive data constructor as
+\emph{non-terminal}, and as \emph{terminal} in any other case.
 
 
 Using this representation, the example page:
@@ -142,14 +142,14 @@ Template Haskell \cite{SheardJ02}.
 %
 For instance, tools like \emph{MegaDeTH} \cite{GriecoCB16, grieco2017} or
 \emph{DRAGEN} \cite{DBLP:conf/haskell/MistaRH18} will synthesize random
-generators using roughly the same procedure as the one shown above.
+generators using roughly the same generation procedure as the one shown above.
 %
 On one hand, \emph{MegaDeTH} derives generators which simply pick among data
 constructors with uniform probabilities, whereas \emph{DRAGEN} analyzes type
 definitions, tuning the generation frequencies based on a predictive mechanism.
 %
-This allows the users to specify the desired distribution of values of the
-derived generators.
+This allows the users to specify the desired distribution of values produced by
+the derived generators.
 %
 \looseness=-1
 
@@ -241,5 +241,5 @@ The main contribution of this paper are:
 \end{CompactItemize}
 %
 Overall, we present a novel technique for reusing automatically derived
-generators in a composable fashion, in contrast with the usual paradigm of
+generators in a composable fashion, in contrast to the usual paradigm of
 automatically deriving ``rigid'', monolithic generators.
