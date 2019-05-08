@@ -78,7 +78,7 @@ deriveFunRep typeFam branching funName = do
 
   -- Create the representation data declaration
   let repDataDec = DDataD Data [] repTypeName extTypeVars
-                     Nothing [singleCon] derivingClause
+                     Nothing [singleCon] (derivingClauses branching)
       singleCon = DCon extTypeVars [] repConName conRepFields repType
       conRepFields = DNormalC False (mkPatRepField <$> funArgTypes)
 

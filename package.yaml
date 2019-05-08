@@ -101,5 +101,4 @@ benchmarks:
       - deepseq
       - th-desugar
       - template-haskell
-    ghc-options: -O2
-    cpp-options: -DDEBUG
+    ghc-options: -O0
