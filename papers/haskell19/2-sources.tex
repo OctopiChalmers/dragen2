@@ -93,7 +93,7 @@ simplify x = x
 This function simply traverses |Html| values, joining together every contiguous
 pair of |Text| constructors.
 %
-Ideally, we would like to put approximately the same testing effort info each
+Ideally, we would like to put approximately the same testing effort into each
 clause of |simplify|, or perhaps even more to the first two ones, since those
 are the ones performing actual simplifications.
 %
@@ -101,7 +101,7 @@ However, these two clauses are the most difficult ones to test in practice!
 %
 The probability of generating a random value satisfying nested patterns
 decreases multiplicatively with the number of constructors we simultaneously
-pattern match against to.
+pattern match against.
 
 
 In our tests, we were not able to exercise any of these two patterns more than
@@ -121,16 +121,16 @@ returning their corresponding expressions, where each variable or wildcard
 pattern is filled using a random sub-expression:
 
 \begin{code}
-  gen d = frequency
-    [ ...
-    , (2, do  t1  <- arbitrary
-              t2  <- arbitrary
-              return (Text t1 iJoin Text t2))
-    , (4, do  t2  <- arbitrary
-              x   <- go (d-1)
-              y   <- go (d-1)
-              return ((Text t1 iJoin x) iJoin y))]
-\end{code}%$
+gen d = frequency
+  [ ...
+  , (2, do  t1  <- arbitrary
+            t2  <- arbitrary
+            return (Join (Text t1) (Text t2)))
+  , (4, do  t2  <- arbitrary
+            x   <- go (d-1)
+            y   <- go (d-1)
+            return (Join (Join (Text t1) x) y))]
+\end{code}
 
 
 % --------------------------------------

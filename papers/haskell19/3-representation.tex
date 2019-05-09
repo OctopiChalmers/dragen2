@@ -108,7 +108,7 @@ where |f| is the functor type used to represent a construction of the target
 type |a|.
 %
 Note the functional dependency |f -> a|, helping the type checker to solve
-uniquely the free type variable |a| at the right hand side of the |=>|, based on
+uniquely the free type variable |a| on the right hand side of the |=>|, based on
 the type |f| used to represent it.
 %
 % In practical terms, it ensures that each representation type |f| will be
@@ -304,7 +304,7 @@ unwrapping the fixed points and mapping their algebras to the result of
 evaluating recursively each recursive sub-term.
 %
 This recursion schema using functors and F-Algebras to fold data generically has
-been well studied and is known a \emph{catamorphism} \cite{Meijer91}.
+been well studied and is known as a \emph{catamorphism} \cite{Meijer91}.
 
 In our particular example, this function satisfies the equation |eval x' == x|.
 %
