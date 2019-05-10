@@ -173,7 +173,7 @@ instance BArbitrary1 Con_Tag where
 instance BArbitrary1 Con_Join where
   liftBGen bgen d = Mk_Join <$> bgen (d - 1) <*> bgen (d - 1)
 \end{code} %$
-
+%
 Note how each instance is defined to be parametric of the maximum depth (using
 the input integer |d|) and the random generator used for the recursive sub-terms
 (using the input generator |bgen|).
