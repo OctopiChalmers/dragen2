@@ -19,7 +19,7 @@ The developers specify
 %
 Then, QuickCheck generates random values using these generators, and uses them
 to evaluate the testing properties in search of possible counterexamples, which
-often indicate the presence of bugs.
+always indicate the presence of bugs.
 
 
 % --------------------------------------
@@ -199,15 +199,15 @@ shown to be particulary useful in the presence of monadic code
 % different data constructors into our random generators.
 %
 In the same way, it is possible to include into the generation process the
-pattern matchings that different functions perform over the data types of our
+pattern matchings that different functions perform over the data types of
 interest, e.g. |f (Join (Text t) (Tag s x)) = dots|.
 %
 Such patterns often expose interesting relationships between multiple data
 constructors, a valuable asset for testing complex systems expecting highly
 structured inputs \cite{klein2009randomized}.
 %
-% This idea is addressed in depth in the next section, while the rest of this work
-% focuses on implementing it in a compositional way.
+% This idea is addressed in depth in the next section, while the rest of this
+% work focuses on implementing it in a compositional way.
 %
 This work shows how to modularly include these extra sources of structural
 information into our automatically derived generators in a compositional manner.

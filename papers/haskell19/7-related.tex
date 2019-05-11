@@ -48,7 +48,7 @@ natural numbers---something easy to do.
 based on their types, paying no attention whatsoever to the generation frequency
 of each data constructor.
 %
-As a result, its automatically derived generators has been shown to be skewed
+As a result, it has been shown that its synthesized generators are biased
 towards generating very small values
 \cite{DBLP:conf/haskell/MistaRH18}.\looseness=-1
 
@@ -86,6 +86,10 @@ In turn, this paper tackles the representation problem, demonstrating how a
 compositional generation process can be effectively implemented and automated in
 Haskell using advanced type-level features.
 %
+% Furthermore, using type-level representations for each random construction
+% leaves the door open for extending our approach with a composable prediction
+% mechanism.
+
 Since none of the aforementioned tools are designed for composability, we
 consider that our ideas could perhaps be applied to improve these tools in the
 future.

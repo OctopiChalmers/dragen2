@@ -28,7 +28,7 @@ use to represent the shape of our random data.
 Ideally, our aim is to be able to obtain random generators with a behavior
 similar to the one presented for |Html| in Section \ref{sec:intro}.
 %
-If we take a closer look at its definition, we can observe three factors
+If we take a closer look at its definition, there we can observe three factors
 happening simultaneously:
 %
 \vspace{2pt}
@@ -36,7 +36,7 @@ happening simultaneously:
 \item We use QuickCheck's generation size to limit the depth of the generated
   values, reducing it by one on each recursive call of the local auxiliary
   function |gen|.
-\item We differentiate between \emph{terminal} and \emph{non-terminal
+\item We differentiated between \emph{terminal} and \emph{non-terminal
     constructors}, picking only among terminal ones when we have reached the
   maximum depth (case |gen 0|).
 \item We generate different constructions in a (possibly) different frequency.
@@ -466,7 +466,7 @@ simultaneously, then this will produce a runtime error triggered by the function
 This kind of exceptions will arise, for example, if we forget to tag at least a
 one construction from our final representation as terminal.
 %
-Fortunately, such runtime exceptions can be catched at compile-time.
+Fortunately, such runtime exceptions can be caught at compile time.
 %
 We can define a type constraint |HasTerminals| that ensures we are trying to
 generate values using a representation with a strictly positive terminal

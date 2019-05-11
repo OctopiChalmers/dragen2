@@ -8,13 +8,21 @@ Furthermore, we incorporate valuable structural information into our generation
 process by considering not only data constructors, but also the structural
 information statically available in abstract interfaces and functions' pattern
 matchings.
+%
 
 
 In the future, we aim to minimize the runtime overhead of our technique, using
 perhaps prefix-free encodings based on generation frequencies, as a way to
 reduce the representation bureaucracy as much as possible.
 %
-Additionally, we are interested on including additional sources of structural
-information from the users' codebases, e.g., locally defined patterns or
-sequences of functions applications---interesting thoughts to motivate our
-future research.
+In addition, using type-level representations for each random construction
+leaves the door open for extending our approach with a composable mechanism for
+predicting the distributions of random values.
+%
+This would be possible by overloading each representation type with stochastic
+information describing its branching behavior---interesting thoughts to motivate
+our future research.
+
+% Additionally, we are interested on including additional sources of structural
+% information from the users' codebases, e.g., locally defined patterns or
+% sequences of functions applications

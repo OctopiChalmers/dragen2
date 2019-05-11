@@ -31,8 +31,8 @@ sequence of numbers is inserted by Template Haskell to ensure uniqueness.
 
 
 This naming convention results hard to use, specially if we consider that we do
-not know the actual type names until they are synthesized in compile-time, due
-to their unique suffixes.
+not know the actual type names until they are synthesized during compilation,
+due to their unique suffixes.
 %
 Fortunately, it is easy to solve this problem using some type-level machinery.
 %
@@ -143,8 +143,8 @@ instance Arbitrary a => BArbitrary1 (Con_Leaf a) where dots
 instance Arbitrary a => BArbitrary1 (Con_Node a) where dots
 \end{code}
 
-% The biggest different appears when deriving the required type instances for the
-% |Con|, |Fun| and |Pat| synonyms.
+% The biggest different appears when deriving the required type instances for
+% the |Con|, |Fun| and |Pat| synonyms.
 %
 However, instead of carrying this type parameter in our generation
 specifications, we can avoid it by hiding it behind an existential type:
