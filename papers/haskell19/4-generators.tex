@@ -36,7 +36,7 @@ happening simultaneously:
 \item We use QuickCheck's generation size to limit the depth of the generated
   values, reducing it by one on each recursive call of the local auxiliary
   function |gen|.
-\item We differentiated between \emph{terminal} and \emph{non-terminal
+\item We differentiate between \emph{terminal} and \emph{non-terminal
     constructors}, picking only among terminal ones when we have reached the
   maximum depth (case |gen 0|).
 \item We generate different constructions in a (possibly) different frequency.
