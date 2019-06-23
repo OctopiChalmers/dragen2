@@ -8,15 +8,16 @@ This section introduces a unified representation for the different constructions
 we might want to consider when generating random values.
 %
 The key idea of this work is to lift each different source of structural
-information at the type level.
+information to the type level.
 %
 In this light, the ``shape'' of our random data is determined entirely by the
-type we use to represent it during the generation process.
+type we use to ``represent'' it during the generation process.
 
 
-For this, we will define a set of different simple ``open'' types, each one in
-charge of representing a single construction of our \emph{target} data type,
-i.e., the actual data type we want to randomly generate.
+For this purpose, we will define a set of different simple ``open'' types, each
+one in charge of representing a single random construction from our
+\emph{target} data type, i.e., the actual data type we want to randomly
+generate.
 %
 These types can be later
 %
@@ -29,7 +30,7 @@ These types can be later
 \end{inparaenum}
 %
 This lifted representation of constructions can be automatically derived from
-our source code in compile-time, relieving programmers of the burden of manually
+our source code at compile time, relieving programmers of the burden of manually
 implementing the required machinery.
 
 
@@ -107,7 +108,7 @@ where |f| is the functor type used to represent a construction of the target
 type |a|.
 %
 Note the functional dependency |f -> a|, helping the type checker to solve
-uniquely the free type variable |a| at the right hand side of the |=>|, based on
+uniquely the free type variable |a| on the right hand side of the |=>|, based on
 the type |f| used to represent it.
 %
 % In practical terms, it ensures that each representation type |f| will be
@@ -138,8 +139,7 @@ instance Algebra Con_Join Html where
 Note how every definition regarding each different constructor so far was
 obtained rather mechanically.
 %
-This let us automate the process quite a bit using Haskell's meta-programming
-capabilities.
+This let us automate the process quite a bit using Template Haskell.
 
 
 % --------------------------------------
@@ -154,7 +154,7 @@ In order to represent interesting values, we need to be able to combine these
 single representations into (possibly complex) composite ones.
 %
 For this purpose, we will define a generic functor type |oplus| to encode the
-choice between two given representation types as follows:
+choice between two given representation types:
 
 \begin{code}
 data ((f :: * -> *) oplus'' (g :: * -> *)) r = InL (f r) | InR (g r)
@@ -177,8 +177,10 @@ except that, instead of combining two base types, it works combining two
 For instance, we can use the type |Con_Text oplus'' Con_Tag| to encode values
 representing either plain text HTMLs or paired tags.
 %
-Such values can be constructed easily using the injections |InL| and |InR| on
-each each case, respectively.
+Such values can be constructed using the injections |InL| and |InR| on each
+case, respectively.
+%
+\looseness=-1
 
 
 The next step consists of providing an |Algebra| type instance for composite
@@ -208,7 +210,7 @@ representations.
 However, in practice, the way in which we associate our constructions affects
 the generation speed dramatically.
 %
-This phenomena is addressed in detail in Section \ref{sec:casestudies}.
+This phenomenon is addressed in detail in Section \ref{sec:casestudies}.
 %
 For simplicity here, we will assume |oplus| as having right associativity, i.e.,
 |f oplus'' g oplus'' h == f oplus'' (g oplus'' h)|.
@@ -238,16 +240,16 @@ newtype Fix (f :: * -> *) = FixC { unFix :: f (Fix f) }
 %
 Given a parametric type |f| of kind |* -> *| representing some target data type,
 the type |Fix f| instantiates each recursive field of |f| with |Fix f|, thus
-closing the definition of |f| into itself---note thus that the kind of |Fix f|
-results |*|.
+closing the definition of |f| into itself---thus the kind of |Fix f| results
+|*|.
 %
 In addition, note that we defined |Fix| as a |newtype|.
 %
 This way, the compiler will avoid producing a runtime representation for it,
 helping to reduce some of the unnecessary overhead.
 %
-This is possible since we only use it as a wrapper to obtain a self-recursive
-type from a parametric one.
+% This is possible since we only use it as a wrapper to obtain a self-recursive
+% type from a parametric one.
 
 
 In general, if |f| is a representation for a given target type, we will refer to
@@ -262,7 +264,7 @@ an example.
 Let us imagine we want to represent our |Html| data type using all of its data
 constructors.
 %
-For this purpose we use the following type to represent it:
+For this purpose, we can use the following type:
 
 \begin{code}
 type Html' = Con_Text oplus'' Con_Sing oplus'' Con_Tag oplus'' Con_Join
@@ -302,7 +304,7 @@ unwrapping the fixed points and mapping their algebras to the result of
 evaluating recursively each recursive sub-term.
 %
 This recursion schema using functors and F-Algebras to fold data generically has
-been well studied and is known a \emph{catamorphism} \cite{Meijer91}.
+been well studied and is known as a \emph{catamorphism} \cite{Meijer91}.
 
 In our particular example, this function satisfies the equation |eval x' == x|.
 %
@@ -371,8 +373,8 @@ Note that, by representing values obtained from function application this way,
 we are not performing any actual computation---we simply store the functions'
 input arguments.
 %
-Instead, the actual functions are evaluated when transforming our
-representations back to their target type, by the means of an |Algebra|:
+Instead, these functions are evaluated when transforming our representations
+back to their target type, by the means of an |Algebra|:
 
 \begin{code}
 instance Algebra Fun_br Html where
@@ -395,8 +397,8 @@ representation fields as an input arguments.
 It is important to remark that this approach inherits any possible downside from
 the functions we use to represent our target data.
 %
-In particular, using non-terminating functions to represent our data might
-produce a non-terminating behavior when calling to the |eval| function.
+In particular, representing non-terminating functions might produce a
+non-terminating behavior when calling to the |eval| function.
 
 
 %
@@ -418,9 +420,9 @@ simplify (Join (Join (Text t1) x) y)  = dots
 %
 We can extend our approach in order to represent these patterns as well.
 %
-We start defining single data types for each one of them, this time encoding in
-the fields of each single data constructor the free pattern variables (or
-wildcards) appearing in its corresponding pattern, from left to right:
+We start by defining data types for each one of them, this time using the fields
+of each single data constructor to encode the free pattern variables (or
+wildcards) appearing on its corresponding pattern, from left to right:
 
 \begin{code}
 data Pat_simplify_1 r = Mk_simplify_1 String String
@@ -451,21 +453,21 @@ instance Algebra Pat_simplify_2 Html where
 %
 % Closing
 %
-\subsubsection{Ensambling Altogether}
+\subsubsection{Assembling It All Together}
 
 Using the constructions presented so far, we are now able to represent values of
 our target data using a higher level of abstraction.
 %
-Instead of constructing values solely by combining different data constructors,
-this mechanism lets us also consider complex constructions like abstract
-interface functions and functions' patterns, treating them uniformingly and in a
-fine grained fashion.
+Instead of constructing values solely by combining data constructors, this
+mechanism lets us also consider complex constructions like abstract interface
+functions and functions' patterns, treating them uniformly and in a fine grained
+fashion.
 
 
-As we have introduced in the Section \ref{sec:sources}, having an extensible,
-fine-grained framework for generating random data might be of great advantage,
-as we would like to generate random test cases following different strategies
-when testing different properties or sub-systems.
+As we have introduced in the Section \ref{sec:sources}, having an extensible
+framework for generating random data might be of great advantage, as we would
+like to generate random test cases following different strategies when testing
+different properties or sub-systems.
 %
 For instance, generating values satisfying the pattern matchings of the function
 |simplify| could be relevant only when testing properties involving such

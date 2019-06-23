@@ -68,7 +68,7 @@ deriveConRep typeFam branching (DCon conTyVars conCxt conName conFields conType)
 
   -- Create the representation data declaration
   let repDataDec = DDataD Data [] repTypeName extTypeVars
-                   Nothing [singleCon] derivingClause
+                   Nothing [singleCon] (derivingClauses branching)
       singleCon = DCon extTypeVars conCxt repConName repConFields repType
       repConFields = mkRepConFields conFields
 

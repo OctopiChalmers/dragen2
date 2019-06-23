@@ -2,8 +2,8 @@
 \label{sec:sources}
 
 In this section, we briefly introduce the motivation for including extra
-information into our random generators, and discuss about how this can be
-implemented in practice.
+information into our random generators, and discuss how this can be implemented
+in practice.
 
 
 % --------------------------------------
@@ -33,7 +33,7 @@ list []  = Text "empty list"
 list xs  = Tag "ul" $ foldl1 Join (Tag "li" <$> xs)
 
 (<+>) :: Html -> Html -> Html
-(<+>) x y = Join x (Join br y)
+(<+>) x y = x iJoin br iJoin y
 \end{code} %$
 %
 These functions let us encode structured HTML constructions like line-breaks
@@ -76,7 +76,7 @@ single data constructors anymore.
 %
 \subsection{Pattern Matchings}
 
-A different challenge appears when we try to test functions comprising complex
+A different challenge appears when we try to test functions involving complex
 pattern matchings. Consider for instance the following function for simplifying
 |Html| values:
 
@@ -93,7 +93,7 @@ simplify x = x
 This function simply traverses |Html| values, joining together every contiguous
 pair of |Text| constructors.
 %
-Ideally, we would like to put approximately the same testing effort info each
+Ideally, we would like to put approximately the same testing effort into each
 clause of |simplify|, or perhaps even more to the first two ones, since those
 are the ones performing actual simplifications.
 %
@@ -101,14 +101,14 @@ However, these two clauses are the most difficult ones to test in practice!
 %
 The probability of generating a random value satisfying nested patterns
 decreases multiplicatively with the number of constructors we simultaneously
-pattern match against to.
+pattern match against.
 
 
 In our tests, we were not able to exercise any of these two patterns more than
 6\% of the overall testing time (and considering recursive sub-calls), using
-random generators derived using either \emph{MegaDeTH} and \emph{DRAGEN}.
+random generators derived using both \emph{MegaDeTH} and \emph{DRAGEN}.
 %
-As expected, most of the random test cases were exercising the simplest (an
+As expected, most of the random test cases were exercising the simplest (and
 rather uninteresting) patterns of this function, corresponding to its last three
 clauses.
 
@@ -121,16 +121,16 @@ returning their corresponding expressions, where each variable or wildcard
 pattern is filled using a random sub-expression:
 
 \begin{code}
-  gen d = frequency
-    [ ...
-    , (2, do  t1  <- arbitrary
-              t2  <- arbitrary
-              return (Text t1 iJoin Text t2))
-    , (4, do  t2  <- arbitrary
-              x   <- go (d-1)
-              y   <- go (d-1)
-              return ((Text t1 iJoin x) iJoin y))]
-\end{code}%$
+gen d = frequency
+  [ ...
+  , (2, do  t1  <- arbitrary
+            t2  <- arbitrary
+            return (Join (Text t1) (Text t2)))
+  , (4, do  t2  <- arbitrary
+            x   <- go (d-1)
+            y   <- go (d-1)
+            return (Join (Join (Text t1) x) y))]
+\end{code}
 
 
 % --------------------------------------
@@ -138,7 +138,7 @@ pattern is filled using a random sub-expression:
 %
 In general, we think that including this static information in our generators
 directly is far from ideal, as in many cases we would like to select which
-random constructions are of our interest when testing different properties or
+random constructions are of interest when testing different properties or
 sub-systems.
 %
 In this light, having ``monolithic'' random generators derived automatically

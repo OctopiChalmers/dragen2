@@ -2,25 +2,25 @@ Generating ``good'' random values described by algebraic data types is often
 quite intricate.
 %
 State-of-the-art tools for synthesizing random generators serve the valuable
-purpose of helping with this task, while providing different level of invariants
-imposed over the generated values.
+purpose of helping with this task, while providing different levels of
+invariants imposed over the generated values.
 %
-However, none of them are built neither for composability nor extendability, a
-useful feature when the shape of our random data makes a difference while
-testing different properties or sub-systems.
+However, none of them are built for composability nor extensibility, a useful
+feature when the shape of our random data makes a difference while testing
+different properties or sub-systems.
 %
 % Instead, users are forced to decide wether to manually write their random
 % generators or to use rigid automatically derived ones.
 
 
 In this work, we develop an extensible framework for deriving compositional
-generators, which can be easily combined in different ways in order to fit the
-developers' demands, using a simple type-level description language.
+generators, which can be easily combined in different ways in order to fit
+developers' demands using a simple type-level description language.
 %
 Our framework relies on familiar ideas from the \`a la Carte technique for
 writing composable interpreters in Haskell.
 %
-In this light, we adapt this technique with the machinery required in the scope
+In particular, we adapt this technique with the machinery required in the scope
 of random generation.
 %
 We provide an implementation of our ideas, and evaluate its performance using

@@ -421,13 +421,11 @@ thTrue, thFalse :: DExp
 thTrue = DConE 'True
 thFalse = DConE 'False
 
-derivingClause :: [DDerivClause]
-derivingClause
-  = [ DDerivClause Nothing
-      [ DConPr ''Show
-      , DConPr ''Functor
-      , DConPr ''Generics.Generic
-      ]
+derivingClauses :: Bool -> [DDerivClause]
+derivingClauses branching 
+  = [ DDerivClause Nothing $
+      (if branching then [DConPr ''Generics.Generic] else [])
+      ++ [ DConPr ''Show, DConPr ''Functor ]
     ]
 
 ----------------------------------------

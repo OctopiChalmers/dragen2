@@ -18,8 +18,8 @@ constructions.
 
 
 From the practical point of view, \citeauthor{KiriyamaOptimizingDTC} propose an
-optimization mechanism for Data Types \`a Carte, where a concrete data type has
-to be derived for each different composition of constructions defined by the
+optimization mechanism for Data Types \`a la Carte, where a concrete data type
+has to be derived for each different composition of constructions defined by the
 user \cite{KiriyamaOptimizingDTC}.
 %
 This solution avoids much of the runtime overhead introduced when internally
@@ -40,15 +40,15 @@ synthesizing random generators.
 data type \cite{DuregardJW12}.
 %
 It works by enumerating all the possible values of such type, so that sampling
-uniformly from it simply becomes sampling uniformly from the a finite prefix of
+uniformly from it simply becomes sampling uniformly from a finite prefix of
 natural numbers---something easy to do.
 
 
-\emph{MegaDeTH} is a simple derivation tool that derives generators solely based
-on their types, paying no attention whatsoever to the generation frequency of
-each data constructor.
+\emph{MegaDeTH} is a simple derivation tool that synthesizes generators solely
+based on their types, paying no attention whatsoever to the generation frequency
+of each data constructor.
 %
-As a result, its automatically derived generators has been shown to be skewed
+As a result, it has been shown that its synthesized generators are biased
 towards generating very small values
 \cite{DBLP:conf/haskell/MistaRH18}.\looseness=-1
 
@@ -67,14 +67,13 @@ where generations correspond to each level of the generated values.
 This tool has shown to improve the code coverage over complex systems, when
 compared to other fully-automated generators derivation mechanisms.
 %
-In a recent work, \citeauthor{Mista2019GeneratingRS} extend this approach to
-generate random values considering also the other sources of structural
-information covered here, namely abstract interfaces and function pattern
-matchings.
+In a recent work, the authors extended this approach to generate random values
+considering also the other sources of structural information covered here,
+namely abstract interfaces and function pattern matchings.
 %
-The authors of this work focus on the generation model problem, extending the
-theory of branching processes in order to obtain sound predictions about
-distributions of random values considering these new kinds of constructions.
+There, they focus on the generation model problem, extending the theory of
+branching processes in order to obtain sound predictions about distributions of
+random values considering these new kinds of constructions.
 %
 Using this extension, they show that using extra information when generating
 random values is extremely valuable, in particular under situations like the
@@ -87,6 +86,10 @@ In turn, this paper tackles the representation problem, demonstrating how a
 compositional generation process can be effectively implemented and automated in
 Haskell using advanced type-level features.
 %
+% Furthermore, using type-level representations for each random construction
+% leaves the door open for extending our approach with a composable prediction
+% mechanism.
+
 Since none of the aforementioned tools are designed for composability, we
 consider that our ideas could perhaps be applied to improve these tools in the
 future.

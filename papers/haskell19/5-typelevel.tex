@@ -20,9 +20,9 @@ scenarios.
 %
 The first problem we face is that of naming conventions.
 %
-In practice, the actual names used when deriving construction representations
-need to be generated in such a way that they are compliant with Haskell's
-syntax, and also that they are \emph{unique within our namespace}.
+In practice, the actual name used when deriving the representation for each
+random construction needs to be generated in such a way that is complies with
+Haskell's syntax, and also that it is \emph{unique within our namespace}.
 %
 This means that, type names like |Fun_cat| or |Pat_simplify_1| are, technically,
 not valid Haskell data type names, thus they will have to be synthesized as
@@ -31,8 +31,8 @@ sequence of numbers is inserted by Template Haskell to ensure uniqueness.
 
 
 This naming convention results hard to use, specially if we consider that we do
-not know the actual type names until they are synthesized in compile-time, due
-to their unique suffixes.
+not know the actual type names until they are synthesized during compilation,
+due to their unique suffixes.
 %
 Fortunately, it is easy to solve this problem using some type-level machinery.
 %
@@ -50,8 +50,8 @@ where |Symbol| is the kind of type-level strings in Haskell.
 Then, our derivation process will synthesize each representation using unique
 names, along with a type instance of the corresponding type family.
 %
-For instance, along with the representations of |Con_Text|, |Fun_cat| and
-|Pat_simplify_1|, we will automatically derive the following type instances:
+For instance, along with the constructions representations |Con_Text|, |Fun_cat|
+and |Pat_simplify_1|, we will automatically derive the following type instances:
 
 \begin{code}
 type instance Con "Text"        = Con_Text_123
@@ -94,7 +94,7 @@ type Html_Spec  =      Con'  "Text"
                 oplus  Pat'  "simplify"  1  otimes 3
                 oplus  Pat   "simplify"  2  otimes 5
 \end{code}
-
+%
 And simply obtain a concrete generator by referring to |Html_Spec| when using
 |genRep|:
 
@@ -143,11 +143,11 @@ instance Arbitrary a => BArbitrary1 (Con_Leaf a) where dots
 instance Arbitrary a => BArbitrary1 (Con_Node a) where dots
 \end{code}
 
-% The biggest different appears when deriving the required type instances for the
-% |Con|, |Fun| and |Pat| synonyms.
+% The biggest different appears when deriving the required type instances for
+% the |Con|, |Fun| and |Pat| synonyms.
 %
 However, instead of carrying this type parameter in our generation
-specifications, we can avoid it by hiding it using an existential type:
+specifications, we can avoid it by hiding it behind an existential type:
 
 \begin{code}
 data Some (f :: * -> * -> *) (r :: *) = forall (a :: *) dot SomeC (f a r)
@@ -166,9 +166,9 @@ construction representation using a |Some|:
 type instance Con "Leaf" = Some Con_Leaf
 type instance Con "Node" = Some Con_Node
 \end{code}
-
-And we can therefore write generation specifications for our |Tree| data type
-without having to refer to its type parameter anywhere.
+%
+And as a consequence, we can write generation specifications for our |Tree| data
+type without having to refer to its type parameter anywhere.
 %
 For instance:
 
@@ -187,8 +187,10 @@ genIntTree :: BGen (Tree Int)
 genIntTree = genRep at (Tree_Spec apply' Int)
 \end{code}
 %
-Where |apply| is a closed type family that traverses our generation
-specification, applying the |Int| type to every occurrence of |Some|:
+Where |apply| is a type family that traverses our generation specification,
+applying the |Int| type to each occurrence of |Some|:
+%
+\looseness=-1
 
 \begin{code}
 type family (f :: * -> *) apply' (a :: *) :: * -> * space where
@@ -211,8 +213,8 @@ extended to multi-parametric data types with minor effort.
 
 
 Along with our automated constructions derivation mechanism, the machinery
-introduced in this section allows us to specify random generators using a
-concise and flexible type-level combinators language.
+introduced in this section allows us to specify random generators using a simple
+and flexible type-level specification language.
 %
 The next section evaluates our approach in terms of performance using a set of
 case studies extracted from real-world Haskell implementations.
