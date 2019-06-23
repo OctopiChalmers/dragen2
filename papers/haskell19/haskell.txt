@@ -1,0 +1,330 @@
+Haskell '19 Paper #61 Reviews and Comments
+===========================================================================
+Paper #61 QuickCheck Generators à la Carte
+
+
+Review #61A
+===========================================================================
+
+Overall merit
+-------------
+D. Reject
+
+Reviewer expertise
+------------------
+Y. I am knowledgeable in this area, but not an expert
+
+Paper summary
+-------------
+The paper proposes to make it easier to write QuickCheck generators by
+using Datatypes a la Carte.  The "a la carte" approach is used not
+only for each individual value constructor, but for combinations of
+value constructors that are deemed especially worth testing.
+(Such combinations are suggested to be identified by looking at nested
+patterns in a function under test.)  Appropriate instance declarations
+for "a la carte" type constructors then make it possible to create a
+custom generator by writing a custom "a la carte" type.  A simple
+type-class trick then maps the result of the generator back to the
+original representation.  Use of *visible type applications* makes the
+type trickery easy to read and to write.
+
+The paper then extends the "a la carte" approach by programming with
+natural numbers at the type level, making it possible to annotate a
+type with a natural-number *frequency,* which drives the use of
+QuickCheck's `frequency` combinator.
+
+Since the approach militates toward the use of many new type
+constructors, the paper also uses type families to makes it possible
+to create indexed families of type constructors, so that the bulk of
+the code can ignore name mangling.
+
+The paper also proposes to extend QuickCheck's generator interface:
+it proposes to replace QuickCheck's single size parameter with a pair
+of natural-number parameters.  In particular, the existing size
+parameter is supplemented with a *depth* parameter, which governs the
+depth of generated trees.
+
+----
+
+I like the subject area, and all the machinery is used correctly, but
+I cannot warm to this paper.  I want to like the ideas, but I'm
+underwhelmed by the execution.
+
+There are a number of minor issues:
+
+  * I'm not convinced that the paper solves a real problem.  In my
+    experience, the hard part of writing these generators is tuning
+    the weights.  The paper doesn't help with that.
+
+    I'd really like to see some evidence of this methodology having
+    been applied in a real setting, with some evaluation.  It would
+    make the paper much more convincing.  As it stands, the paper
+    mentions only three benchmarks, and it assesses those benchmarks
+    *only* by considering the performance of the generators.  I can't
+    find an evaluation of the problem the paper set out to solve
+    (which wasn't performance).
+
+  * I'm not convinced the problem is hard.
+
+  * Important parts of what's presented are already known.  For
+    example, the first couple of pages of section 3 seem just to
+    recapitulate the data types a la carte approach.  I can't object
+    to this, as it's a virtue for a paper to be self-contained, but
+    I'd like the paper to be a bit clearer about what parts are
+    original work---in addition to Datatypes a la Carte, I'm also
+    reminded of machinery used to generate constrained, random data by
+    Claessen, Duregård, and Pałka (2014).
+
+  * The most interesting part of the work is the ability to generate
+    inputs that satisfy certain (syntactic) invariants.  But isn't
+    that capability subsumed by a property-based generator like
+    Beginner's Luck (Lampropoulos et al, POPL 2017)?  I was surprised
+    that this related work was not mentioned.
+
+  * Some related work is presented, but the work presented is not
+    actually *compared* with related work.
+
+
+
+There is also a more serious issue:
+
+  * The paper does not mention *shrinking*.  But shrinking is an
+    essential part of any QuickCheck generator.  And because the
+    approach presented is simply a wrapper around QuickCheck's
+    existing combinators, I fear that shrinking will not preserve the
+    invariants.  For example, when an instance of the
+    `(Join (Join (Text t_1) x) y)` pattern is shrunk, there is no
+    guarantee that the shrunk version is still an instance.  So the
+    most interesting result in the paper---the ability to generate
+    inputs that satisfy certain syntactic invariants---doesn't work:
+    shrinking violates the invariants.
+
+Given these issues, I cannot recommend acceptance.
+
+Comments for author
+-------------------
+On lines 136 to 141, I get what you're saying, but it would be helpful
+to have a couple of examples. Especially an example of specific
+patterns of values that might be used to trigger bugs.  (Or maybe a
+forward reference to section 2.2 would do the job.)
+
+When I see the example starting on line 278, that's when I really
+start to worry about shrinking. Because there seems to be some kind of
+invariant implicit in what's going on there, and I'm pretty sure the
+shrinker is not going to preserve that invariant.
+
+When I hit line 288, it all seems perfectly plausible, so I'm not
+forming a clear picture of what you think is "far from ideal."
+Reading between the lines, perhaps the examples presented so far have
+to be centralized in a single, universal instance declaration for
+class `Arbitrary`?  But that's not the way you make it look!  The way
+you present the examples it makes it look as if it's modular already.
+Please fix the presentation to make it clear, *as the examples are
+presented*, that you are accumulating more and more cruft on the
+centralized `Arbitrary` declaration, so that when you finally hit line
+288 you can say, "wait, this is crazy; we shouldn't be doing things
+this way."
+
+I don't understand the paragraph that starts at line 297. Especially
+the bit about every variant being expressed at the type level.  Please
+rewrite the paragraph to be more concrete.  (And please don't
+hyphenate "type level" when it's used as a noun phrase.)
+
+I struggled with the opening of section 4.1.  Please *start* with the
+issue on line 698: QuickCheck's generators expect a *single* size
+parameter, which governs not only tree depth but also the sizes of
+primitive values like integers.  For some reason you want to split
+this into two parameters: one for tree depth and another for things
+like strings and integers.  (I'm troubled because I can't see the
+principle behind this approach.  In particular, strings are lists,
+lists are trees, and the length of a random string *is* tree depth.
+So how do you justify treating them differently?)
+
+In section 4.1, in the example for `Join`, you might want to call
+`bgen (d div 2)` instead of `bgen (d-1)`.  This change would make your
+example consistent with MegaDeTH.
+
+On line 972, what is `Proxy`?  That is the only mention I can find in
+the PDF.
+
+Section 5 looks clever, but at this point I want to see an artifact.
+
+In figure 1, please don't give us relative times. Please give actual
+measurements in absolute time.
+
+In section 7, I don't find any comparisons.  Please say explicitly
+what these tools do that your tool cannot do, and what your tool does
+that these tools cannot do.  I'm especially concerned about *Feat*,
+which provides a fairly deep property (uniform sampling of terms of a
+given size).  It's not obvious to me how one might accomplish that
+using your approach.
+
+At the end of section 7, I'm unconvinced.  Please sketch what path you
+expect to follow that would lead to an improvement in a tool like Feat
+or DRAGEN.
+
+
+
+Review #61B
+===========================================================================
+
+Overall merit
+-------------
+C. Weak reject
+
+Reviewer expertise
+------------------
+Y. I am knowledgeable in this area, but not an expert
+
+Paper summary
+-------------
+This paper adopts the Data type a la Carte technique, exposing the structural
+information of datatypes, pattern matchings, and smart constructors to type
+level, to derive compositional test data generators in the context of
+QuickCheck, where the programmer can specify the frequency of individual cases.
+This paper is very well presented and is easy to follow the development. 
+
+I think the technical development presented in this paper is solid, but I have
+several concerns:
+
+1) Novelty. The techniques given in this paper don't look novel. The
+a-la-carte encoding is well-known and is widely used in many applications, as
+already noted by the authors. What's new in this paper other than applying the
+same technique to yet another domain? This is something that the author should
+highlight. Compositionality is not a contribution of this paper, as
+it's been solved by the original a-la-carte paper. Also while reading the paper
+I was wondering if the authors meant to submit under the Functional Pearl
+category, which I think would be more appropriate.
+
+2) What problem does it solve and why is it the right (or better) approach
+comparing to the status quo? The problem this paper tries to solve is pretty
+much the same as [17]. The main differences, as far as I can see, are that a) a
+different encoding is used; b) frequencies are specified by the users instead
+of by heuristics. So what's better compared to [17]? The authors don't
+adequately justify this point. If the amount of exposed structural information
+is on par with that of [17], I would vote for [17]'s approach, as its encoding
+is much simpler and the runtime overhead might be less significant. Another
+approach---using DSL---is not discussed in this paper. Using DSLs enables the
+generation of nearly ordinary QuickCheck data generators, without the need for
+a lot of the a-la-carte constructs and the use of tens of GHC extensions. E.g.
+Lampropoulos et al.'s Beginner's Luck (POPL'17) is a piece of work trying to
+solve similar problems. How do the authors compare them and what's the
+advantages of the approach advocated by this paper?
+
+3) Other than the mechanism used, this paper also presents a tool for realising
+the proposed approach in real life. From the paper I know that what will be
+generated by the tool. What I don't get from the paper is what, as a user,
+needs to write. This leaves me wondering how practically useable it is as I
+have no information to judge.
+
+Comments for author
+-------------------
+Minor comments (by line number):
+
+* l249: Text t_1 --> Text t
+
+* l285-186: go --> gen
+
+* l444: as piece of --> a piece of
+
+* Section 3.4: Is representing smart constructors and patterns new? (They are
+not in the original a-la-carte paper if I remember correctly. Are there any
+other papers exploring them?)
+
+* l866: if a type does [not] have ...
+
+* l976-980: the code looks incorrect, as Html_simplify and ValidHtml don't have
+`Term's in them and therefore don't satisfy `HasTerminals'.
+
+
+
+Review #61C
+===========================================================================
+
+Overall merit
+-------------
+C. Weak reject
+
+Reviewer expertise
+------------------
+Y. I am knowledgeable in this area, but not an expert
+
+Paper summary
+-------------
+The paper propose an method to define test-case generators specialized
+to test-cases by the "a la Carte" approach. Specifically, they
+separate a datatype to be generated and a datatype to be tested. The
+datatypes for generations are described in terms of the
+"sum-of-product" style with the explicit fixpoint, and thus we can
+obtain generators for them in a compositional way by using generic
+programming. The designated generators are obtained by related the two
+representations of datatypes. A datatype can have multiple
+representations for generation, one can have different test-case
+generator for different situations.
+
+Comments for author
+-------------------
+It is true that there are some cases where derived or predefined
+test-case generators are not sufficient for testing some properties,
+and there is a motivation to have different test-case generator for
+test different properties.
+
+However, I have to say that I failed to understand the motivation of
+this paper. The author(s) used examples to describe the problem. The
+examples look so unnatural, although they themselves are rather
+easy-to-follow, they look so unnatural. For example, the datatype
+`HTML` is quite unnatural. Why do we want to use the join-list
+representation instead of the cons list, and why do we want to
+distinguish elements with children (`Tag`) and those without children
+(`Sing`). Also, the development in Section 2 looks so unnatural to
+me. Why do we want to add possibility to generate valid HTML
+structures, once we know the problem on generating invalid HTMLs?
+Even though I could admit the situation that one want to add
+possibility to generate a designed structure instead of replacing a
+generator, a term-level approach could achieve the goal in a
+compositional way merely by `oneof [old, new]`. If one wants to care
+about the weight of choice, just couple it with a generator would
+suffice.
+
+This would be a minor issue but the presentation of the paper is not
+well structured. At least, it is not good that we have to wait until
+Section 4 to see what the proposed approach is. Please consider adding
+an overview section just after explaining the problems of existing
+approaches.
+
+# Individual Comments 
+
+   - p4L:366 It is misleading to call it Algebra, as usually there are
+     many algebras for a functor (for a datatype).
+     
+   - p5L:462 "final representation" I failed to understand why this is
+     emphasized.
+
+   - p5L:492-494 "This recursion schema ... is known as catamorphism"
+     No. For this to be a catamorphism, `a` must be arbitrary
+     determined by an "algebra" `(f a -> a)`. Also, "recursion schema"
+     would be a typo of "recursion scheme".
+
+   - p10L:1004 It is not clear to me why Template Haskell is related
+     to the proposed approach.
+
+   - p12L "Related Work" The author(s) would also be interested in the
+     following papers, which enable test-case generation specialized
+     for properties.
+
+       - Leonidas Lampropoulos, Diane Gallois-Wong, Catalin Hritcu,
+         John Hughes, Benjamin C. Pierce, Li-yao Xia: Beginner's luck:
+         a language for property-based generators. POPL 2017: 114-129
+ 
+       - Jan Christiansen, Sebastian Fischer: EasyCheck - Test Data
+         for Free. FLOPS 2008: 322-336
+
+       - Colin Runciman, Matthew Naylor, Fredrik Lindblad: Smallcheck
+         and lazy smallcheck: automatic exhaustive testing for small
+         values. Haskell 2008: 37-48
+         
+   - p12L:1256-1259 "Feat provides a mechanism to uniformly generating
+     values from a given data type [6]" This is a bit misleading, as
+     it is quite unclear what "uniformly" means for datatypes that
+     have infinite inhabitants such as lists. I suggest adding "of a
+     given size" after "data type".
