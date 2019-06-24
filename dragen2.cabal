@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5e2c711b9c8a23b00a1ef59429abfdfc6d79b286994f4c7373be8a4d3a920091
+-- hash: b052a857864419b4bb4edb82b0cc3a8bc132b0a4a129a6eca843b8e4a76ca3f3
 
 name:           dragen2
 version:        0.1.0.0
@@ -113,8 +113,7 @@ benchmark dragen2-benchmarks
   hs-source-dirs:
       bench
   default-extensions: AllowAmbiguousTypes ConstraintKinds DataKinds DeriveFunctor DeriveGeneric ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs MultiParamTypeClasses NoStarIsType PolyKinds QuantifiedConstraints RankNTypes ScopedTypeVariables StandaloneDeriving TemplateHaskell TypeApplications TypeFamilies TypeOperators UndecidableInstances
-  ghc-options: -O2
-  cpp-options: -DDEBUG
+  ghc-options: -O0
   build-depends:
       QuickCheck
     , base >=4.7 && <5
