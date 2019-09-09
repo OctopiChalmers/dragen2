@@ -112,7 +112,9 @@ deriveFunRep typeFam branching funName = do
 
   -- Create the function Rep type instance
   let repFunTyIns = DTySynInstD ''Rep.Fun repInsEqn
-      repInsEqn = DTySynEqn [thNameTyLit funName] someTy
+      repInsEqn = DTySynEqn [thNameTyLit funName] termTy
+      termTy | isTerminal typeFam funArgTypes = thTerm someTy
+             | otherwise = someTy
       someTy | null funRetTypeFreeVars = DConT repTypeName
              | otherwise = thSome (length funRetTypeFreeVars) (DConT repTypeName)
 
@@ -175,13 +177,11 @@ deriveRepTypeIns typeFam alias funcsNames = do
       mkFunExp funName funArgsTypes
         -- If the function doesn't has any argument from the recursive family,
         -- then is safe (modulo non-termination) to consider it terminal.
-        | bf funArgsTypes == 0
+        | isTerminal typeFam funArgsTypes
         = thTerm (thFun (thNameTyLit funName))
         -- Otherwise, treat the function as non-terminal.
         | otherwise
         = thFun (thNameTyLit funName)
-
-      bf = sum . branchingFactor typeFam
 
   dragenMsg "derived type instance:" [repTypeIns]
 

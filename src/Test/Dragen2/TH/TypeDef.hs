@@ -103,7 +103,9 @@ deriveConRep typeFam branching (DCon conTyVars conCxt conName conFields conType)
 
   -- Create the function Rep type instance
   let repConTyIns = DTySynInstD ''Rep.Con repInsEqn
-      repInsEqn = DTySynEqn [thNameTyLit conName] someTy
+      repInsEqn = DTySynEqn [thNameTyLit conName] termTy
+      termTy | isTerminal typeFam (dConFieldsTypes conFields) = thTerm someTy
+             | otherwise = someTy
       someTy | null conTyVars = DConT repTypeName
              | otherwise      = thSome (length conTyVars) (DConT repTypeName)
 
@@ -163,7 +165,7 @@ deriveRepTypeIns typeFam typeName cons = do
 
       mkConExp con
         -- If the constructor is terminal, tag it accordingly
-        | isTerminalDCon typeFam con
+        | isTerminal typeFam (dConFieldsTypes (dConFields con))
         = thTerm (thCon (dConNameTyLit con))
         -- If there are no terminal constructors and `con`
         -- is the "smallest" one, tag it as terminal
@@ -174,7 +176,8 @@ deriveRepTypeIns typeFam typeName cons = do
         = thCon (dConNameTyLit con)
 
       dConNameTyLit = thNameTyLit . dConName
-      noTerminals = not (any (isTerminalDCon typeFam) cons)
+      noTerminals = not (any (isTerminal typeFam)
+                         (dConFieldsTypes . dConFields <$> cons))
       smallest = head . sortBy (comparing bf)
       bf = sum . branchingFactor typeFam . dConFieldsTypes . dConFields
 

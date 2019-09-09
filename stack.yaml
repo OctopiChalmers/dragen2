@@ -35,7 +35,7 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 extra-deps:
-  - template-haskell-2.12.0.0
+  - template-haskell-2.14.0.0
   - reflection-2.1.4
   - criterion-1.5.4.0
 

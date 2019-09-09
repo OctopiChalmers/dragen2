@@ -11,7 +11,6 @@ import qualified RE.RE          as RE
 import qualified RBT.RBT        as RBT
 import qualified Lisp.Lisp      as Lisp
 import qualified Html.Html      as Html
---import qualified Html.HtmlUnbal as Html
 
 samples :: Int
 samples = 10000
@@ -33,12 +32,12 @@ genSamples gen
 main :: IO ()
 main = defaultMainWith (defaultConfig { verbosity = Verbose })
   [
-    bench "RBT/Manual"          $ nfIO (genSamples (RBT.genTree   @Int))
-  , bench "RBT/Dragen/Autobal"  $ nfIO (genSamples (RBT.genTree'' @Int))
-  , bench "Lisp/Manual"         $ nfIO (genSamples (Lisp.genSExpr))
-  , bench "Lisp/Dragen/Autobal" $ nfIO (genSamples (Lisp.genSExpr''))
-  , bench "Html/Manual"         $ nfIO (genSamples (Html.genHtml ))
-  , bench "Html/Dragen/Autobal" $ nfIO (genSamples (Html.genHtml''))
-  , bench "RE/Manual"           $ nfIO (genSamples (RE.genR       @Char))
-  , bench "RE/Dragen/Autobal"   $ nfIO (genSamples (RE.genR'      @Char))
+    bench "RBT/Manual"   $ nfIO (genSamples (RBT.genTree   @Int))
+  , bench "RBT/Dragen2"  $ nfIO (genSamples (RBT.genTree' @Int))
+  , bench "Lisp/Manual"  $ nfIO (genSamples (Lisp.genSExpr))
+  , bench "Lisp/Dragen2" $ nfIO (genSamples (Lisp.genSExpr'))
+  , bench "Html/Manual"  $ nfIO (genSamples (Html.genHtml ))
+  , bench "Html/Dragen2" $ nfIO (genSamples (Html.genHtml'))
+  , bench "RE/Manual"    $ nfIO (genSamples (RE.genR       @Char))
+  , bench "RE/Dragen2"   $ nfIO (genSamples (RE.genR'      @Char))
   ]

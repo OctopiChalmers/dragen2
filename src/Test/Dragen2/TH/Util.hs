@@ -194,12 +194,14 @@ dConFieldsNum :: DConFields -> Int
 dConFieldsNum (DNormalC _ bts) = length bts
 dConFieldsNum (DRecC bts)      = length bts
 
--- | Is a constructor terminal?
+-- | Is a construction terminal?
 -- We assume that if it contains a field naming any type from the mutually
 -- recursive family of types, then it is not.
-isTerminalDCon :: [Name] -> DCon -> Bool
-isTerminalDCon typeFam (DCon _ _ _ conFields _)
-  = not (any ((`nameOccursIn` conFields)) typeFam)
+isTerminal :: [Name] -> [DType] -> Bool
+isTerminal typeFam types
+  -- = not (any ((`nameOccursIn` types)) typeFam)
+  = sum (branchingFactor typeFam types) == 0
+
 
 -- | The branching factor of a list of types to members of a mutually recursive
 -- family of types. Some special cases happen here. You have been warned!
@@ -422,7 +424,7 @@ thTrue = DConE 'True
 thFalse = DConE 'False
 
 derivingClauses :: Bool -> [DDerivClause]
-derivingClauses branching 
+derivingClauses branching
   = [ DDerivClause Nothing $
       (if branching then [DConPr ''Generics.Generic] else [])
       ++ [ DConPr ''Show, DConPr ''Functor ]
@@ -524,3 +526,21 @@ dragenError msg inputs = runIO $ do
       mapM_ dragenLog' (lines (show i))
 
   error "DRAGEN derivation error"
+
+dragenHeader :: Name -> Q ()
+dragenHeader method = do
+  dragenMsg' "-----------------------------"
+  dragenMsg' "DRAGEN 0.1.0.0"
+  dragenMsg' ("method: " ++ pprint method)
+
+dragenFooter :: Q ()
+dragenFooter = do
+  dragenMsg' "done!"
+  dragenMsg' "-----------------------------"
+
+dragen :: Name -> Q a -> Q a
+dragen method action = do
+  dragenHeader method
+  a <- action
+  dragenFooter
+  return a

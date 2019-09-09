@@ -109,24 +109,21 @@ derive [''SExpr]
   ]
 
 type SExprS
-   = Con' "Null"
-   :+ Con' "AtomInt"
-   :+ Con' "AtomBool"
-   :+ Con' "AtomSymbol"
-   :+ Con  "Quote"
-   :+ Con  "Cons"
-   :+ Pat  "execute" 1
-   :+ Pat  "execute" 2
-   :+ Pat  "execute" 3
-   :+ Pat  "execute" 4
-   :+ Pat  "execute" 5
-   :+ Pat' "constantFold" 1
-   :+ Pat' "constantFold" 2
-   :+ Pat' "constantFold" 3
-   :+ Pat' "constantFold" 4
+   =  Con "Null"
+   :+ Con "AtomInt"
+   :+ Con "AtomBool"
+   :+ Con "AtomSymbol"
+   :+ Con "Quote"
+   :+ Con "Cons"
+   :+ Pat "execute" 1
+   :+ Pat "execute" 2
+   :+ Pat "execute" 3
+   :+ Pat "execute" 4
+   :+ Pat "execute" 5
+   :+ Pat "constantFold" 1
+   :+ Pat "constantFold" 2
+   :+ Pat "constantFold" 3
+   :+ Pat "constantFold" 4
 
 genSExpr' :: BoundedGen SExpr
-genSExpr' = genEval @SExprS
-
-genSExpr'' :: BoundedGen SExpr
-genSExpr'' = genRep @SExprS
+genSExpr' = genRep @SExprS

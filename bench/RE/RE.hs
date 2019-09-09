@@ -183,33 +183,17 @@ derive [''R]
   ]
 
 type R_Spec
-  =  Con' "Nil"
-  :+ Con' "Eps"
-  :+ Con' "Atom"
-  :+ Con  ":+:"
-  :+ Con  ":&:"
-  :+ Con  ":>:"
-  :+ Con  "Star"
-  :+ Fun  ".&."
-  :+ Fun  ".+."
-  :+ Fun  ".>."
-  :+ Fun  "epsR"
-
-type R_Spec_Bal
-  =  (((Con' "Nil"
-  :+ Con' "Eps")
-  :+ (Con' "Atom"
-  :+ Con  ":+:"))
-  :+ ((Con  ":&:"
-  :+ Con  ":>:")
-  :+ (Con  "Star"
-  :+ Fun  ".&.")))
-  :+ (((Fun  ".+."
-  :+ Fun  ".>.")
-  :+ Fun  "epsR"))
+  =  Con "Nil"
+  :+ Con "Eps"
+  :+ Con "Atom"
+  :+ Con ":+:"
+  :+ Con ":&:"
+  :+ Con ":>:"
+  :+ Con "Star"
+  :+ Fun ".&."
+  :+ Fun ".+."
+  :+ Fun ".>."
+  :+ Fun "epsR"
 
 genR' :: forall a. (Ord a, Arbitrary a) => BoundedGen (R a)
 genR' = genRep @(R_Spec <| a)
-
-genR'' :: forall a. (Ord a, Arbitrary a) => BoundedGen (R a)
-genR'' = genRep @(R_Spec_Bal <| a)

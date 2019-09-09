@@ -230,23 +230,20 @@ derive [''Tree]
   ]
 
 type RBT_Spec
-  =  Con' "E"
-  :+ Con  "T"
-  :+ Fun' "empty"
-  :+ Fun  "insert"
-  :+ Fun  "balance'"
-  :+ Fun  "delete"
-  :+ Fun  "fuse"
-  :+ Pat  "balL" 1
-  :+ Pat  "balL" 2
-  :+ Pat  "balL" 3
-  :+ Pat  "balR" 1
-  :+ Pat  "balR" 2
-  :+ Pat  "balR" 3
+  =  Con "E"
+  :+ Con "T"
+  :+ Fun "empty"
+  :+ Fun "insert"
+  :+ Fun "balance'"
+  :+ Fun "delete"
+  :+ Fun "fuse"
+  :+ Pat "balL" 1
+  :+ Pat "balL" 2
+  :+ Pat "balL" 3
+  :+ Pat "balR" 1
+  :+ Pat "balR" 2
+  :+ Pat "balR" 3
 
 
 genTree' :: forall a. (Ord a, Arbitrary a) => BoundedGen (Tree a)
-genTree' = genEval @(RBT_Spec <| a)
-
-genTree'' :: forall a. (Ord a, Arbitrary a) => BoundedGen (Tree a)
-genTree'' = genRep @(RBT_Spec <| a)
+genTree' = genRep @(RBT_Spec <| a)

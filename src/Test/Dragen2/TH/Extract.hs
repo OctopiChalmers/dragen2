@@ -2,7 +2,6 @@ module Test.Dragen2.TH.Extract where
 
 import Data.List
 import Data.Maybe
-import Data.Foldable
 
 import Control.Monad.Extra
 import Control.Monad.IO.Class
@@ -55,28 +54,15 @@ extractVarNames (Module _ mbModHead _ _ decs) = do
       extractBinds (FunBind _ (ms : _)) = funBindName ms
       extractBinds _ = return []
 
-      funBindName (Match _ n _ _ _) = do
-        dragenMsg "reifying name: " [rawName n]
-        maybeToList <$> TH.lookupValueName (rawName n)
-      funBindName (InfixMatch _ _ n _ _ _) = do
-        dragenMsg "reifying infix name: " [rawName n]
-        maybeToList <$> TH.lookupValueName (rawName n)
+      funBindName (Match _ n _ _ _)
+        = maybeToList <$> TH.lookupValueName (rawName n)
+      funBindName (InfixMatch _ _ n _ _ _)
+        = maybeToList <$> TH.lookupValueName (rawName n)
 
-      patBindName (PVar _ n) = do
-        dragenMsg "reifying name: " [rawName n]
-        maybeToList <$> TH.lookupValueName (rawName n)
+      patBindName (PVar _ n)
+        = maybeToList <$> TH.lookupValueName (rawName n)
       patBindName p
         = unsupported 'extractVarNames p
-
-      -- funBindName (Match _ n _ _ _)        = TH.mkName (qualify mbModName n)
-      -- funBindName (InfixMatch _ _ n _ _ _) = TH.mkName (qualify mbModName n)
-
-      -- patBindName (PVar _ n) = return [TH.mkName (qualify mbModName n)]
-      -- patBindName p          = unsupported 'extractVarNames p
-
-
-      -- qualify (Just modName) n = prettyPrint modName ++ "." ++ prettyPrint n
-      -- qualify _              n = prettyPrint n
 
       mbModName = case mbModHead of
         (Just (ModuleHead _ modName _ _)) -> Just modName
@@ -90,10 +76,9 @@ extractVarNames (Module _ mbModHead _ _ decs) = do
   when (null srcNames) $ do
     dragenError "couldn't find any variable names" [printModName mbModName]
 
-
   let varNames = nub srcNames
-  dragenMsg
-    ("extracted names from module " ++ printModName mbModName ++ ":") [varNames]
+  dragenMsg ("extracted names from module " ++ printModName mbModName ++ ":")
+            [varNames]
 
   return (nub srcNames)
 
@@ -112,7 +97,7 @@ extractDPats funName (Module _ _ _ _ decs) = do
 
   dpats <- mapM toDPats funDefs
   when (null dpats) $ do
-    dragenError "found no patterns" [funName]
+    dragenError "found no patterns in the function" [funName]
 
   return dpats
 

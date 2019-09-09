@@ -24,6 +24,8 @@ deriveFunPats funName argNum path typeFam branching = do
   -- Parse the appropriate file to obtain the target function pattern matching
   modulePath <- maybeM currentFile pure (pure path)
   funPats <- extractDPats funName =<< parseModule modulePath
+  dragenMsg ("extracted patterns from function " ++ show funName)
+            (show <$> funPats)
 
   -- Extract the patterns from the function for the given argument
   (_, _, funArgsTypes, _) <- reifyFunSig funName
@@ -36,8 +38,8 @@ deriveFunPats funName argNum path typeFam branching = do
   funArgDefTypeVars <- mapM desugar vs
 
   -- Replace the type variables in the instantiated function argument type to
-  -- match the ones in the type definition. This is kind of annoying, but it
-  -- works ¯\_(ツ)_/¯
+  -- match the ones in the type definition.
+  -- This is kind of annoying, but works ¯\_(ツ)_/¯
   let funArgType' = funArgTypeName <<# replacedTyVars
       replacedTyVars = zipWith pickTypeVars funArgDefTypeVars funArgInsTypeVars
 
@@ -115,14 +117,13 @@ derivePatRep funName typeFam funArgType funArgDefTypeVars branching
 
       mkCxt v = DAppPr (DConPr ''QC.Arbitrary) (DVarT v)
 
-  -- Create the representation BranchingType instance
-
   -- Create the function Rep type instance
   let repPatTyIns = DTySynInstD ''Rep.Pat repInsEqn
-      repInsEqn = DTySynEqn [thNameTyLit funName, thNumTyLit patNum] someTy
-      someTy
-        | null funArgDefTypeVars = DConT repTypeName
-        | otherwise = thSome (length funArgDefTypeVars) (DConT repTypeName)
+      repInsEqn = DTySynEqn [thNameTyLit funName, thNumTyLit patNum] termTy
+      termTy | isTerminal typeFam funArgPatVarsTypes = thTerm someTy
+             | otherwise = someTy
+      someTy | null funArgDefTypeVars = DConT repTypeName
+             | otherwise = thSome (length funArgDefTypeVars) (DConT repTypeName)
 
   -- Create the representation BranchingType instance
   repBrIns <- deriveBranchingTypeIns typeFam funName patNum targetPat
@@ -186,13 +187,11 @@ deriveRepTypeIns typeFam funName patsVarsTypes = do
       mkPatExp patNum patVarTypes
         -- If the pattern doesn't has any pattern variable from the recursive
         -- family, then is safe to consider it terminal.
-        | bf patVarTypes == 0
+        | isTerminal typeFam patVarTypes
         = thTerm (thPat (thNameTyLit funName) patNum)
         -- Otherwise, treat the pattern as non-terminal.
         | otherwise
         = thPat (thNameTyLit funName) patNum
-
-      bf = sum . branchingFactor typeFam
 
   dragenMsg "derived type instance:" [repTypeIns]
 

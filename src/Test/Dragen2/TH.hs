@@ -86,26 +86,26 @@ branching t = t { branching_ = True }
 
 -- | TH target dispatcher
 deriveTarget :: Target -> Q [Dec]
-deriveTarget (TypeDef typeName _blacklist typeFam branching)
-  = sweeten <$> deriveTypeDef typeName _blacklist typeFam branching
-deriveTarget (TypeInt typeName _alias _blacklist _path typeFam branching)
-  = sweeten <$> deriveTypeInt typeName _alias _blacklist _path typeFam branching
-deriveTarget (FunPats funName _argNum _path typeFam branching)
-  = sweeten <$> deriveFunPats funName _argNum _path typeFam branching
+deriveTarget (TypeDef typeName _blacklist typeFam _branching)
+  = sweeten <$> deriveTypeDef typeName _blacklist typeFam _branching
+deriveTarget (TypeInt typeName _alias _blacklist _path typeFam _branching)
+  = sweeten <$> deriveTypeInt typeName _alias _blacklist _path typeFam _branching
+deriveTarget (FunPats funName _argNum _path typeFam _branching)
+  = sweeten <$> deriveFunPats funName _argNum _path typeFam _branching
 
 
 -- | Derive multiple target using the same family of mutually recursive types
 derive :: MutRecFam -> [Target] -> Q [Dec]
-derive fam targets
-  = concatMapM deriveTarget (setFam <$> targets)
+derive fam targets = dragen 'derive $ do
+  concatMapM deriveTarget (setFam <$> targets)
   where setFam target = target { typeFam_ = fam }
 
 ----------------------------------------
 -- | Derive BoundedArbitrary instances using a generation specification
 
 deriveBoundedArbitrary :: [(Name, [Maybe Name])] -> Name -> Q [Dec]
-deriveBoundedArbitrary typeFam spec
-  = concatMapM deriveInstance typeFam
+deriveBoundedArbitrary typeFam spec = dragen 'deriveBoundedArbitrary $ do
+  concatMapM deriveInstance typeFam
   where
     deriveInstance (typeName, typeCxt) = do
 
@@ -147,7 +147,7 @@ optimize
   :: forall spec root.
      spec `StartingFrom` root
   => DistFun -> MaxDepth -> Q Type
-optimize dist depth = do
+optimize dist depth = dragen 'optimize $ do
 
   dragenMsg' "optimizing frequencies:"
 
